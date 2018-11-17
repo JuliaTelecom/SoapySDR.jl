@@ -1,33 +1,25 @@
 #!/usr/bin/julia
 
 # http://pothosware.github.io/SoapySDR/doxygen/0.1.1/structSoapySDRKwargs.html
-mutable struct SoapySDRKwargs
+struct SoapySDRKwargs
     size::Csize_t
-    keys::Ptr{Ptr{Cchar}}
-    vals::Ptr{Ptr{Cchar}}
+    keys::Ptr{Cstring}
+    vals::Ptr{Cstring}
 end
 
-mutable struct SoapySDRDevice
-    size::Csize_t
-    keys::Ptr{Ptr{Cchar}}
-    vals::Ptr{Ptr{Cchar}}
-end
-
-mutable struct SDRKwargs
+struct SDRKwargs
     size::Int
     keys::Array{String, 1}
     vals::Array{String, 1}
 end
 
-function createSDRKwargs(kwargs::Ptr{SoapySDRKwargs})::SDRKwargs
+function createSDRKwargs(kwargs::Ptr{SoapySDRKwargs}, numDevices::Ref{Csize_t})::SDRKwargs
+    s = Int(numDevices[])
     t = unsafe_load(kwargs)
-    keys =  Array{String, 1}(undef, t.size)
-    vals =  Array{String, 1}(undef, t.size)
-    for i = 1:t.size
-        keys[i] = unsafe_string(unsafe_load(t.keys,i))
-        vals[i] = unsafe_string(unsafe_load(t.vals,i))
-    end
-    return SDRKwargs(Int(t.size),keys,vals)
+    size = t.size
+    keys = unsafe_string.(unsafe_wrap(Array, t.keys, size))
+    vals = unsafe_string.(unsafe_wrap(Array, t.vals, size))
+    return SDRKwargs(Int(size), keys, vals)
 end
 
 #function createSoapySDRKwargs(kwargs::SDRKwargs)
@@ -38,9 +30,9 @@ end
 #        # write this
 #end
 
-function SoapySDRDevice_enumerate()::Ptr{SoapySDRKwargs}
-    t2 = ccall((:SoapySDRDevice_enumerate, "libSoapySDR.so"), Ptr{SoapySDRKwargs}, ())
-    return t2
+function SoapySDRDevice_enumerate()
+    size=Ref{Csize_t}()
+    ccall((:SoapySDRDevice_enumerate, "libSoapySDR.so"), Ptr{SoapySDRKwargs}, (Ptr{Nothing}, Ref{Csize_t}), C_NULL, size)
 end
 
 function SoapySDRKwargsList_clear(kwargs::Ptr{SoapySDRKwargs})
@@ -48,16 +40,19 @@ function SoapySDRKwargsList_clear(kwargs::Ptr{SoapySDRKwargs})
 end
 
 function getSoapySDRDevice()::SDRKwargs
-    t2 = ccall((:SoapySDRDevice_enumerate, "libSoapySDR.so"), Ptr{SoapySDRKwargs}, ())
-    t = createSDRKwargs(t2)
+    size=Ref{Csize_t}()
+    t2 = ccall((:SoapySDRDevice_enumerate, "libSoapySDR.so"), Ptr{SoapySDRKwargs}, (Ptr{Nothing}, Ref{Csize_t}), C_NULL, size)
+    t = createSDRKwargs(t2, size)
     SoapySDRKwargsList_clear(t2)
     return t
 end
 
-t2 = ccall((:SoapySDRDevice_enumerate, "libSoapySDR.so"), Ptr{SoapySDRKwargs}, ())
-t = createSDRKwargs(t2)
 
-device = ccall((:SoapySDRDevice_make, "libSoapySDR.so"), Ptr{SoapySDRDevice}, (Ptr{SoapySDRKwargs},), t2)
+size=Ref{Csize_t}()
+t2 = ccall((:SoapySDRDevice_enumerate, "libSoapySDR.so"), Ptr{SoapySDRKwargs}, (Ptr{Nothing}, Ref{Csize_t}), C_NULL, size)
+t = createSDRKwargs(t2, size)
+
+#device = ccall((:SoapySDRDevice_make, "libSoapySDR.so"), Ptr{SoapySDRDevice}, (Ptr{SoapySDRKwargs},), t2)
 
 #names = ccall((:SoapySDRDevice_listAntennas, "libSoapySDR.so"), Ptr{Ptr{Char}}, (Ptr{SoapySDRDevice},Cint, Csize_t, Csize_t), device, 1, 0, 1)
     #char** names = SoapySDRDevice_listAntennas(sdr, SOAPY_SDR_RX, 0, &length);
@@ -91,5 +86,7 @@ device = ccall((:SoapySDRDevice_make, "libSoapySDR.so"), Ptr{SoapySDRDevice}, (P
 ##args = SoapySDRKwargs(1, "driver","rtlsdr")
 ###args = SoapySDRKwargs()
 ##ccall((:SoapySDRKwargs_set, "libSoapySDR.so"), Ptr{Nothing}, (SoapySDRKwargs, Cstring, Cstring), args, "driver", "rtlsdr")
-##
+##=#
 
+
+#t2 = ccall((:SoapySDRDevice_enumerate, "libSoapySDR.so"), Ptr{SoapySDRKwargs}, ())
