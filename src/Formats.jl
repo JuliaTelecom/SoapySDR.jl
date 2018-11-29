@@ -60,17 +60,10 @@ const SOAPY_SDR_S8 = "S8"
 # Real unsigned 8-bit integers (uint8)
 const SOAPY_SDR_U8 = "U8"
 
-##ifdef __cplusplus
-#extern "C" {
-##endif
-#
-#/*!
-# * Get the size of a single element in the specified format.
-# * \param format a supported format string
-# * \return the size of an element in bytes
-# */
-#SOAPY_SDR_API size_t SoapySDR_formatToSize(const char *format);
-#
-##ifdef __cplusplus
-#}
-##endif
+
+# Get the size of a single element in the specified format.
+# param format a supported format string
+# return the size of an element in bytes
+function SoapySDR_formatToSize(format)
+    ccall((:SoapySDR_formatToSize, lib), Cint, (Cstring, ), format)
+end

@@ -75,12 +75,12 @@ end
 
 # Clear the contents of a list of string
 # Convenience call to deal with results that return a string list.
-function SoapySDRKwargsList_clear(kwargs::Ptr{SoapySDRKwargs})
-    ccall((:SoapySDRKwargsList_clear, "libSoapySDR.so"), Nothing, (Ptr{SoapySDRKwargs}, Csize_t), kwargs, 1)
-end
-#function SoapySDRStrings_clear(elems, length::Cint)
-#    ccall((:SoapySDRStrings_clear, lib), Cvoid, (Ptr{Ptr{Cstring}}, Cint), elems, length)
+#function SoapySDRKwargsList_clear(kwargs::Ptr{SoapySDRKwargs})
+#    ccall((:SoapySDRKwargsList_clear, "libSoapySDR.so"), Nothing, (Ptr{SoapySDRKwargs}, Csize_t), kwargs, 1)
 #end
+function SoapySDRStrings_clear(elems, length)
+    ccall((:SoapySDRStrings_clear, lib), Cvoid, (Ptr{Ptr{Cstring}}, Cint), elems, length)
+end
 
 # Set a key/value pair in a kwargs structure.
 # If the key exists, the existing entry will be modified;
@@ -88,7 +88,10 @@ end
 # On error, the elements of args will not be modified,
 # and args is guaranteed to be in a good state.
 # return 0 for success, otherwise allocation error
-function SoapySDRKwargs_set(args, key, val)
+function SoapySDRKwargs_set(args, key, val) # THIS IS BROKEN
+    #ccall((:SoapySDRKwargs_set, "libSoapySDR.so"), Cint, (Ref{SoapySDRKwargs}, Cstring, Cstring, ), args, key, val)
+    #ccall((:SoapySDRKwargs_set, lib), Cint, (Ptr{SoapySDRKwargs}, Cstring, Cstring), args, key, val)
+    #ccall((:SoapySDRKwargs_set, lib), Cint, (Ref{SoapySDRKwargs}, Cstring, Cstring), args, key, val)
     ccall((:SoapySDRKwargs_set, lib), Cint, (Ptr{SoapySDRKwargs}, Cstring, Cstring), args, key, val)
 end
 

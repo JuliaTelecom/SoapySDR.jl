@@ -1,20 +1,12 @@
 # Error codes used in the device API.
 
-##ifdef __cplusplus
-#extern "C" {
-##endif
-#
-#/*!
-# * Convert a error code to a string for printing purposes.
-# * If the error code is unrecognized, errToStr returns "UNKNOWN".
-# * \param errorCode a negative integer return code
-# * \return a pointer to a string representing the error
-# */
-#SOAPY_SDR_API const char *SoapySDR_errToStr(const int errorCode);
-#
-##ifdef __cplusplus
-#}
-##endif
+# Convert a error code to a string for printing purposes.
+# If the error code is unrecognized, errToStr returns "UNKNOWN".
+# param errorCode a negative integer return code
+# return a pointer to a string representing the error
+function SoapySDR_errToStr(errorCode)
+    ccall((:SoapySDR_errToStr, lib), Cstring, (Cint,), errorCode)
+end
 
 # Returned when read has a timeout.
 const SOAPY_SDR_TIMEOUT = -1
