@@ -60,7 +60,8 @@ end
 # return a pointer to a new Device object
 function SoapySDRDevice_make(args) # have not checked
     #ccall((:SoapySDRDevice_make, lib), Ptr{SoapySDRDevice}, (,), args)
-    ccall((:SoapySDRDevice_make, lib), Ptr{SoapySDRDevice}, (Ref{SoapySDRKwargs},), args)
+    r = ccall((:SoapySDRDevice_make, lib), Ptr{SoapySDRDevice}, (Ref{SoapySDRKwargs},), args)
+    @show r
 end
 
 # Make a new Device object given device construction args.
@@ -347,7 +348,10 @@ end
 function SoapySDRDevice_readStream(device, stream, buffs, numElems, flags, timeNs, timeoutUs)
     #ccall((:SoapySDRDevice_readStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Ptr{Ptr{Cvoid}}, Cint, Ptr{Cint}, Ptr{Clonglong}, Clong), device, stream, buffs, numElems, flags, timeNs, timeoutUs)
     #ccall((:SoapySDRDevice_readStream, lib), Cint, (Ref{SoapySDRDevice}, Ref{SoapySDRStream}, Ptr{Ptr{Cvoid}}, Csize_t, Ptr{Cint}, Ptr{Clonglong}, Clong), device, stream, buffs, numElems, flags, timeNs, timeoutUs)
-    ccall((:SoapySDRDevice_readStream, lib), Cint, (Ref{SoapySDRDevice}, Ref{SoapySDRStream}, Ptr{Ptr{Cvoid}}, Csize_t, Ptr{Cint}, Ptr{Clonglong}, Clong), device, stream, buffs, numElems, flags, timeNs, timeoutUs)
+    #ccall((:SoapySDRDevice_readStream, lib), Cint, (Ref{SoapySDRDevice}, Ref{SoapySDRStream}, Ref{Ref{Cvoid}}, Csize_t, Ptr{Cint}, Ptr{Clonglong}, Clong), device, stream, buffs, numElems, flags, timeNs, timeoutUs)
+    ccall((:SoapySDRDevice_readStream, lib), Cint, (Ref{SoapySDRDevice}, Ref{SoapySDRStream}, Ptr{Ptr{Cvoid}}, Csize_t, Ptr{Cint}, Ptr{Clonglong}, Clong), device, stream, map(pointer, buffs), numElems, flags, timeNs, timeoutUs) # THIS SOMEWHAT WORKS
+
+#Ref{ComplexF32}
 end
 
 # Deactivate a stream.
