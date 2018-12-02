@@ -1,6 +1,8 @@
 include("../src/SoapySDR.jl")
 using Printf
 using FFTW
+using PyPlot
+include("fmDemod.jl")
 
 # enumerate devices
 (kwargs, sz) = SoapySDR.SoapySDRDevice_enumerate()
@@ -61,7 +63,9 @@ end
 @printf "\n"
 
 # apply settings
-if (SoapySDR.SoapySDRDevice_setSampleRate(sdr, SoapySDR.SOAPY_SDR_RX, 0, 1e6) != 0)
+#sampRate = 1e6
+sampRate = 1024e3
+if (SoapySDR.SoapySDRDevice_setSampleRate(sdr, SoapySDR.SOAPY_SDR_RX, 0, sampRate) != 0)
     @printf "setSampleRate fail: %s\n" unsafe_string(SoapySDR.SoapySDRDevice_lastError())
 end
 
@@ -76,43 +80,31 @@ if (SoapySDR.SoapySDRDevice_setupStream(sdr, rxStream, SoapySDR.SOAPY_SDR_RX, So
     @printf "setupStream fail: %s\n" unsafe_string(SoapySDR.SoapySDRDevice_lastError())
 end
 
-
 # start streaming
 SoapySDR.SoapySDRDevice_activateStream(sdr, rxStream, 0, 0, 0)
 
 # create a re-usable buffer for rx samples
 buffsz = 4096
-#buff = ComplexF32#[buffsz]
 buff = Array{ComplexF32}(undef, buffsz)
 
-##buffs = Ref{ComplexF32}()
-#flags = Ref{Cint}()
-#timeNs = Ref{Clonglong}()
-##buffs = [buff]
-##buffs = Ref{ComplexF32}() # THIS SOMEWHAT WORKS
-#buffs = [buff] # THIS SOMEWHAT WORKS
-#oldbuf = deepcopy(buffs)
-#@show buffs
-#SoapySDR.SoapySDRDevice_readStream(sdr, rxStream, buffs, buffsz, flags, timeNs, 100000)
-#@show buffs
-#@show flags
-#@show timeNs
-## receive some samples
-timeSamp = 10000
+# receive some samples
+timeS = 15 
+timeSamp = Int(floor(timeS * sampRate / buffsz))
 storeFft = zeros(buffsz, timeSamp)
+storeIq = zeros(ComplexF32, buffsz*timeSamp)
+
+flags = Ref{Cint}()
+timeNs = Ref{Clonglong}()
+buffs = [buff] 
 for i=1:timeSamp
-    global buffs = [buff] 
-    oldbuf = deepcopy(buffs)
-    flags = Ref{Cint}()
-    timeNs = Ref{Clonglong}()
     ret = SoapySDR.SoapySDRDevice_readStream(sdr, rxStream, buffs, buffsz, flags, timeNs, 100000)
+    local storeIq[(i-1)*buffsz+1:i*buffsz] = buffs[1]
     #@show ret
     #@show isequal(oldbuf[1], buffs[1])
     #@show bitstring(flags[])
     #@show timeNs
-    storeFft[:,i] = 20 .*log10.(abs.(fftshift(fft(buff))))
-    
-    #@prinf "i = %i, %f +%fi\n"
+    #@sync @async 
+    local storeFft[:,i] = 20 .*log10.(abs.(fftshift(fft(buff))))
 end
 
 
@@ -121,3 +113,12 @@ SoapySDR.SoapySDRDevice_deactivateStream(sdr, rxStream, 0, 0)  # stop streaming
 SoapySDR.SoapySDRDevice_closeStream(sdr, rxStream)
 
 SoapySDR.SoapySDRDevice_unmake(sdr);
+
+
+imshow(storeFft)
+(data, fs) =  fmDemod(storeIq, sampRate)
+figure()
+plot(data)
+
+wavwrite(data, "demod.wav", Fs=fs)
+
