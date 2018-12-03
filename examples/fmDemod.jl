@@ -76,7 +76,8 @@ function fmDemod(data, fs)
     M = Int(fs2 / fs3)
     (data7, b7, a7) = downsample(data6, M)
     
-    maxval = abs(data7[argmax(abs.(data7))])
-    data8 = data7./maxval
-    return (data8, fs3)
+    #maxval = abs(data7[argmax(abs.(data7))])
+    #data8 = data7./maxval
+    #return (data8, fs3)
+    return (data7, fs3)
 end
