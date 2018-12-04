@@ -326,7 +326,7 @@ end
 # param timeoutUs the timeout in microseconds
 # return the number of elements read per buffer or error code
 function SoapySDRDevice_readStream(device, stream, buffs, numElems, flags, timeNs, timeoutUs)
-    ccall((:SoapySDRDevice_readStream, lib), Cint, (Ref{SoapySDRDevice}, Ref{SoapySDRStream}, Ptr{Ptr{Cvoid}}, Csize_t, Ptr{Cint}, Ptr{Clonglong}, Clong), device, stream, map(pointer, buffs), numElems, flags, timeNs, timeoutUs) # THIS SOMEWHAT WORKS
+    ccall((:SoapySDRDevice_readStream, lib), Cint, (Ref{SoapySDRDevice}, Ref{SoapySDRStream}, Ptr{Ptr{Cvoid}}, Csize_t, Ptr{Cint}, Ptr{Clonglong}, Clong), device, stream, map(pointer, buffs), numElems, flags, timeNs, timeoutUs) 
 end
 
 # Deactivate a stream.
