@@ -1,5 +1,5 @@
 # Interface definition for Soapy SDR devices.
-# 
+ 
 # General design rules about the API:
 # The caller must free non-const array results.
 
@@ -28,7 +28,6 @@ end
 # Use lastError() to access the exception's error message.
 function SoapySDRDevice_lastError()
     ccall((:SoapySDRDevice_lastError, lib), Cstring, ())
-    # unsafe_string(ret)
 end
 
 # Enumerate a list of available devices on the system.
@@ -59,9 +58,7 @@ end
 # param args device construction key/value argument map
 # return a pointer to a new Device object
 function SoapySDRDevice_make(args) # have not checked
-    #ccall((:SoapySDRDevice_make, lib), Ptr{SoapySDRDevice}, (,), args)
     r = ccall((:SoapySDRDevice_make, lib), Ptr{SoapySDRDevice}, (Ref{SoapySDRKwargs},), args)
-    @show r
 end
 
 # Make a new Device object given device construction args.
@@ -149,7 +146,6 @@ end
 # param [out] length the number of antenna names
 # return a list of available antenna names
 function SoapySDRDevice_listAntennas(device, direction, channel)
-    #ccall((:SoapySDRDevice_listAntennas, Device), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Cint, Cint, Ptr{Cint}), device, direction, channel, length)
     leng = Ref{Csize_t}()
     names = ccall((:SoapySDRDevice_listAntennas, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, leng)
     return (names, leng)
@@ -168,10 +164,8 @@ end
 # return a list of gain string names
 #function SoapySDRDevice_listGains(device, direction, channel, length)
 function SoapySDRDevice_listGains(device, direction, channel)
-    #ccall((:SoapySDRDevice_listGains, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Cint, Cint, Ptr{Cint}), device, direction, channel, length)
     leng = Ref{Csize_t}()
     names = ccall((:SoapySDRDevice_listGains, "libSoapySDR.so"), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, leng)
-    #names3 = unsafe_string(unsafe_load(names))
     return (names, leng)
 end
 
@@ -186,7 +180,6 @@ end
 # param [out] length the number of ranges
 # return a list of frequency ranges in Hz
 function SoapySDRDevice_getFrequencyRange(device, direction, channel)
-    #ccall((:SoapySDRDevice_getFrequencyRange, Device), Ptr{Cint}, ())
     leng = Ref{Csize_t}()
     ranges = ccall((:SoapySDRDevice_getFrequencyRange, lib), Ptr{SoapySDRRange}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, leng)
     return (ranges, leng)
@@ -202,7 +195,6 @@ end
 # param channel an available channel on the device
 # param rate the sample rate in samples per
 function SoapySDRDevice_setSampleRate(device, direction, channel, rate)
-    #ccall((:SoapySDRDevice_setSampleRate, lib), Cint, (Ptr{SoapySDRDevice}, Cint, Cint, Cdouble), device, direction, channel, rate)
     ccall((:SoapySDRDevice_setSampleRate, lib), Cint, (Ref{SoapySDRDevice}, Cint, Csize_t, Cdouble), device, direction, channel, rate)
 end
 
@@ -234,13 +226,7 @@ end
 # param frequency the center frequency in Hz
 # param args optional tuner arguments
 # return an error code or 0 for success
-#function SoapySDRDevice_setFrequency(device, direction::Cint, channel::Cint, frequency::Cdouble, args)
-#function SoapySDRDevice_setFrequency(device, direction, channel, frequency, args)
 function SoapySDRDevice_setFrequency(device, direction, channel, frequency)
-    #ccall((:SoapySDRDevice_setFrequency, lib), Cint, (Ptr{SoapySDRDevice}, Cint, Cint, Cdouble, Ptr{Cint}), device, direction, channel, frequency, args)
-    #args = Ref{SoapySDRKwargs}()
-    #ccall((:SoapySDRDevice_setFrequency, lib), Int, (Ref{SoapySDRDevice}, Cint, Csize_t, Cdouble, Ref{SoapySDRKwargs}), device, direction, channel, frequency, args)
-    #ccall((:SoapySDRDevice_setFrequency, lib), Int, (Ref{SoapySDRDevice}, Cint, Csize_t, Cdouble, Ref{SoapySDRKwargs}), device, direction, channel, frequency, C_NULL)
     ccall((:SoapySDRDevice_setFrequency, lib), Int, (Ref{SoapySDRDevice}, Cint, Csize_t, Cdouble, Ptr{Nothing}), device, direction, channel, frequency, C_NULL)
 end
 
@@ -298,10 +284,7 @@ end
 # endparblock
 # return 0 for success or error code on failure
 function SoapySDRDevice_setupStream(device, stream, direction, format, channels, numChans)
-    #ccall((:SoapySDRDevice_setupStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{Ptr{SoapySDRStream}}, Cint, Cstring, Ptr{Cint}, Cint, Ptr{Cint}), device, stream, direction, format, channels, numChans, args)
-    #ccall((:SoapySDRDevice_setupStream, lib), Int, (Ref{SoapySDRDevice}, Ref{Ref{SoapySDRStream}}, Cint, Cstring, Ref{Csize_t}, Csize_t, Ref{SoapySDRKwargs}), device, stream, direction, format, channels, numChans, args)
     ccall((:SoapySDRDevice_setupStream, lib), Int, (Ref{SoapySDRDevice}, Ref{Ref{SoapySDRStream}}, Cint, Cstring, Ref{Csize_t}, Csize_t, Ptr{Nothing}), device, stream, direction, format, channels, numChans, C_NULL)
-    #ccall((:SoapySDRDevice_setupStream, lib), Int, (Ref{SoapySDRDevice}, Ref{SoapySDRStream}, Cint, Cstring, Ref{Csize_t}, Csize_t, Ptr{Nothing}), device, stream, direction, format, channels, numChans, C_NULL)
 end
 
 # Activate a stream.
@@ -321,10 +304,7 @@ end
 # param numElems optional element count for burst control
 # return 0 for success or error code on failure
 function SoapySDRDevice_activateStream(device, stream, flags, timeNs, numElems)
-    #ccall((:SoapySDRDevice_activateStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Cint, Clonglong, Csize_t), device, stream, flags, timeNs, numElems)
-    #ccall((:SoapySDRDevice_activateStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Cint, Clonglong, Csize_t), device, stream, flags, timeNs, numElems)
     ccall((:SoapySDRDevice_activateStream, lib), Cint, (Ref{SoapySDRDevice}, Ref{SoapySDRStream}, Cint, Clonglong, Csize_t), device, stream, flags, timeNs, numElems)
-    #ccall((:SoapySDRDevice_activateStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Cint, Clonglong, Cint), device, stream, flags, timeNs, numElems)
 end
 
 # Read elements from a stream for reception.
@@ -346,12 +326,7 @@ end
 # param timeoutUs the timeout in microseconds
 # return the number of elements read per buffer or error code
 function SoapySDRDevice_readStream(device, stream, buffs, numElems, flags, timeNs, timeoutUs)
-    #ccall((:SoapySDRDevice_readStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Ptr{Ptr{Cvoid}}, Cint, Ptr{Cint}, Ptr{Clonglong}, Clong), device, stream, buffs, numElems, flags, timeNs, timeoutUs)
-    #ccall((:SoapySDRDevice_readStream, lib), Cint, (Ref{SoapySDRDevice}, Ref{SoapySDRStream}, Ptr{Ptr{Cvoid}}, Csize_t, Ptr{Cint}, Ptr{Clonglong}, Clong), device, stream, buffs, numElems, flags, timeNs, timeoutUs)
-    #ccall((:SoapySDRDevice_readStream, lib), Cint, (Ref{SoapySDRDevice}, Ref{SoapySDRStream}, Ref{Ref{Cvoid}}, Csize_t, Ptr{Cint}, Ptr{Clonglong}, Clong), device, stream, buffs, numElems, flags, timeNs, timeoutUs)
     ccall((:SoapySDRDevice_readStream, lib), Cint, (Ref{SoapySDRDevice}, Ref{SoapySDRStream}, Ptr{Ptr{Cvoid}}, Csize_t, Ptr{Cint}, Ptr{Clonglong}, Clong), device, stream, map(pointer, buffs), numElems, flags, timeNs, timeoutUs) # THIS SOMEWHAT WORKS
-
-#Ref{ComplexF32}
 end
 
 # Deactivate a stream.

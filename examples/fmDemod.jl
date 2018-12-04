@@ -12,7 +12,6 @@ end
 
 function decimate(data, M)
        return data[1:M:end]
-
 end
 
 function discriminator(data, M)
@@ -38,9 +37,7 @@ function delay(data, D, o)
        b = [sin.(a*(n - D))/(a*(n - D) ) + 0im for n = 0:o-1]
        c = filt(b, a, data)
        return (c, b, [1])
-
 end
-
 
 function deemphasis(data, t, f)
        T = 1/f
@@ -56,6 +53,38 @@ function lowPassFilter(data, f, pb, sb)
        order = 35
        coeffs = remez(order, [0, fp, ft, 0.5], [1, 0])
        return (filt(coeffs, [1], data), coeffs, [1])
+end
+
+function plotTimeFreq(storeFft, fs, f0)
+    w, h = figaspect(0.33)
+    figure(figsize=[w,h])
+    minF = (f0 - fs/2 )./ 1e6
+    maxF = (f0 + fs/2 )./ 1e6
+    maxT = 1/fs * size(storeFft)[1] * size(storeFft)[2]
+    imshow(storeFft, extent=[minF,maxF,0,maxT], aspect="auto")
+    xlabel("Frequnecy (MHz)")
+    ylabel("Time (s)")
+    cb = colorbar()
+    cb[:set_label]("Magnitude (dB)")
+end
+
+function plotTime(data, fs)
+    w, h = figaspect(0.33)
+    figure(figsize=[w,h])
+    maxT = 1/fs * size(data)[1]
+    t = range(0, maxT, length=size(data)[1])
+    plot(t, data, linewidth=0.1)
+    xlim([0, maxT])
+    xlabel("Time (s)")
+    ylabel("Amplitude")
+end
+
+function plotIq(data)
+    figure()
+    scatter(real.(data), imag.(data), s=10)
+    xlabel("In-phase")
+    ylabel("Quadrature")
+    title("IQ data")
 end
 
 function fmDemod(data, fs)
@@ -76,8 +105,8 @@ function fmDemod(data, fs)
     M = Int(fs2 / fs3)
     (data7, b7, a7) = downsample(data6, M)
     
-    #maxval = abs(data7[argmax(abs.(data7))])
-    #data8 = data7./maxval
-    #return (data8, fs3)
+    maxval = abs(data7[argmax(abs.(data7))])
+    data8 = data7./maxval
+    return (data8, fs3)
     return (data7, fs3)
 end

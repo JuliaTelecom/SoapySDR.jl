@@ -16,7 +16,6 @@ end
 # Convert a markup string to a key-value map.
 # The markup format is: "key0=value0, key1=value1"
 function SoapySDRKwargs_fromString(markup)
-    #ccall((:SoapySDRKwargs_fromString, src), SoapySDRKwargs, (Ptr{Cchar},), markup)
     ccall((:SoapySDRKwargs_fromString, lib), SoapySDRKwargs, (Cstring,), markup)
 end
 
@@ -89,9 +88,6 @@ end
 # and args is guaranteed to be in a good state.
 # return 0 for success, otherwise allocation error
 function SoapySDRKwargs_set(args, key, val) # THIS IS BROKEN
-    #ccall((:SoapySDRKwargs_set, "libSoapySDR.so"), Cint, (Ref{SoapySDRKwargs}, Cstring, Cstring, ), args, key, val)
-    #ccall((:SoapySDRKwargs_set, lib), Cint, (Ptr{SoapySDRKwargs}, Cstring, Cstring), args, key, val)
-    #ccall((:SoapySDRKwargs_set, lib), Cint, (Ref{SoapySDRKwargs}, Cstring, Cstring), args, key, val)
     ccall((:SoapySDRKwargs_set, lib), Cint, (Ptr{SoapySDRKwargs}, Cstring, Cstring), args, key, val)
 end
 
