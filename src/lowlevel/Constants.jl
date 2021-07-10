@@ -1,10 +1,7 @@
 # Constants used in the device API.
 
-# Constant to represent the transmit direction
-const SOAPY_SDR_TX = 0
-
-# Constant to represent the receive direction
-const SOAPY_SDR_RX = 1
+# SOAPY_SDR_TX SOAPY_SDR_RX
+@enum Direction Tx=0 Rx=1
 
 # Indicate end of burst for transmit or receive.
 # For write, end of burst if set by the caller.

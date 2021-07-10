@@ -74,9 +74,6 @@ end
 
 # Clear the contents of a list of string
 # Convenience call to deal with results that return a string list.
-#function SoapySDRKwargsList_clear(kwargs::Ptr{SoapySDRKwargs})
-#    ccall((:SoapySDRKwargsList_clear, "libSoapySDR.so"), Nothing, (Ptr{SoapySDRKwargs}, Csize_t), kwargs, 1)
-#end
 function SoapySDRStrings_clear(elems, length)
     ccall((:SoapySDRStrings_clear, lib), Cvoid, (Ptr{Ptr{Cstring}}, Cint), elems, length)
 end
@@ -105,8 +102,8 @@ end
 
 # Clear a list of kwargs structures.
 # This frees all the underlying memory and clears the members.
-function SoapySDRKwargsList_clear(args, length::Cint)
-    ccall((:SoapySDRKwargsList_clear, lib), Cvoid, (Ptr{SoapySDRKwargs}, Cint), args, length)
+function SoapySDRKwargsList_clear(args, length::Integer)
+    ccall((:SoapySDRKwargsList_clear, lib), Cvoid, (Ptr{SoapySDRKwargs}, Csize_t), args, length)
 end
 
 # Clear the contents of a argument info structure.

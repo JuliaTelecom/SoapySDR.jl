@@ -3,6 +3,12 @@
 # General design rules about the API:
 # The caller must free non-const array results.
 
+const LL_DISCLAIMER = 
+    """
+    NOTE: This function is part of the lowlevel libsoapysdr interface.
+    For end-users in Julia, the higher-level Julia APIs are preferred
+    """
+
 # Forward declaration of device handle
 mutable struct SoapySDRDevice
 end
@@ -11,12 +17,32 @@ end
 mutable struct SoapySDRStream
 end
 
-# Get the last status code after a Device API call.
-# The status code is cleared on entry to each Device call.
-# When an device API call throws, the C bindings catch
-# the exception, and set a non-zero last status code.
-# Use lastStatus() to determine success/failure for
-# Device calls without integer status return codes.
+struct SoapyDeviceError
+    msg::String
+end
+
+macro check_error(expr)
+    quote
+        val = $(esc(expr))
+        if SoapySDRDevice_lastStatus() == -1
+            throw(SoapyDeviceError(unsafe_string(SoapySDRDevice_lastError())))
+        end
+        val
+    end
+end
+
+"""
+    SoapySDRDevice_lastStatus()
+
+Get the last status code after a Device API call.
+The status code is cleared on entry to each Device call.
+When an device API call throws, the C bindings catch
+the exception, and set a non-zero last status code.
+Use lastStatus() to determine success/failure for
+Device calls without integer status return codes.
+
+$LL_DISCLAIMER
+"""
 function SoapySDRDevice_lastStatus()
     ccall((:SoapySDRDevice_lastStatus, lib), Cint, ())
 end
@@ -36,8 +62,8 @@ end
 # return a list of arguments strings, each unique to a device
 function SoapySDRDevice_enumerate()
     sz = Ref{Csize_t}()
-    kwargs = ccall((:SoapySDRDevice_enumerate, lib), Ptr{SoapySDRKwargs}, (Ptr{Nothing}, Ref{Csize_t}), C_NULL, sz)
-    return (kwargs, sz)
+    kwargs = @check_error ccall((:SoapySDRDevice_enumerate, lib), Ptr{SoapySDRKwargs}, (Ptr{Nothing}, Ref{Csize_t}), C_NULL, sz)
+    return (kwargs, sz[])
 end
 
 # Enumerate a list of available devices on the system.
@@ -48,17 +74,23 @@ end
 function SoapySDRDevice_enumerateStrArgs(args)
     sz = Ref{Csize_t}()
     kwargs = ccall((:SoapySDRDevice_enumerateStrArgs, lib), Ptr{SoapySDRKwargs}, (Cstring, Ref{Csize_t}), args, sz)
-    return (kwargs, sz)
+    return (kwargs, sz[])
 end
 
-# Make a new Device object given device construction args.
-# The device pointer will be stored in a table so subsequent calls
-# with the same arguments will produce the same device.
-# For every call to make, there should be a matched call to unmake.
-# param args device construction key/value argument map
-# return a pointer to a new Device object
-function SoapySDRDevice_make(args) # have not checked
-    r = ccall((:SoapySDRDevice_make, lib), Ptr{SoapySDRDevice}, (Ref{SoapySDRKwargs},), args)
+"""
+    SoapySDRDevice_make(args)
+
+Make a new Device object given device construction args.
+The device pointer will be stored in a table so subsequent calls
+with the same arguments will produce the same device.
+For every call to make, there should be a matched call to unmake.
+param args device construction key/value argument map
+return a pointer to a new Device object.
+
+$LL_DISCLAIMER
+"""
+function SoapySDRDevice_make(args)
+    return @check_error ccall((:SoapySDRDevice_make, lib), Ptr{SoapySDRDevice}, (Ref{SoapySDRKwargs},), args)
 end
 
 # Make a new Device object given device construction args.
@@ -106,7 +138,7 @@ function SoapySDRDevice_unmake_list(devices, length::Cint)
 end
 
 ########################
-## Identificatoin API ##    # have not checked any of these
+## Identification API ##    # have not checked any of these
 ########################
 
 # A key that uniquely identifies the device driver.
@@ -131,13 +163,38 @@ end
 # This information can be displayed to the user
 # to help identify the instantiated device.
 # \param device a pointer to a device instance
-function SoapySDRDevice_getHardwareInfo()
-    ccall((:SoapySDRDevice_getHardwareInfo, lib), Cint, ())
+function SoapySDRDevice_getHardwareInfo(device)
+    ccall((:SoapySDRDevice_getHardwareInfo, lib), SoapySDRKwargs, (Ptr{SoapySDRDevice},), device)
 end
 
 #################
 ## ANTENNA API ##
 #################
+
+# Get a number of channels given the streaming direction
+# param device a pointer to a device instance
+# param direction the channel direction RX or TX
+# return the number of channels
+function SoapySDRDevice_getNumChannels(device, direction)
+    num_channels = ccall((:SoapySDRDevice_getNumChannels, lib), Csize_t, (Ptr{SoapySDRDevice}, Cint), device, direction)
+    return Int(num_channels)
+end
+
+"""
+    SoapySDRDevice_getChannelInfo(device, direction, channel)
+
+Get channel info given the streaming direction
+*  `device` a pointer to a device instance
+*  `direction` the channel direction RX or TX
+*  `channel` the channel number to get info for
+
+Returns channel information
+
+$LL_DISCLAIMER
+"""
+function SoapySDRDevice_getChannelInfo(device, direction, channel);
+    return @check_error ccall((:SoapySDRDevice_getChannelInfo, lib), SoapySDRKwargs, (Ptr{SoapySDRDevice}, Cint, Csize_t), device, direction, channel)
+end
 
 # Get a list of available antennas to select on a given chain.
 # param device a pointer to a device instance
@@ -146,9 +203,9 @@ end
 # param [out] length the number of antenna names
 # return a list of available antenna names
 function SoapySDRDevice_listAntennas(device, direction, channel)
-    leng = Ref{Csize_t}()
-    names = ccall((:SoapySDRDevice_listAntennas, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, leng)
-    return (names, leng)
+    num_antennas = Ref{Csize_t}()
+    names = ccall((:SoapySDRDevice_listAntennas, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, num_antennas)
+    return (names, num_antennas[])
 end
 
 ##############
@@ -162,11 +219,22 @@ end
 # param channel an available channel
 # param [out] length the number of gain names
 # return a list of gain string names
-#function SoapySDRDevice_listGains(device, direction, channel, length)
 function SoapySDRDevice_listGains(device, direction, channel)
-    leng = Ref{Csize_t}()
-    names = ccall((:SoapySDRDevice_listGains, "libSoapySDR.so"), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, leng)
-    return (names, leng)
+    num_gains = Ref{Csize_t}()
+    names = @check_error ccall((:SoapySDRDevice_listGains, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, num_gains)
+    names, num_gains[]
+end
+
+function SoapySDRDevice_getGainElement(device, direction, channel, name)
+    return @check_error ccall((:SoapySDRDevice_getGainElement, lib), Cdouble, (Ptr{SoapySDRDevice}, Cint, Csize_t, Cstring),
+        device, direction, channel, name)
+end
+
+function SoapySDRDevice_setGainElement(device, direction, channel, name, val)
+    err = @check_error ccall((:SoapySDRDevice_getGainElement, lib), Cint, (Ptr{SoapySDRDevice}, Cint, Csize_t, Cstring, Cdouble),
+        device, direction, channel, name, val)
+    @assert err == 0
+    return nothing
 end
 
 ###################
@@ -180,9 +248,11 @@ end
 # param [out] length the number of ranges
 # return a list of frequency ranges in Hz
 function SoapySDRDevice_getFrequencyRange(device, direction, channel)
-    leng = Ref{Csize_t}()
-    ranges = ccall((:SoapySDRDevice_getFrequencyRange, lib), Ptr{SoapySDRRange}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, leng)
-    return (ranges, leng)
+    num_ranges = Ref{Csize_t}()
+    ranges = ccall((:SoapySDRDevice_getFrequencyRange, lib), Ptr{SoapySDRRange}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, num_ranges)
+    num_ranges = Int(num_ranges[])
+    ranges = unsafe_wrap(Array, ranges, num_ranges)
+    return (ranges, num_ranges)
 end
 
 #####################

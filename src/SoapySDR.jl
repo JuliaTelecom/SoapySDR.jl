@@ -1,11 +1,16 @@
 module SoapySDR
 
-const lib = "libSoapySDR.so"
+using soapysdr_jll
+const lib = soapysdr_jll.libsoapysdr
 
-include("Constants.jl") # Done
-include("Errors.jl")    # Done
-include("Formats.jl")   # Done
-include("Types.jl")     # Done
-include("Device.jl")
+using Unitful
+const dB = u"dB"
+
+include("lowlevel/Constants.jl") # Done
+include("lowlevel/Errors.jl")    # Done
+include("lowlevel/Formats.jl")   # Done
+include("lowlevel/Types.jl")     # Done
+include("lowlevel/Device.jl")
+include("highlevel.jl")
 
 end

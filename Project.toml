@@ -1,3 +1,6 @@
 name = "SoapySDR"
 uuid = "4fa426e6-03fd-45b2-b2dd-25f726820c03"
 version = "0.1.0"
+
+[deps]
+soapysdr_jll = "343a40d9-ed99-5d34-8b56-649aaa4ecee6"
