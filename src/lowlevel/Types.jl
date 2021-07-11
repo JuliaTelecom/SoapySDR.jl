@@ -4,6 +4,7 @@
 struct SoapySDRRange
     minimum::Cdouble
     maximum::Cdouble
+    step::Cdouble
 end
 
 #Definition for a key/value string map
@@ -116,4 +117,8 @@ end
 # This frees all the underlying memory and clears the members.
 function SoapySDRArgInfoList_clear(info, length::Cint)
     ccall((:SoapySDRArgInfoList_clear, lib), Cvoid, (Ptr{SoapySDRArgInfo}, Cint), info, length)
+end
+
+function SoapySDR_free(ptr::Ptr)
+    ccall((:SoapySDR_free, lib), Cvoid, (Ptr{Cvoid},), ptr)
 end

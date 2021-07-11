@@ -1,5 +1,7 @@
 # Interface definition for Soapy SDR devices.
  
+using Base.Meta
+
 # General design rules about the API:
 # The caller must free non-const array results.
 
@@ -167,10 +169,6 @@ function SoapySDRDevice_getHardwareInfo(device)
     ccall((:SoapySDRDevice_getHardwareInfo, lib), SoapySDRKwargs, (Ptr{SoapySDRDevice},), device)
 end
 
-#################
-## ANTENNA API ##
-#################
-
 # Get a number of channels given the streaming direction
 # param device a pointer to a device instance
 # param direction the channel direction RX or TX
@@ -180,13 +178,17 @@ function SoapySDRDevice_getNumChannels(device, direction)
     return Int(num_channels)
 end
 
+const CHANNEL_ARGS = """
+*  `device` a pointer to a device instance
+*  `direction` the channel direction RX or TX
+*  `channel` the channel number to get info for
+"""
+
 """
     SoapySDRDevice_getChannelInfo(device, direction, channel)
 
 Get channel info given the streaming direction
-*  `device` a pointer to a device instance
-*  `direction` the channel direction RX or TX
-*  `channel` the channel number to get info for
+$CHANNEL_ARGS
 
 Returns channel information
 
@@ -196,15 +198,22 @@ function SoapySDRDevice_getChannelInfo(device, direction, channel);
     return @check_error ccall((:SoapySDRDevice_getChannelInfo, lib), SoapySDRKwargs, (Ptr{SoapySDRDevice}, Cint, Csize_t), device, direction, channel)
 end
 
-# Get a list of available antennas to select on a given chain.
-# param device a pointer to a device instance
-# param direction the channel direction RX or TX
-# param channel an available channel on the device
-# param [out] length the number of antenna names
-# return a list of available antenna names
+#################
+## ANTENNA API ##
+#################
+
+"""
+Get a list of available antennas to select on a given chain.
+
+$CHANNEL_ARGS
+
+returns a list of available antenna names
+
+$LL_DISCLAIMER
+"""
 function SoapySDRDevice_listAntennas(device, direction, channel)
     num_antennas = Ref{Csize_t}()
-    names = ccall((:SoapySDRDevice_listAntennas, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, num_antennas)
+    names = @check_error ccall((:SoapySDRDevice_listAntennas, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, num_antennas)
     return (names, num_antennas[])
 end
 
@@ -237,6 +246,51 @@ function SoapySDRDevice_setGainElement(device, direction, channel, name, val)
     return nothing
 end
 
+#=
+"""
+Get the overall value of the gain elements in a chain.
+
+$CHANNEL_ARGS
+
+Returns the value of the gain in dB
+"""
+function SoapySDRDevice_getGain(device, direction, channel)
+    return @check_error ccall((:SoapySDRDevice_getGain, lib), Cdouble, (Ptr{SoapySDRDevice}, Cint, Csize_t),
+        device, direction, channel)
+end
+=#
+
+"""
+Get the overall range of possible gain values
+
+$CHANNEL_ARGS
+
+Returns the range of possible gain values for this channel in dB
+"""
+function SoapySDRDevice_getGainRange(device, direction, channel)
+    range = @check_error ccall((:SoapySDRDevice_getGainRange, lib), SoapySDRRange, (Ptr{SoapySDRDevice}, Cint, Csize_t),
+        device, direction, channel)
+    return range
+end
+
+"""
+    SoapySDRDevice_getGainElementRange(device, direction, channel, name)
+
+    Get the range of possible gain values for a specific element.
+
+$CHANNEL_ARGS
+* `name` the name of an amplification element
+
+Returns the range of possible gain values for the specified amplification element in dB
+
+$LL_DISCLAIMER
+"""
+function SoapySDRDevice_getGainElementRange(device, direction, channel, name)
+    range = @check_error ccall((:SoapySDRDevice_getGainElementRange, lib), SoapySDRRange, (Ptr{SoapySDRDevice}, Cint, Csize_t, Cstring),
+        device, direction, channel, name)
+    return range
+end
+
 ###################
 ## FREQUENCY API ##
 ###################
@@ -253,19 +307,6 @@ function SoapySDRDevice_getFrequencyRange(device, direction, channel)
     num_ranges = Int(num_ranges[])
     ranges = unsafe_wrap(Array, ranges, num_ranges)
     return (ranges, num_ranges)
-end
-
-#####################
-## SAMPLE RATE API ##
-#####################
-
-# Set the baseband sample rate of the chain.
-# param device a pointer to a device instance
-# param direction the channel direction RX or TX
-# param channel an available channel on the device
-# param rate the sample rate in samples per
-function SoapySDRDevice_setSampleRate(device, direction, channel, rate)
-    ccall((:SoapySDRDevice_setSampleRate, lib), Cint, (Ref{SoapySDRDevice}, Cint, Csize_t, Cdouble), device, direction, channel, rate)
 end
 
 ###################
@@ -422,4 +463,112 @@ end
 # return 0 for success or error code on failure
 function SoapySDRDevice_closeStream(device, stream)
     ccall((:SoapySDRDevice_closeStream, lib), Cint, (Ref{SoapySDRDevice}, Ref{SoapySDRStream}), device, stream)
+end
+
+### Various channel queries
+for (prop, T, may_be_missing, desc) in [
+        (:DCOffsetMode, Bool, true, "automatic DC offset corrections mode"),
+        (:IQBalanceMode, Bool, true, "automatic IQ balance corrections mode"),
+        (:GainMode, Bool, true, "automatic gain control mode"),
+        (:FrequencyCorrection, Cdouble, true, "frontend frequency correction"),
+        (:Gain, Cdouble, false, "gain in dB"),
+        (:Antenna, Cstring, false, "selected antenna"),
+        (:Bandwidth, Cdouble, false, "bandwidth in Hz"),
+        (:SampleRate, Cdouble, false, "sample rate in Hz"),
+    ]
+
+    has_sym = Symbol(string("SoapySDRDevice_has"), prop)
+    get_sym = Symbol(string("SoapySDRDevice_get"), prop)
+    set_sym = Symbol(string("SoapySDRDevice_set"), prop)
+
+    if may_be_missing
+        """
+        Does the device suppport $desc
+
+        $CHANNEL_ARGS
+
+        $LL_DISCLAIMER
+        """
+        @eval function ($has_sym)(device, direction, channel)
+            return ccall(($(quot(has_sym)), lib), Bool, (Ref{SoapySDRDevice}, Cint, Csize_t), device, direction, channel)
+        end
+    end
+
+    """
+    Get the $desc.
+
+    $CHANNEL_ARGS
+
+    Returns the $desc.
+
+    $LL_DISCLAIMER
+    """
+    @eval function ($get_sym)(device, direction, channel)
+        return ccall(($(quot(get_sym)), lib), $T, (Ref{SoapySDRDevice}, Cint, Csize_t), device, direction, channel)
+    end
+
+    """
+    Set the $desc.
+
+    $CHANNEL_ARGS
+    * `value` set the $desc to this `value`
+
+    $LL_DISCLAIMER
+    """
+    @eval function ($set_sym)(device, direction, channel, value)
+        return ccall(($(quot(set_sym)), lib), Cint, (Ref{SoapySDRDevice}, Cint, Csize_t, $T), device, direction, channel, value)
+    end
+end
+
+for (prop, desc) in [
+    (:IQBalance, "frontend IQ balance correction"),
+    (:DCOffset, "frontend DC offset correction")
+]
+
+    has_sym = Symbol(string("SoapySDRDevice_has"), prop)
+    get_sym = Symbol(string("SoapySDRDevice_get"), prop)
+    set_sym = Symbol(string("SoapySDRDevice_set"), prop)
+
+
+    """
+    Does the device suppport $desc?
+
+    $CHANNEL_ARGS
+    $LL_DISCLAIMER
+    """
+    @eval function ($has_sym)(device, direction, channel)
+        return @check_error ccall(($(quot(has_sym)), lib), Bool, (Ref{SoapySDRDevice}, Cint, Csize_t),
+            device, direction, channel)
+    end
+
+    """
+    Get the $desc.
+
+    $CHANNEL_ARGS
+    $LL_DISCLAIMER
+    """
+    @eval function ($get_sym)(device, direction, channel)
+        i = Ref{Cdouble}()
+        q = Ref{Cdouble}()
+        @check_error ccall(($(quot(get_sym)), lib), Cint, (Ref{SoapySDRDevice}, Cint, Csize_t, Ref{Cdouble}, Ref{Cdouble}),
+            device, direction, channel, i, q)
+        (i[], q[])
+    end
+
+    """
+    Set the $desc.
+
+    $CHANNEL_ARGS
+    $LL_DISCLAIMER
+    """
+    @eval function ($set_sym)(device, direction, channel, i, q)
+        @check_error ccall(($(quot(set_sym)), lib), Cint, (Ref{SoapySDRDevice}, Cint, Csize_t, Cdouble, Cdouble),
+            device, direction, channel, i, q)
+    end
+end
+
+function SoapySDRDevice_getBandwidthRange(device, direction, channel)
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_getBandwidthRange, lib), Ptr{SoapySDRRange}, (Ref{SoapySDRDevice}, Cint, Csize_t, Ptr{Csize_t}), device, direction, channel, len)
+    (ptr, len[])
 end

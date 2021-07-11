@@ -3,8 +3,11 @@ module SoapySDR
 using soapysdr_jll
 const lib = soapysdr_jll.libsoapysdr
 
+using Intervals
 using Unitful
+using Unitful.DefaultSymbols
 const dB = u"dB"
+const GC = Base.GC
 
 include("lowlevel/Constants.jl") # Done
 include("lowlevel/Errors.jl")    # Done
