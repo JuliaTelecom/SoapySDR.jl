@@ -8,6 +8,11 @@ function SoapySDR_errToStr(errorCode)
     ccall((:SoapySDR_errToStr, lib), Cstring, (Cint,), errorCode)
 end
 
+struct SoapySDRAPIError
+    code::Cint
+end
+Base.show(io::IO, se::SoapySDRAPIError) = print(io, unsafe_string(SoapySDR_errToStr(se.code)))
+
 # Returned when read has a timeout.
 const SOAPY_SDR_TIMEOUT = -1
 

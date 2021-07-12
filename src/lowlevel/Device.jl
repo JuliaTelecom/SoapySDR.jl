@@ -295,24 +295,6 @@ end
 ## FREQUENCY API ##
 ###################
 
-# Get the range of overall frequency values.
-# param device a pointer to a device instance
-# param direction the channel direction RX or TX
-# param channel an available channel on the device
-# param [out] length the number of ranges
-# return a list of frequency ranges in Hz
-function SoapySDRDevice_getFrequencyRange(device, direction, channel)
-    num_ranges = Ref{Csize_t}()
-    ranges = ccall((:SoapySDRDevice_getFrequencyRange, lib), Ptr{SoapySDRRange}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, num_ranges)
-    num_ranges = Int(num_ranges[])
-    ranges = unsafe_wrap(Array, ranges, num_ranges)
-    return (ranges, num_ranges)
-end
-
-###################
-## FREQUENCY API ##
-###################
-
 # Set the center frequency of the chain.
 #  - For RX, this specifies the down-conversion frequency.
 #  - For TX, this specifies the up-conversion frequency.
@@ -337,65 +319,79 @@ end
 # param frequency the center frequency in Hz
 # param args optional tuner arguments
 # return an error code or 0 for success
-function SoapySDRDevice_setFrequency(device, direction, channel, frequency)
-    ccall((:SoapySDRDevice_setFrequency, lib), Int, (Ref{SoapySDRDevice}, Cint, Csize_t, Cdouble, Ptr{Nothing}), device, direction, channel, frequency, C_NULL)
+function SoapySDRDevice_setFrequency(device, direction, channel, frequency, kwargs)
+    ccall((:SoapySDRDevice_setFrequency, lib), Int, (Ref{SoapySDRDevice}, Cint, Csize_t, Cdouble, Ptr{SoapySDRKwargs}), device, direction, channel, frequency, kwargs)
 end
 
 ################
 ## STREAM API ##
 ################
 
-# Initialize a stream given a list of channels and stream arguments.
-# The implementation may change switches or power-up components.
-# All stream API calls should be usable with the new stream object
-# after setupStream() is complete, regardless of the activity state.
-#
-# The API allows any number of simultaneous TX and RX streams, but many dual-channel
-# devices are limited to one stream in each direction, using either one or both channels.
-# This call will return an error if an unsupported combination is requested,
-# or if a requested channel in this direction is already in use by another stream.
-#
-# When multiple channels are added to a stream, they are typically expected to have
-# the same sample rate. See SoapySDRDevice_setSampleRate().
-#
-# param device a pointer to a device instance
-# param [out] stream the opaque pointer to a stream handle.
-#
-# The returned stream is not required to have internal locking, and may not be used
-# concurrently from multiple threads.
-#
-# param direction the channel direction (`SOAPY_SDR_RX` or `SOAPY_SDR_TX`)
-# param format A string representing the desired buffer format in read/writeStream()
-# parblock
-#
-# The first character selects the number type:
-#   - "C" means complex
-#   - "F" means floating point
-#   - "S" means signed integer
-#   - "U" means unsigned integer
-#
-# The type character is followed by the number of bits per number (complex is 2x this size per sample)
-#
-#  Example format strings:
-#   - "CF32" -  complex float32 (8 bytes per element)
-#   - "CS16" -  complex int16 (4 bytes per element)
-#   - "CS12" -  complex int12 (3 bytes per element)
-#   - "CS4" -  complex int4 (1 byte per element)
-#   - "S32" -  int32 (4 bytes per element)
-#   - "U8" -  uint8 (1 byte per element)
-#
-# endparblock
-# param channels a list of channels or empty for automatic
-# param numChans the number of elements in the channels array
-# param args stream args or empty for defaults
-# parblock
-#
-#   Recommended keys to use in the args dictionary:
-#    - "WIRE" - format of the samples between device and host
-# endparblock
-# return 0 for success or error code on failure
-function SoapySDRDevice_setupStream(device, stream, direction, format, channels, numChans)
-    ccall((:SoapySDRDevice_setupStream, lib), Int, (Ref{SoapySDRDevice}, Ref{Ref{SoapySDRStream}}, Cint, Cstring, Ref{Csize_t}, Csize_t, Ptr{Nothing}), device, stream, direction, format, channels, numChans, C_NULL)
+"""
+Query a list of the available stream formats.
+
+$CHANNEL_ARGS
+
+Returns a list of allowed format strings.
+
+$LL_DISCLAIMER
+"""
+function SoapySDRDevice_getStreamFormats(device, direction, channel)
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_getStreamFormats, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, len)
+    ptr, len[]
+end
+
+"""
+Initialize a stream given a list of channels and stream arguments.
+The implementation may change switches or power-up components.
+All stream API calls should be usable with the new stream object
+after setupStream() is complete, regardless of the activity state.
+
+The API allows any number of simultaneous TX and RX streams, but many dual-channel
+devices are limited to one stream in each direction, using either one or both channels.
+This call will return an error if an unsupported combination is requested,
+or if a requested channel in this direction is already in use by another stream.
+
+When multiple channels are added to a stream, they are typically expected to have
+the same sample rate. See SoapySDRDevice_setSampleRate().
+
+ * `device` a pointer to a device instance
+ * `direction` the channel direction (`SOAPY_SDR_RX` or `SOAPY_SDR_TX`)
+ * `format` A string representing the desired buffer format in read/writeStream()
+
+ The first character selects the number type:
+   - "C" means complex
+   - "F" means floating point
+   - "S" means signed integer
+   - "U" means unsigned integer
+
+ The type character is followed by the number of bits per number (complex is 2x this size per sample)
+
+  Example format strings:
+   - "CF32" -  complex float32 (8 bytes per element)
+   - "CS16" -  complex int16 (4 bytes per element)
+   - "CS12" -  complex int12 (3 bytes per element)
+   - "CS4" -  complex int4 (1 byte per element)
+   - "S32" -  int32 (4 bytes per element)
+   - "U8" -  uint8 (1 byte per element)
+
+ * `channels` a list of channels or empty for automatic
+ * `numChans` the number of elements in the channels array
+ * `args` stream args or empty for defaults
+
+Recommended keys to use in the args dictionary:
+    - "WIRE" - format of the samples between device and host
+
+Returns the opaque pointer to a stream handle.
+
+# NOTE:
+    The returned stream is not required to have internal locking, and may not be used
+    concurrently from multiple threads.
+"""
+function SoapySDRDevice_setupStream(device, direction, format, channels, numChans, kwargs)
+    return @check_error ccall((:SoapySDRDevice_setupStream, lib), Ptr{SoapySDRStream}, (Ptr{SoapySDRDevice}, Cint, Cstring, Ptr{Csize_t}, Csize_t, Ptr{SoapySDRKwargs}),
+        device, direction, format, channels, numChans, kwargs)
 end
 
 # Activate a stream.
@@ -415,7 +411,11 @@ end
 # param numElems optional element count for burst control
 # return 0 for success or error code on failure
 function SoapySDRDevice_activateStream(device, stream, flags, timeNs, numElems)
-    ccall((:SoapySDRDevice_activateStream, lib), Cint, (Ref{SoapySDRDevice}, Ref{SoapySDRStream}, Cint, Clonglong, Csize_t), device, stream, flags, timeNs, numElems)
+    err = @check_error ccall((:SoapySDRDevice_activateStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Cint, Clonglong, Csize_t), device, stream, flags, timeNs, numElems)
+    if err != 0
+        throw(SoapySDRAPIError(err))
+    end
+    return nothing
 end
 
 # Read elements from a stream for reception.
@@ -436,8 +436,46 @@ end
 # param [out] timeNs the buffer's timestamp in nanoseconds
 # param timeoutUs the timeout in microseconds
 # return the number of elements read per buffer or error code
-function SoapySDRDevice_readStream(device, stream, buffs, numElems, flags, timeNs, timeoutUs)
-    ccall((:SoapySDRDevice_readStream, lib), Cint, (Ref{SoapySDRDevice}, Ref{SoapySDRStream}, Ptr{Ptr{Cvoid}}, Csize_t, Ptr{Cint}, Ptr{Clonglong}, Clong), device, stream, map(pointer, buffs), numElems, flags, timeNs, timeoutUs) 
+function SoapySDRDevice_readStream(device, stream, buffs, numElems, timeoutUs)
+    flags = Ref{Cint}()
+    timeNs = Ref{Clonglong}()
+    nelems = @check_error ccall((:SoapySDRDevice_readStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Ptr{Cvoid}, Csize_t, Ptr{Cint}, Ptr{Clonglong}, Clong),
+        device, stream, buffs, numElems, flags, timeNs, timeoutUs)
+    if nelems < 0
+        throw(SoapySDRAPIError(nelems))
+    end
+    nelems, flags[], timeNs[]
+end
+
+"""
+Write elements to a stream for transmission.
+This is a multi-channel call, and buffs should be an array of void *,
+where each pointer will be filled with data for a different channel.
+
+**Client code compatibility:**
+Client code relies on writeStream() for proper back-pressure.
+The writeStream() implementation must enforce the timeout
+such that the call blocks until space becomes available
+or timeout expiration.
+
+* `device` a pointer to a device instance
+* `stream` the opaque pointer to a stream handle
+* `buffs` an array of void* buffers num chans in size
+* `numElems` the number of elements in each buffer
+* `flags` optional input flags and output flags
+* `timeNs` the buffer's timestamp in nanoseconds
+* `timeoutUs` the timeout in microseconds
+
+Returns the number of elements written per buffer, output flags
+"""
+function SoapySDRDevice_writeStream(device, stream, buffs, numElems, flags, timeNs, timeoutUs)
+    flags = Ref{Cint}(flags)
+    nelems = @check_error ccall((:SoapySDRDevice_writeStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Ptr{Cvoid}, Csize_t, Ptr{Cint}, Clonglong, Clong),
+        device, stream, buffs, numElems, flags, timeNs, timeoutUs)
+    if nelems < 0
+        throw(SoapySDRAPIError(nelems))
+    end
+    nelems, flags[]
 end
 
 # Deactivate a stream.
@@ -454,7 +492,7 @@ end
 # param timeNs optional deactivation time in nanoseconds
 # return 0 for success or error code on failure
 function SoapySDRDevice_deactivateStream(device, stream, flags, timeNs)
-    ccall((:SoapySDRDevice_deactivateStream, lib), Cint, (Ref{SoapySDRDevice}, Ref{SoapySDRStream}, Cint, Clonglong), device, stream, flags, timeNs)
+    ccall((:SoapySDRDevice_deactivateStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Cint, Clonglong), device, stream, flags, timeNs)
 end
 
 # Close an open stream created by setupStream
@@ -462,7 +500,7 @@ end
 # param stream the opaque pointer to a stream handle
 # return 0 for success or error code on failure
 function SoapySDRDevice_closeStream(device, stream)
-    ccall((:SoapySDRDevice_closeStream, lib), Cint, (Ref{SoapySDRDevice}, Ref{SoapySDRStream}), device, stream)
+    @check_error ccall((:SoapySDRDevice_closeStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}), device, stream)
 end
 
 ### Various channel queries
@@ -571,4 +609,88 @@ function SoapySDRDevice_getBandwidthRange(device, direction, channel)
     len = Ref{Csize_t}()
     ptr = @check_error ccall((:SoapySDRDevice_getBandwidthRange, lib), Ptr{SoapySDRRange}, (Ref{SoapySDRDevice}, Cint, Csize_t, Ptr{Csize_t}), device, direction, channel, len)
     (ptr, len[])
+end
+
+###################
+## FREQUENCY API ##
+###################
+
+"""
+Get the range of overall frequency values.
+
+$CHANNEL_ARGS
+
+Returns a list of frequency ranges in Hz
+
+$LL_DISCLAIMER
+"""
+function SoapySDRDevice_getFrequencyRange(device, direction, channel)
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_getFrequencyRange, lib), Ptr{SoapySDRRange}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, len)
+    (ptr, len[])
+end
+
+"""
+Get the range of tunable values for the specified element.
+
+$CHANNEL_ARGS
+
+Returns a list of frequency ranges in Hz
+
+$LL_DISCLAIMER
+"""
+function SoapySDRDevice_getFrequencyRangeComponent(device, direction, channel, name)
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_getFrequencyRangeComponent, lib), Ptr{SoapySDRRange}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Cstring, Ref{Csize_t}), device, direction, channel, name, len)
+    (ptr, len[])
+end
+
+"""
+Get the range of possible baseband sample rates.
+
+$CHANNEL_ARGS
+
+Returns a list of samples rates in samples per second
+
+$LL_DISCLAIMER
+"""
+function SoapySDRDevice_getSampleRateRange(device, direction, channel)
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_getSampleRateRange, lib), Ptr{SoapySDRRange}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, len)
+    (ptr, len[])
+end
+
+
+"""
+List available tunable elements in the chain.
+Elements should be in order RF to baseband.
+
+$CHANNEL_ARGS
+
+Returns a list of tunable elements by name
+
+$LL_DISCLAIMER
+*/
+"""
+function SoapySDRDevice_listFrequencies(device, direction, channel)
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_listFrequencies, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, len)
+    ptr, len[]
+end
+
+function SoapySDRDevice_getFrequency(device, direction, channel)
+    return @check_error ccall((:SoapySDRDevice_getFrequency, lib), Cdouble, (Ptr{SoapySDRDevice}, Cint, Csize_t),
+        device, direction, channel)
+end
+
+function SoapySDRDevice_getFrequencyComponent(device, direction, channel, name)
+    return @check_error ccall((:SoapySDRDevice_getFrequencyComponent, lib), Cdouble, (Ptr{SoapySDRDevice}, Cint, Csize_t, Cstring),
+        device, direction, channel, name)
+end
+
+function SoapySDRDevice_setFrequencyComponent(device, direction, channel, name, val)
+    err = @check_error ccall((:SoapySDRDevice_setFrequencyComponent, lib), Cint, (Ptr{SoapySDRDevice}, Cint, Csize_t, Cstring, Cdouble),
+        device, direction, channel, name, val)
+    @assert err == 0
+    return nothing
 end
