@@ -119,6 +119,7 @@ Base.unsafe_convert(::Type{<:Ptr{SoapySDRDevice}}, d::Device) = d.ptr
 function Base.getindex(d::Devices, i::Integer)
     Device(SoapySDRDevice_make(ptr(d.kwargslist[i])))
 end
+Base.iterate(d::Devices, state=1) = state > length(d) ? nothing : (d[state], state+1)
 
 function Base.getproperty(d::Device, s::Symbol)
     if s === :info
@@ -149,9 +150,9 @@ Base.show(io::IO, c::Channel) =
 # Express everything in (kHz, MHz, GHz)
 function pick_freq_unit(val::Quantity)
     iszero(val.val) && return val
-    val >= 1.0u"GHz" ? uconvert(u"GHz", val) :
-    val >= 1.0u"MHz" ? uconvert(u"MHz", val) :
-                        uconvert(u"kHz", val)
+    abs(val) >= 1.0u"GHz" ? uconvert(u"GHz", val) :
+    abs(val) >= 1.0u"MHz" ? uconvert(u"MHz", val) :
+                            uconvert(u"kHz", val)
 end
 
 # Print to 3 digits of precision, no decimal point
@@ -188,7 +189,7 @@ function print_hz_range(io::IO, x::Interval{<:Any, Closed, Closed})
 end
 
 function Base.show(io::IO, ::MIME"text/plain", c::Channel)
-    println(io, c.direction == Tx ? "TX" : "RX", " Channel #", c.idx, " on ", c.device.hardware)
+    println(io, c.direction == Tx ? "TX" : "RX", " Channel #", c.idx + 1, " on ", c.device.hardware)
     if !get(io, :compact, false)
         print(io, "  Selected Antenna [")
             join(io, AntennaList(c), ", ")
@@ -497,16 +498,25 @@ struct SampleBuffer{N, T}
     flags::Cint
     timens::typeof(1u"ns")
 end
+Base.length(sb::SampleBuffer) = length(sb.bufs[1])
 
 function Base.read(s::Stream{T}, n::Int; kwargs...) where {T}
     bufs = ntuple(_->Vector{T}(undef, n), s.nchannels)
     nread, flags, timens = _read!(s, bufs; kwargs...)
-    @assert nread == n
+    if nread != n
+        @info("assertion debugging", nread, n)
+        @assert nread == n
+    end
     SampleBuffer(bufs, flags, timens)
 end
 
 function activate!(s::Stream; flags = 0, timens = nothing, numElems=0)
     SoapySDRDevice_activateStream(s.d, s, flags, timens === nothing ? 0 : uconvert(u"ns", timens).val, numElems)
+    nothing
+end
+
+function deactivate!(s::Stream; flags = 0, timens = nothing)
+    SoapySDRDevice_deactivateStream(s.d, s, flags, timens === nothing ? 0 : uconvert(u"ns", timens).val)
     nothing
 end
 
