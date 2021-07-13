@@ -116,6 +116,10 @@ SoapySDRDevice_unmake(d::Device) = SoapySDRDevice_unmake(d.ptr)
 Base.cconvert(::Type{<:Ptr{SoapySDRDevice}}, d::Device) = d
 Base.unsafe_convert(::Type{<:Ptr{SoapySDRDevice}}, d::Device) = d.ptr
 
+function Base.show(io::IO, d::Device)
+    print(io, "SoapySDR ", d.hardware, " device (driver: ", d.driver, ") w/ ", length(d.tx), " TX channels and ", length(d.rx), " RX channels")
+end
+
 function Base.getindex(d::Devices, i::Integer)
     Device(SoapySDRDevice_make(ptr(d.kwargslist[i])))
 end

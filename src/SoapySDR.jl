@@ -18,4 +18,7 @@ include("lowlevel/Types.jl")     # Done
 include("lowlevel/Device.jl")
 include("highlevel.jl")
 
+const SDRStream = Stream
+export SDRStream
+
 end
