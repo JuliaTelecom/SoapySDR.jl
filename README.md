@@ -61,7 +61,7 @@ julia> Devices()
 [1] :addr => "pcie:///dev/xtrx0", :dev => "pcie:///dev/xtrx0", :driver => "xtrx", :label => "XTRX: pcie:///dev/xtrx0 (10Gbit)", :media => "PCIe", :module => "SoapyXTRX", :name => "XTRX", :serial => "", :type => "xtrx"
 ```
 
-Devices may be selected ust by indexing:
+Devices may be selected just by indexing:
 ```
 julia> device = Devices()[1]
 21:11:54.675118 DEBUG:  xtrxllpciev0_discovery:264 [PCIE] pcie: Found `pcie:///dev/xtrx0`
