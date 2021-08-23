@@ -2,5 +2,5 @@ using SoapySDR
 using Test
 
 @testset "SoapySDR.jl" begin
-    # Write your tests here.
+    @test length(Devices()) == 0
 end
