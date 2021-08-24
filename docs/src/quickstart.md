@@ -1,8 +1,9 @@
 # QuickStart
 
-These examples assume that the SDR is an xtrx and that it is the only
-device attached. Subsitute the driver for your SDR and check settings
-as appropriate.
+!!! note
+    You have to load a driver for your particular SDR in order to work
+    with SoapySDR. Available modules through the Julia Package manager are listed
+    on the [driver modules page.](./drivermodules.md)
 
 TX:
 ```

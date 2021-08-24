@@ -87,9 +87,7 @@ SoapySDRStrings_clear(s::StringList) = @GC.preserve s SoapySDRStrings_clear(poin
 """
     Devices()
 
-Enumerates all detectable devices connected to the system.
-
-Note: on some systems such as Linux, udev rules may be required to make the system detect the device.
+Enumerates all detectable SDR devices on the system.
 """
 struct Devices
     kwargslist::KWArgsList
@@ -99,7 +97,7 @@ Base.length(d::Devices) = length(d.kwargslist)
 
 function Base.show(io::IO, d::Devices)
     if length(d) == 0
-        print(io, "< No devices available >")
+        println(io, "No devices available! Make sure a supported SDR module is included.")
     end
     for (i, dev) in enumerate(d.kwargslist)
         print(io, "[$i] ")
