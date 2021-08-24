@@ -83,8 +83,14 @@ function Base.getindex(s::StringList, i::Integer)
 end
 
 SoapySDRStrings_clear(s::StringList) = @GC.preserve s SoapySDRStrings_clear(pointer_from_objref(s), s.length)
-## 
 
+"""
+    Devices()
+
+Enumerates all detectable devices connected to the system.
+
+Note: on some systems such as Linux, udev rules may be required to make the system detect the device.
+"""
 struct Devices
     kwargslist::KWArgsList
     Devices() = new(KWArgsList(SoapySDRDevice_enumerate()...))
