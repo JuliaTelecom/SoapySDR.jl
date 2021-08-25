@@ -83,8 +83,12 @@ function Base.getindex(s::StringList, i::Integer)
 end
 
 SoapySDRStrings_clear(s::StringList) = @GC.preserve s SoapySDRStrings_clear(pointer_from_objref(s), s.length)
-## 
 
+"""
+    Devices()
+
+Enumerates all detectable SDR devices on the system.
+"""
 struct Devices
     kwargslist::KWArgsList
     Devices() = new(KWArgsList(SoapySDRDevice_enumerate()...))
@@ -93,7 +97,7 @@ Base.length(d::Devices) = length(d.kwargslist)
 
 function Base.show(io::IO, d::Devices)
     if length(d) == 0
-        print(io, "< No devices available >")
+        println(io, "No devices available! Make sure a supported SDR module is included.")
     end
     for (i, dev) in enumerate(d.kwargslist)
         print(io, "[$i] ")
