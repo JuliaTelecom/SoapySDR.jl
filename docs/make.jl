@@ -24,5 +24,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/JuliaTelecom/SoapySDR.jl",
+    repo="github.com/JuliaTelecom/SoapySDR.jl";
+    devbranch = "master"
 )
