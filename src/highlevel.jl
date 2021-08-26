@@ -408,44 +408,17 @@ end
 
 ### Streams
 
-struct StreamFormat
-    T
+struct StreamFormat{T}
+    soapy_repr::String
+    function StreamFormat(s::String)
+        haskey(_stream_type_map, s) || error("unsupported format!")
+        T = _stream_type_map[s]
+        T <: Exception && error("unsupported format!") # unsupported are mapped to ErrorException
+        new{T}(s)
+    end
 end
-function Base.print(io::IO, sf::StreamFormat)
-    T = sf.T
-    if T <: Complex
-        print(io, 'C')
-        T = real(T)
-    end
-    if T <: AbstractFloat
-        print(io, 'F')
-    elseif T <: Signed
-        print(io, 'S')
-    elseif T <: Unsigned
-        print(io, 'U')
-    else
-        error("Unknown format")
-    end
-    print(io, 8*sizeof(T))
-end
-
-function StreamFormat(s::String)
-    # Complex prepended with C
-    complex = first(s) === 'C'
-    complex && (s = s[2:end])
-
-    # TODO: 12 bit
-    t = first(s)
-    nbits = parse(Int, s[2:end])
-    if t == 'F'
-        T = Dict(32 => Float32, 64 => Float64)[nbits]
-    elseif t === 'S' || t === 'U'
-        T = Dict(8 => UInt8, 16 => UInt16, 32 => UInt32, 64 => UInt64)[nbits]
-        T === 'S' && (T = signed(T))
-    else
-        error("Unknown format")
-    end
-    return StreamFormat{complex ? Complex{T} : T}()
+function Base.print(io::IO, sf::StreamFormat{T}) where T
+    print(io, sf.soapy_repr)
 end
 
 function stream_formats(c::Channel)
@@ -474,13 +447,15 @@ function Base.show(io::IO, s::Stream)
 end
 
 function Stream(format::Union{StreamFormat, Type}, device::Device, direction::Direction; kwargs...)
-    format = StreamFormat(format)
+    @show format
+    format = isa(format, StreamFormat) ? typeof(format).parameters[1] : format
     isempty(kwargs) || error("TODO")
-    Stream{T}(device, 1, SoapySDRDevice_setupStream(device, direction, string(format), C_NULL, 0, C_NULL))
+    Stream{format}(device, 1, SoapySDRDevice_setupStream(device, direction, string(format), C_NULL, 0, C_NULL))
 end
 
 function Stream(format::Union{StreamFormat, Type}, channels::Vector{Channel}; kwargs...)
-    format = StreamFormat(format)
+    @show format
+    format = isa(format, StreamFormat) ? typeof(format).parameters[1] : format
     isempty(kwargs) || error("TODO")
     isempty(channels) && error("Must specify at least one channel or use the device/direction constructor for automatic.")
     device = first(channels).device
