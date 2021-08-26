@@ -14,7 +14,7 @@ jobs:
           - 'nightly'
         os:
           - ubuntu-latest
-          - macOS-latest
+          #- macOS-latest
         arch:
           - x64
     steps:
@@ -35,8 +35,6 @@ jobs:
             ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
-        with:
-          prefix: docker
   docs:
     name: Documentation
     runs-on: ubuntu-latest
