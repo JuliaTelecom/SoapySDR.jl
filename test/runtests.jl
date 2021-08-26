@@ -48,6 +48,8 @@ end
 @testset "High Level API" begin
     @test length(Devices()) == 1
     dev = Devices()[1]
-    #@show dev
+
+    @show dev
+
 end
 end
