@@ -2,3 +2,5 @@
 .ipynb_checkpoints
 /Manifest.toml
 /docs/build/
+test/build
+test/products
