@@ -3,7 +3,7 @@ using Test
 using Libdl
 
 const sd = SoapySDR
-const build_loopback = false
+const build_loopback = true
 
 # Build SoapyLoopback
 # TODO: Yggdrasil once stable
@@ -15,6 +15,7 @@ loopback_tar = readdir()[1]
 loopback = splitext(loopback_tar)[1]
 run(`tar -xzf $(loopback_tar)`) # BB without tar output?
 dlopen("lib/SoapySDR/modules0.8/libsoapyloopback.so")
+
 
 @testset "SoapySDR.jl" begin
 @testset "High Level API" begin
