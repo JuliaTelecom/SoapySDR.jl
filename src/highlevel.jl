@@ -88,6 +88,7 @@ SoapySDRStrings_clear(s::StringList) = @GC.preserve s SoapySDRStrings_clear(poin
     Devices()
 
 Enumerates all detectable SDR devices on the system.
+Indexing into this list return a `Device` struct.
 """
 struct Devices
     kwargslist::KWArgsList
@@ -425,12 +426,15 @@ function Base.print(io::IO, sf::StreamFormat)
     else
         error("Unknown format")
     end
-    print(io, 8sizeof(T))
+    print(io, 8*sizeof(T))
 end
 
 function StreamFormat(s::String)
+    # Complex prepended with C
     complex = first(s) === 'C'
     complex && (s = s[2:end])
+
+    # TODO: 12 bit
     t = first(s)
     nbits = parse(Int, s[2:end])
     if t == 'F'
@@ -438,6 +442,8 @@ function StreamFormat(s::String)
     elseif t === 'S' || t === 'U'
         T = Dict(8 => UInt8, 16 => UInt16, 32 => UInt32, 64 => UInt64)[nbits]
         T === 'S' && (T = signed(T))
+    else
+        error("Unknown format")
     end
     return StreamFormat{complex ? Complex{T} : T}()
 end
