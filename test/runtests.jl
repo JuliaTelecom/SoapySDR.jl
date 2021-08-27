@@ -1,20 +1,18 @@
 using SoapySDR
 using Test
-using Libdl
 
 const sd = SoapySDR
-const build_loopback = true
 
-# Build SoapyLoopback
-# TODO: Yggdrasil once stable
-if build_loopback
-    include("build_tarballs.jl")
+const hardware = "loopback"
+
+# build SoapyLoopback and dlopen it
+if hardware == "loopback"
+    include("setup_loopback.jl")
+elseif hardware == "rtlsdr"
+    using SoapyRTLSDR_jll
+else
+    error("unknown test hardware")
 end
-cd("products")
-loopback_tar = readdir()[1]
-loopback = splitext(loopback_tar)[1]
-run(`tar -xzf $(loopback_tar)`) # BB without tar output?
-dlopen("lib/SoapySDR/modules0.8/libsoapyloopback.so")
 
 
 @testset "SoapySDR.jl" begin
@@ -49,7 +47,10 @@ end
     @test length(Devices()) == 1
     dev = Devices()[1]
 
-    @show dev
-
+    @show dev.info
+    @show dev.driver
+    @show dev.hardware
+    @show dev.tx
+    @show dev.rx
 end
 end

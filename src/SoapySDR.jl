@@ -16,7 +16,6 @@ include("lowlevel/Errors.jl")    # Done
 include("lowlevel/Formats.jl")   # Done
 include("lowlevel/Types.jl")     # Done
 include("lowlevel/Device.jl")
-include("typemap.jl")
 include("highlevel.jl")
 
 const SDRStream = Stream
