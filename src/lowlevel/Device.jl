@@ -49,30 +49,36 @@ function SoapySDRDevice_lastStatus()
     ccall((:SoapySDRDevice_lastStatus, lib), Cint, ())
 end
 
-# Get the last error message after a device call fails.
-# When an device API call throws, the C bindings catch
-# the exception, store its message in thread-safe storage,
-# and return a non-zero status code to indicate failure.
-# Use lastError() to access the exception's error message.
+"""
+Get the last error message after a device call fails.
+When an device API call throws, the C bindings catch
+the exception, store its message in thread-safe storage,
+and return a non-zero status code to indicate failure.
+Use lastError() to access the exception's error message.
+"""
 function SoapySDRDevice_lastError()
     ccall((:SoapySDRDevice_lastError, lib), Cstring, ())
 end
 
-# Enumerate a list of available devices on the system.
-# param args device construction key/value argument filters
-# param [out] length the number of elements in the result.
-# return a list of arguments strings, each unique to a device
+"""
+Enumerate a list of available devices on the system.
+param args device construction key/value argument filters
+param [out] length the number of elements in the result.
+return a list of arguments strings, each unique to a device
+"""
 function SoapySDRDevice_enumerate()
     sz = Ref{Csize_t}()
     kwargs = @check_error ccall((:SoapySDRDevice_enumerate, lib), Ptr{SoapySDRKwargs}, (Ptr{Nothing}, Ref{Csize_t}), C_NULL, sz)
     return (kwargs, sz[])
 end
 
-# Enumerate a list of available devices on the system.
-# Markup format for args: "keyA=valA, keyB=valB".
-# param args a markup string of key/value argument filters
-# param [out] length the number of elements in the result.
-# return a list of arguments strings, each unique to a device
+"""
+Enumerate a list of available devices on the system.
+Markup format for args: "keyA=valA, keyB=valB".
+param args a markup string of key/value argument filters
+param [out] length the number of elements in the result.
+return a list of arguments strings, each unique to a device
+"""
 function SoapySDRDevice_enumerateStrArgs(args)
     sz = Ref{Csize_t}()
     kwargs = ccall((:SoapySDRDevice_enumerateStrArgs, lib), Ptr{SoapySDRKwargs}, (Cstring, Ref{Csize_t}), args, sz)
@@ -95,13 +101,15 @@ function SoapySDRDevice_make(args)
     return @check_error ccall((:SoapySDRDevice_make, lib), Ptr{SoapySDRDevice}, (Ref{SoapySDRKwargs},), args)
 end
 
-# Make a new Device object given device construction args.
-# The device pointer will be stored in a table so subsequent calls
-# with the same arguments will produce the same device.
-# For every call to make, there should be a matched call to unmake.
-#
-# param args a markup string of key/value arguments
-# return a pointer to a new Device object or null for error
+"""
+Make a new Device object given device construction args.
+The device pointer will be stored in a table so subsequent calls
+with the same arguments will produce the same device.
+For every call to make, there should be a matched call to unmake.
+
+param args a markup string of key/value arguments
+return a pointer to a new Device object or null for error
+"""
 function SoapySDRDevice_makeStrArgs(args) # have not checked
     ccall((:SoapySDRDevice_makeStrArgs, lib), Ptr{SoapySDRDevice}, (Cstring,), args)
 end
@@ -117,24 +125,27 @@ end
 ## PARALLEL SUPPORT ##      # have not checked any of these
 ######################
 
-# Create a list of devices from a list of construction arguments.
-# This is a convenience call to parallelize device construction,
-# and is fundamentally a parallel for loop of make(Kwargs).
-#
-# \param argsList a list of device arguments per each device
-# \param length the length of the argsList array
-# \return a list of device pointers per each specified argument
+"""
+Create a list of devices from a list of construction arguments.
+This is a convenience call to parallelize device construction,
+and is fundamentally a parallel for loop of make(Kwargs).
+param argsList a list of device arguments per each device
+param length the length of the argsList array
+return a list of device pointers per each specified argument
+"""
 function SoapySDRDevice_make_list(argsList, length::Cint) 
     ccall((:SoapySDRDevice_make_list, lib), Ptr{Ptr{SoapySDRDevice}}, (Ptr{Cint}, Cint), argsList, length)
 end
 
-# Unmake or release a list of device handles
-# and free the devices array memory as well.
-# This is a convenience call to parallelize device destruction,
-# and is fundamentally a parallel for loop of unmake(Device *).
-# param devices a list of pointers to device objects
-# param length the length of the devices array
-# return 0 for success or error code on failure
+"""
+Unmake or release a list of device handles
+and free the devices array memory as well.
+This is a convenience call to parallelize device destruction,
+and is fundamentally a parallel for loop of unmake(Device *).
+param devices a list of pointers to device objects
+param length the length of the devices array
+return 0 for success or error code on failure
+"""
 function SoapySDRDevice_unmake_list(devices, length::Cint)
     ccall((:SoapySDRDevice_unmake_list, lib), Cint, (Ptr{Ptr{SoapySDRDevice}}, Cint), devices, length)
 end
@@ -143,36 +154,45 @@ end
 ## Identification API ##    # have not checked any of these
 ########################
 
-# A key that uniquely identifies the device driver.
-# This key identifies the underlying implementation.
-# Serveral variants of a product may share a driver.
-# param device a pointer to a device instance
+"""
+A key that uniquely identifies the device driver.
+This key identifies the underlying implementation.
+Serveral variants of a product may share a driver.
+param device a pointer to a device instance
+"""
 function SoapySDRDevice_getDriverKey(device)
     ccall((:SoapySDRDevice_getDriverKey, lib), Cstring, (Ptr{SoapySDRDevice},), device)
 end
 
-# A key that uniquely identifies the hardware.
-# This key should be meaningful to the user
-# to optimize for the underlying hardware.
-# \param device a pointer to a device instance
+"""
+A key that uniquely identifies the hardware.
+This key should be meaningful to the user
+to optimize for the underlying hardware.
+param device a pointer to a device instance
+"""
 function SoapySDRDevice_getHardwareKey(device)
     ccall((:SoapySDRDevice_getHardwareKey, lib), Cstring, (Ptr{SoapySDRDevice},), device)
 end
 
-# Query a dictionary of available device information.
-# This dictionary can any number of values like
-# vendor name, product name, revisions, serials...
-# This information can be displayed to the user
-# to help identify the instantiated device.
-# \param device a pointer to a device instance
+"""
+Query a dictionary of available device information.
+This dictionary can any number of values like
+vendor name, product name, revisions, serials...
+This information can be displayed to the user
+to help identify the instantiated device.
+
+param device a pointer to a device instance
+"""
 function SoapySDRDevice_getHardwareInfo(device)
     ccall((:SoapySDRDevice_getHardwareInfo, lib), SoapySDRKwargs, (Ptr{SoapySDRDevice},), device)
 end
 
-# Get a number of channels given the streaming direction
-# param device a pointer to a device instance
-# param direction the channel direction RX or TX
-# return the number of channels
+"""
+Get a number of channels given the streaming direction
+param device a pointer to a device instance
+param direction the channel direction RX or TX
+return the number of channels
+"""
 function SoapySDRDevice_getNumChannels(device, direction)
     num_channels = ccall((:SoapySDRDevice_getNumChannels, lib), Csize_t, (Ptr{SoapySDRDevice}, Cint), device, direction)
     return Int(num_channels)
@@ -221,13 +241,16 @@ end
 ## GAIN API ##
 ##############
 
-# List available amplification elements.
-# Elements should be in order RF to baseband.
-# param device a pointer to a device instance
-# param direction the channel direction RX or TX
-# param channel an available channel
-# param [out] length the number of gain names
-# return a list of gain string names
+"""
+List available amplification elements.
+Elements should be in order RF to baseband.
+param: device a pointer to a device instance
+param: direction the channel direction RX or TX
+param: channel an available channel
+param: [out] length the number of gain names
+
+return a list of gain string names
+"""
 function SoapySDRDevice_listGains(device, direction, channel)
     num_gains = Ref{Csize_t}()
     names = @check_error ccall((:SoapySDRDevice_listGains, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, num_gains)
@@ -247,6 +270,8 @@ function SoapySDRDevice_setGainElement(device, direction, channel, name, val)
 end
 
 #=
+TODO
+
 """
 Get the overall value of the gain elements in a chain.
 
@@ -295,30 +320,32 @@ end
 ## FREQUENCY API ##
 ###################
 
-# Set the center frequency of the chain.
-#  - For RX, this specifies the down-conversion frequency.
-#  - For TX, this specifies the up-conversion frequency.
-# The default implementation of setFrequency() will tune the "RF"
-# component as close as possible to the requested center frequency.
-# Tuning inaccuracies will be compensated for with the "BB" component.
-# The args can be used to augment the tuning algorithm.
-#  - Use "OFFSET" to specify an "RF" tuning offset,
-#    usually with the intention of moving the LO out of the passband.
-#    The offset will be compensated for using the "BB" component.
-#  - Use the name of a component for the key and a frequency in Hz
-#    as the value (any format) to enforce a specific frequency.
-#    The other components will be tuned with compensation
-#    to achieve the specified overall frequency.
-#  - Use the name of a component for the key and the value "IGNORE"
-#    so that the tuning algorithm will avoid altering the component.
-#  - Vendor specific implementations can also use the same args to augment
-#    tuning in other ways such as specifying fractional vs integer N tuning.
-# param device a pointer to a device instance
-# param direction the channel direction RX or TX
-# param channel an available channel on the device
-# param frequency the center frequency in Hz
-# param args optional tuner arguments
-# return an error code or 0 for success
+"""
+Set the center frequency of the chain.
+ - For RX, this specifies the down-conversion frequency.
+ - For TX, this specifies the up-conversion frequency.
+The default implementation of setFrequency() will tune the "RF"
+component as close as possible to the requested center frequency.
+Tuning inaccuracies will be compensated for with the "BB" component.
+The args can be used to augment the tuning algorithm.
+ - Use "OFFSET" to specify an "RF" tuning offset,
+   usually with the intention of moving the LO out of the passband.
+   The offset will be compensated for using the "BB" component.
+ - Use the name of a component for the key and a frequency in Hz
+   as the value (any format) to enforce a specific frequency.
+   The other components will be tuned with compensation
+   to achieve the specified overall frequency.
+ - Use the name of a component for the key and the value "IGNORE"
+   so that the tuning algorithm will avoid altering the component.
+ - Vendor specific implementations can also use the same args to augment
+   tuning in other ways such as specifying fractional vs integer N tuning.
+param device a pointer to a device instance
+param direction the channel direction RX or TX
+param channel an available channel on the device
+param frequency the center frequency in Hz
+param args optional tuner arguments
+return an error code or 0 for success
+"""
 function SoapySDRDevice_setFrequency(device, direction, channel, frequency, kwargs)
     ccall((:SoapySDRDevice_setFrequency, lib), Int, (Ref{SoapySDRDevice}, Cint, Csize_t, Cdouble, Ptr{SoapySDRKwargs}), device, direction, channel, frequency, kwargs)
 end
@@ -394,22 +421,24 @@ function SoapySDRDevice_setupStream(device, direction, format, channels, numChan
         device, direction, format, channels, numChans, kwargs)
 end
 
-# Activate a stream.
-# Call activate to prepare a stream before using read/write().
-# The implementation control switches or stimulate data flow.
-#
-# The timeNs is only valid when the flags have SOAPY_SDR_HAS_TIME.
-# The numElems count can be used to request a finite burst size.
-# The SOAPY_SDR_END_BURST flag can signal end on the finite burst.
-# Not all implementations will support the full range of options.
-# In this case, the implementation returns SOAPY_SDR_NOT_SUPPORTED.
-#
-# param device a pointer to a device instance
-# param stream the opaque pointer to a stream handle
-# param flags optional flag indicators about the stream
-# param timeNs optional activation time in nanoseconds
-# param numElems optional element count for burst control
-# return 0 for success or error code on failure
+"""
+Activate a stream.
+Call activate to prepare a stream before using read/write().
+The implementation control switches or stimulate data flow.
+
+The timeNs is only valid when the flags have SOAPY_SDR_HAS_TIME.
+The numElems count can be used to request a finite burst size.
+The SOAPY_SDR_END_BURST flag can signal end on the finite burst.
+Not all implementations will support the full range of options.
+In this case, the implementation returns SOAPY_SDR_NOT_SUPPORTED.
+
+param device a pointer to a device instance
+param stream the opaque pointer to a stream handle
+param flags optional flag indicators about the stream
+param timeNs optional activation time in nanoseconds
+param numElems optional element count for burst control
+return 0 for success or error code on failure
+"""
 function SoapySDRDevice_activateStream(device, stream, flags, timeNs, numElems)
     err = @check_error ccall((:SoapySDRDevice_activateStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Cint, Clonglong, Csize_t), device, stream, flags, timeNs, numElems)
     if err != 0
@@ -418,24 +447,26 @@ function SoapySDRDevice_activateStream(device, stream, flags, timeNs, numElems)
     return nothing
 end
 
-# Read elements from a stream for reception.
-# This is a multi-channel call, and buffs should be an array of void *,
-# where each pointer will be filled with data from a different channel.
-#
-# **Client code compatibility:**
-# The readStream() call should be well defined at all times,
-# including prior to activation and after deactivation.
-# When inactive, readStream() should implement the timeout
-# specified by the caller and return SOAPY_SDR_TIMEOUT.
-#
-# param device a pointer to a device instance
-# param stream the opaque pointer to a stream handle
-# param buffs an array of void* buffers num chans in size
-# param numElems the number of elements in each buffer
-# param [out] flags optional flag indicators about the result
-# param [out] timeNs the buffer's timestamp in nanoseconds
-# param timeoutUs the timeout in microseconds
-# return the number of elements read per buffer or error code
+"""
+Read elements from a stream for reception.
+This is a multi-channel call, and buffs should be an array of void *,
+where each pointer will be filled with data from a different channel.
+
+**Client code compatibility:**
+The readStream() call should be well defined at all times,
+including prior to activation and after deactivation.
+When inactive, readStream() should implement the timeout
+specified by the caller and return SOAPY_SDR_TIMEOUT.
+
+param device a pointer to a device instance
+param stream the opaque pointer to a stream handle
+param buffs an array of void* buffers num chans in size
+param numElems the number of elements in each buffer
+param [out] flags optional flag indicators about the result
+param [out] timeNs the buffer's timestamp in nanoseconds
+param timeoutUs the timeout in microseconds
+return the number of elements read per buffer or error code
+"""
 function SoapySDRDevice_readStream(device, stream, buffs, numElems, timeoutUs)
     flags = Ref{Cint}()
     timeNs = Ref{Clonglong}()
@@ -478,27 +509,31 @@ function SoapySDRDevice_writeStream(device, stream, buffs, numElems, flags, time
     nelems, flags[]
 end
 
-# Deactivate a stream.
-# Call deactivate when not using using read/write().
-# The implementation control switches or halt data flow.
-#
-# The timeNs is only valid when the flags have SOAPY_SDR_HAS_TIME.
-# Not all implementations will support the full range of options.
-# In this case, the implementation returns SOAPY_SDR_NOT_SUPPORTED.
-#
-# param device a pointer to a device instance
-# param stream the opaque pointer to a stream handle
-# param flags optional flag indicators about the stream
-# param timeNs optional deactivation time in nanoseconds
-# return 0 for success or error code on failure
+"""
+Deactivate a stream.
+Call deactivate when not using using read/write().
+The implementation control switches or halt data flow.
+
+The timeNs is only valid when the flags have SOAPY_SDR_HAS_TIME.
+Not all implementations will support the full range of options.
+In this case, the implementation returns SOAPY_SDR_NOT_SUPPORTED.
+
+param device a pointer to a device instance
+param stream the opaque pointer to a stream handle
+param flags optional flag indicators about the stream
+param timeNs optional deactivation time in nanoseconds
+return 0 for success or error code on failure
+"""
 function SoapySDRDevice_deactivateStream(device, stream, flags, timeNs)
     ccall((:SoapySDRDevice_deactivateStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Cint, Clonglong), device, stream, flags, timeNs)
 end
 
-# Close an open stream created by setupStream
-# param device a pointer to a device instance
-# param stream the opaque pointer to a stream handle
-# return 0 for success or error code on failure
+"""
+Close an open stream created by setupStream
+param device a pointer to a device instance
+param stream the opaque pointer to a stream handle
+return 0 for success or error code on failure
+"""
 function SoapySDRDevice_closeStream(device, stream)
     @check_error ccall((:SoapySDRDevice_closeStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}), device, stream)
 end
