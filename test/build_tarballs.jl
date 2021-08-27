@@ -7,8 +7,7 @@ version = v"0.1.0"
 
 # Collection of sources required to complete build
 sources = [
-    #GitSource("https://github.com/JuliaTelecom/SoapyLoopback.git", "9462da47c615598883d83d0530f01a76d112d01b")
-    DirectorySource("/home/steve/jc/SoapyLoopback")
+    GitSource("https://github.com/JuliaTelecom/SoapyLoopback.git", "97b07744d83f21e031c1e7a7263d8b6c0567b684")
 ]
 
 dependencies = [
@@ -18,7 +17,7 @@ dependencies = [
 
 # Bash recipe for building across all platforms
 script = raw"""
-#cd SoapyLoopback #if GitSource
+cd SoapyLoopback #if GitSource
 mkdir build
 cd build
 cmake -DCMAKE_INSTALL_PREFIX=${prefix} \

@@ -49,9 +49,23 @@ end
     dev = Devices()[1]
 
     @test typeof(dev.info) == sd.OwnedKWArgs
-    @show dev.driver, typeof(dev.driver)
-    @test dev.driver == :Loopback
-    @test dev.hardware == :Loopback
+    @test dev.driver == :LoopbackDriver
+    @test dev.hardware == :LoopbackHardware
+    dev.hardwareinfo #TODO
+
+    rx_chan = dev.rx[1]
+    tx_chan = dev.tx[1]
+
+    @show rx_chan.bandwidth
+    @show rx_chan.frequency
+    @show rx_chan.gain
+    @show rx_chan.sample_rate
+
+
+    rx_stream = sd.Stream(ComplexF32, [rx_chan])
+
+    tx_stream = sd.Stream(ComplexF32, [tx_chan])
+
     #@test dev.tx == [Channel(Loopback, Tx, 0)]
     #@test dev.rx == [Channel(Loopback, Rx, 0)]
 end

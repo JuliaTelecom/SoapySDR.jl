@@ -107,8 +107,19 @@ function Base.show(io::IO, d::Devices)
     end
 end
 
-##
+"""
+    `Device`
 
+A device is a collection of SDR channels, obtained from the `Devices()` list.
+
+Fields:
+- `info`
+- `driver`
+- `hardware`
+- `hardwareinfo`
+- `tx`
+- `rx`
+"""
 mutable struct Device
     ptr::Ptr{SoapySDRDevice}
     function Device(ptr::Ptr{SoapySDRDevice})
@@ -137,6 +148,8 @@ function Base.getproperty(d::Device, s::Symbol)
         Symbol(unsafe_string(SoapySDRDevice_getDriverKey(d)))
     elseif s === :hardware
         Symbol(unsafe_string(SoapySDRDevice_getHardwareKey(d)))
+    elseif s === :hardwareinfo #TODO
+        SoapySDRDevice_getHardwareInfo(d) # TODO wrap
     elseif s === :tx
         ChannelList(d, Tx)
     elseif s === :rx
@@ -465,13 +478,13 @@ function Base.show(io::IO, s::Stream)
 end
 
 function Stream(format::Union{StreamFormat, Type}, device::Device, direction::Direction; kwargs...)
-    format = StreamFormat(format)
+    format = StreamFormat(format) # TODO isa(format, StreamFormat) ? format : StreamFormat(format)?
     isempty(kwargs) || error("TODO")
     Stream{T}(device, 1, SoapySDRDevice_setupStream(device, direction, string(format), C_NULL, 0, C_NULL))
 end
 
 function Stream(format::Union{StreamFormat, Type}, channels::Vector{Channel}; kwargs...)
-    format = StreamFormat(format)
+    format = StreamFormat(format) # TODO isa(format, StreamFormat) ? format : StreamFormat(format)?
     isempty(kwargs) || error("TODO")
     isempty(channels) && error("Must specify at least one channel or use the device/direction constructor for automatic.")
     device = first(channels).device
