@@ -14,14 +14,18 @@ struct SoapySDRKwargs
     vals::Ptr{Cstring}
 end
 
-# Convert a markup string to a key-value map.
-# The markup format is: "key0=value0, key1=value1"
+"""
+Convert a markup string to a key-value map.
+The markup format is: "key0=value0, key1=value1"
+"""
 function SoapySDRKwargs_fromString(markup)
     ccall((:SoapySDRKwargs_fromString, lib), SoapySDRKwargs, (Cstring,), markup)
 end
 
-# Convert a key-value map to a markup string.
-# The markup format is: "key0=value0, key1=value1"
+"""
+Convert a key-value map to a markup string.
+The markup format is: "key0=value0, key1=value1"
+"""
 function SoapySDRKwargs_toString(args)
     ccall((:SoapySDRKwargs_toString, lib), Cstring, (Ptr{SoapySDRKwargs},), args)
 end
@@ -79,42 +83,49 @@ function SoapySDRStrings_clear(elems, length)
     ccall((:SoapySDRStrings_clear, lib), Cvoid, (Ptr{Ptr{Cstring}}, Cint), elems, length)
 end
 
-# Set a key/value pair in a kwargs structure.
-# If the key exists, the existing entry will be modified;
-# otherwise a new entry will be appended to args.
-# On error, the elements of args will not be modified,
-# and args is guaranteed to be in a good state.
-# return 0 for success, otherwise allocation error
+"""
+Set a key/value pair in a kwargs structure.
+If the key exists, the existing entry will be modified;
+otherwise a new entry will be appended to args.
+On error, the elements of args will not be modified,
+and args is guaranteed to be in a good state.
+return 0 for success, otherwise allocation error
+"""
 function SoapySDRKwargs_set(args, key, val) # THIS IS BROKEN
     ccall((:SoapySDRKwargs_set, lib), Cint, (Ptr{SoapySDRKwargs}, Cstring, Cstring), args, key, val)
 end
 
-# Get a value given a key in a kwargs structure.
-# return the string or NULL if not found
+"""
+Get a value given a key in a kwargs structure.
+return the string or NULL if not found
+"""
 function SoapySDRKwargs_get(args, key)
     ccall((:SoapySDRKwargs_get, lib), Cstring, (Ptr{SoapySDRKwargs}, Cstring), args, key)
 end
 
-# Clear the contents of a kwargs structure.
-# This frees all the underlying memory and clears the members.
+"""
+Clear the contents of a kwargs structure.
+This frees all the underlying memory and clears the members.
+"""
 function SoapySDRKwargs_clear(args)
     ccall((:SoapySDRKwargs_clear, lib), Cvoid, (Ptr{SoapySDRKwargs},), args)
 end
 
-# Clear a list of kwargs structures.
-# This frees all the underlying memory and clears the members.
+"""Clear a list of kwargs structures.
+This frees all the underlying memory and clears the members."""
 function SoapySDRKwargsList_clear(args, length::Integer)
     ccall((:SoapySDRKwargsList_clear, lib), Cvoid, (Ptr{SoapySDRKwargs}, Csize_t), args, length)
 end
 
-# Clear the contents of a argument info structure.
-# This frees all the underlying memory and clears the members.
+"""Clear the contents of a argument info structure.
+This frees all the underlying memory and clears the members."""
 function SoapySDRArgInfo_clear(info)
     ccall((:SoapySDRArgInfo_clear, lib), Cvoid, (Ptr{SoapySDRArgInfo},), info)
 end
 
-# Clear a list of argument info structures.
-# This frees all the underlying memory and clears the members.
+"""
+Clear a list of argument info structures.
+This frees all the underlying memory and clears the members."""
 function SoapySDRArgInfoList_clear(info, length::Cint)
     ccall((:SoapySDRArgInfoList_clear, lib), Cvoid, (Ptr{SoapySDRArgInfo}, Cint), info, length)
 end

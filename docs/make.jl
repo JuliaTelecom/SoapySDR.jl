@@ -15,10 +15,8 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-        "Quick Start" => "quickstart.md",
         "Tutorial" => "tutorial.md",
         "High Level API" => "highlevel.md",
-        "Driver Modules" => "drivermodules.md",
         "Low Level API" => "lowlevel.md",
     ],
 )

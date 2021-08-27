@@ -88,6 +88,7 @@ SoapySDRStrings_clear(s::StringList) = @GC.preserve s SoapySDRStrings_clear(poin
     Devices()
 
 Enumerates all detectable SDR devices on the system.
+Indexing into this list return a `Device` struct.
 """
 struct Devices
     kwargslist::KWArgsList
@@ -106,8 +107,19 @@ function Base.show(io::IO, d::Devices)
     end
 end
 
-##
+"""
+    `Device`
 
+A device is a collection of SDR channels, obtained from the `Devices()` list.
+
+Fields:
+- `info`
+- `driver`
+- `hardware`
+- `hardwareinfo`
+- `tx`
+- `rx`
+"""
 mutable struct Device
     ptr::Ptr{SoapySDRDevice}
     function Device(ptr::Ptr{SoapySDRDevice})
@@ -136,6 +148,8 @@ function Base.getproperty(d::Device, s::Symbol)
         Symbol(unsafe_string(SoapySDRDevice_getDriverKey(d)))
     elseif s === :hardware
         Symbol(unsafe_string(SoapySDRDevice_getHardwareKey(d)))
+    elseif s === :hardwareinfo #TODO
+        SoapySDRDevice_getHardwareInfo(d) # TODO wrap
     elseif s === :tx
         ChannelList(d, Tx)
     elseif s === :rx
@@ -407,6 +421,7 @@ end
 
 ### Streams
 
+#TODO {T} ?
 struct StreamFormat
     T
 end
@@ -425,21 +440,16 @@ function Base.print(io::IO, sf::StreamFormat)
     else
         error("Unknown format")
     end
-    print(io, 8sizeof(T))
+    print(io, 8*sizeof(T))
 end
 
 function StreamFormat(s::String)
-    complex = first(s) === 'C'
-    complex && (s = s[2:end])
-    t = first(s)
-    nbits = parse(Int, s[2:end])
-    if t == 'F'
-        T = Dict(32 => Float32, 64 => Float64)[nbits]
-    elseif t === 'S' || t === 'U'
-        T = Dict(8 => UInt8, 16 => UInt16, 32 => UInt32, 64 => UInt64)[nbits]
-        T === 'S' && (T = signed(T))
+    if haskey(_stream_type_map, s)
+        T = _stream_type_map[s]
+        return StreamFormat(T)
+    else
+        error("Unknown format")
     end
-    return StreamFormat{complex ? Complex{T} : T}()
 end
 
 function stream_formats(c::Channel)
@@ -468,13 +478,13 @@ function Base.show(io::IO, s::Stream)
 end
 
 function Stream(format::Union{StreamFormat, Type}, device::Device, direction::Direction; kwargs...)
-    format = StreamFormat(format)
+    format = StreamFormat(format) # TODO isa(format, StreamFormat) ? format : StreamFormat(format)?
     isempty(kwargs) || error("TODO")
     Stream{T}(device, 1, SoapySDRDevice_setupStream(device, direction, string(format), C_NULL, 0, C_NULL))
 end
 
 function Stream(format::Union{StreamFormat, Type}, channels::Vector{Channel}; kwargs...)
-    format = StreamFormat(format)
+    format = StreamFormat(format) # TODO isa(format, StreamFormat) ? format : StreamFormat(format)?
     isempty(kwargs) || error("TODO")
     isempty(channels) && error("Must specify at least one channel or use the device/direction constructor for automatic.")
     device = first(channels).device

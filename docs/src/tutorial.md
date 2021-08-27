@@ -3,7 +3,7 @@
 !!! note
     You have to load a driver for your particular SDR in order to work
     with SoapySDR. Available modules through the Julia Package manager are listed
-    on the [driver modules page.](./drivermodules.md)
+    on the [index.](./index.md)
 
 The entry point of this package is the `Devices()` object, which will list
 all devices known to SoapySDR on the current system. 
