@@ -408,6 +408,7 @@ end
 
 ### Streams
 
+#TODO {T} ?
 struct StreamFormat
     T
 end
@@ -430,22 +431,12 @@ function Base.print(io::IO, sf::StreamFormat)
 end
 
 function StreamFormat(s::String)
-    # Complex prepended with C
-    complex = first(s) === 'C'
-    complex && (s = s[2:end])
-
-    # TODO: 12 bit
-    t = first(s)
-    nbits = parse(Int, s[2:end])
-    if t == 'F'
-        T = Dict(32 => Float32, 64 => Float64)[nbits]
-    elseif t === 'S' || t === 'U'
-        T = Dict(8 => UInt8, 16 => UInt16, 32 => UInt32, 64 => UInt64)[nbits]
-        T === 'S' && (T = signed(T))
+    if haskey(_stream_type_map, s)
+        T = _stream_type_map[s]
+        return StreamFormat(T)
     else
         error("Unknown format")
     end
-    return StreamFormat{complex ? Complex{T} : T}()
 end
 
 function stream_formats(c::Channel)

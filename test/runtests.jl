@@ -5,8 +5,9 @@ const sd = SoapySDR
 
 const hardware = "loopback"
 
-# build SoapyLoopback and dlopen it
+# Load dummy test harness or hardware
 if hardware == "loopback"
+    # build SoapyLoopback and dlopen it
     include("setup_loopback.jl")
 elseif hardware == "rtlsdr"
     using SoapyRTLSDR_jll
@@ -35,22 +36,23 @@ end
     sd.StreamFormat(sd.SOAPY_SDR_U8)
     sd.StreamFormat(sd.SOAPY_SDR_CS8)
     sd.StreamFormat(sd.SOAPY_SDR_CU8)
+    sd.StreamFormat(sd.SOAPY_SDR_CS12)
+    sd.StreamFormat(sd.SOAPY_SDR_CU12)
+    sd.StreamFormat(sd.SOAPY_SDR_CS4)
+    sd.StreamFormat(sd.SOAPY_SDR_CU4)
 
     # Should throw
-    @test_throws ErrorException sd.StreamFormat(sd.SOAPY_SDR_CS12)
-    @test_throws ErrorException sd.StreamFormat(sd.SOAPY_SDR_CU12)
-    @test_throws ErrorException sd.StreamFormat(sd.SOAPY_SDR_CS4)
-    @test_throws ErrorException sd.StreamFormat(sd.SOAPY_SDR_CU4)
     @test_throws ErrorException sd.StreamFormat("nonsense")
 end
 @testset "High Level API" begin
     @test length(Devices()) == 1
     dev = Devices()[1]
 
-    @show dev.info
-    @show dev.driver
-    @show dev.hardware
-    @show dev.tx
-    @show dev.rx
+    @test typeof(dev.info) == sd.OwnedKWArgs
+    @show dev.driver, typeof(dev.driver)
+    @test dev.driver == :Loopback
+    @test dev.hardware == :Loopback
+    #@test dev.tx == [Channel(Loopback, Tx, 0)]
+    #@test dev.rx == [Channel(Loopback, Rx, 0)]
 end
 end
