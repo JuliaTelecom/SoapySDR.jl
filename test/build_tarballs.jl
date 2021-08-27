@@ -7,22 +7,23 @@ version = v"0.1.0"
 
 # Collection of sources required to complete build
 sources = [
-    GitSource("https://github.com/JuliaTelecom/SoapyLoopback.git", "9462da47c615598883d83d0530f01a76d112d01b")
+    #GitSource("https://github.com/JuliaTelecom/SoapyLoopback.git", "9462da47c615598883d83d0530f01a76d112d01b")
+    DirectorySource("/home/steve/jc/SoapyLoopback")
 ]
 
 dependencies = [
     Dependency(PackageSpec(name="CompilerSupportLibraries_jll", uuid="e66e0078-7015-5450-92f7-15fbd957f2ae")),
-    Dependency(PackageSpec(name="soapysdr_jll", uuid="343a40d9-ed99-5d34-8b56-649aaa4ecee6"))
+    BuildDependency(PackageSpec(name="soapysdr_jll", uuid="343a40d9-ed99-5d34-8b56-649aaa4ecee6"))
 ]
 
 # Bash recipe for building across all platforms
 script = raw"""
-cd SoapyLoopback
+#cd SoapyLoopback #if GitSource
 mkdir build
 cd build
 cmake -DCMAKE_INSTALL_PREFIX=${prefix} \
       -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TARGET_TOOLCHAIN} \
-      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_BUILD_TYPE=Debug \
       ..
 make -j${nproc}
 make install
