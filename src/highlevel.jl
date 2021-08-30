@@ -108,7 +108,7 @@ function Base.show(io::IO, d::Devices)
 end
 
 """
-    `Device`
+    Device
 
 A device is a collection of SDR channels, obtained from the `Devices()` list.
 

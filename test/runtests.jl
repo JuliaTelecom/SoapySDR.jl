@@ -1,5 +1,6 @@
 using SoapySDR
 using Test
+using Unitful
 
 const sd = SoapySDR
 
@@ -56,17 +57,19 @@ end
     rx_chan = dev.rx[1]
     tx_chan = dev.tx[1]
 
-    @show rx_chan.bandwidth
-    @show rx_chan.frequency
-    @show rx_chan.gain
-    @show rx_chan.sample_rate
+    @test rx_chan.bandwidth == 2.048e6u"Hz"
+    @test rx_chan.frequency == 1.0e8u"Hz"
+    @test rx_chan.gain == -21u"dB"
+    @test rx_chan.sample_rate == 2.048e6u"Hz"
 
+    @test tx_chan.bandwidth == 2.048e6u"Hz"
+    @test tx_chan.frequency == 1.0e8u"Hz"
+    @test tx_chan.gain == -21u"dB"
+    @test tx_chan.sample_rate == 2.048e6u"Hz"
 
     rx_stream = sd.Stream(ComplexF32, [rx_chan])
 
     tx_stream = sd.Stream(ComplexF32, [tx_chan])
 
-    #@test dev.tx == [Channel(Loopback, Tx, 0)]
-    #@test dev.rx == [Channel(Loopback, Rx, 0)]
 end
 end
