@@ -42,6 +42,8 @@ products = Product[
     LibraryProduct("libsoapyloopback", :librtlsdrSupport, ["lib/SoapySDR/modules0.8/"])
 ]
 
+args = ["--verbose"]
+
 # Build the tarballs, and possibly a `build.jl` as well.
 # gcc7 constraint from boost
-build_tarballs(ARGS, name, version, sources, script, platforms, products, dependencies; julia_compat="1.6")
+build_tarballs(args, name, version, sources, script, platforms, products, dependencies; julia_compat="1.6")
