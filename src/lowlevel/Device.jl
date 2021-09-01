@@ -448,6 +448,23 @@ function SoapySDRDevice_activateStream(device, stream, flags, timeNs, numElems)
 end
 
 """
+Get the stream's maximum transmission unit (MTU) in number of elements.
+The MTU specifies the maximum payload transfer in a stream operation.
+This value can be used as a stream buffer allocation size that can
+best optimize throughput given the underlying stream implementation.
+
+param device a pointer to a device instance
+param stream the opaque pointer to a stream handle
+return the MTU in number of stream elements (never zero)
+"""
+function SoapySDRDevice_getStreamMTU(device, stream)
+    mtu = ccall((:SoapySDRDevice_getStreamMTU, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}), device, stream)
+    return mtu
+end
+
+
+
+"""
 Read elements from a stream for reception.
 This is a multi-channel call, and buffs should be an array of void *,
 where each pointer will be filled with data from a different channel.
