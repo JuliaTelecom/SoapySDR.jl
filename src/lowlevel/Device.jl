@@ -695,6 +695,21 @@ function SoapySDRDevice_getSampleRateRange(device, direction, channel)
     (ptr, len[])
 end
 
+"""
+Get the list of possible baseband sample rates.
+
+$CHANNEL_ARGS
+
+Returns a list of samples rates in samples per second
+
+$LL_DISCLAIMER
+"""
+function SoapySDRDevice_listSampleRates(device, direction, channel)
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_listSampleRates, lib), Ptr{Float64}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, len)
+    (ptr, len[])
+end
+
 
 """
 List available tunable elements in the chain.
