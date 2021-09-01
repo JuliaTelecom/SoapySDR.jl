@@ -18,6 +18,7 @@ Below is a list of driver modules that may be installed with the Julia package m
 |--------|-----------------|
 | xrtx   | xtrx_jll        |
 |RTL-SDR | SoapyRTLSDR_jll |
+|LimeSDR | SoapyLMS7_jll   |
 
 If you need a driver module that is not listed, you can search [JuliaHub](https://juliahub.com)
 to see if it may have been added to the package manager. If not, please file an [issue](https://github.com/JuliaTelecom/SoapySDR.jl/issues).
