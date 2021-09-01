@@ -413,6 +413,18 @@ function sample_rate_ranges(c::Channel)
     arr
 end
 
+"""
+    list_sample_rates(::Channel)
+
+List the natively supported sample rates for a given channel.
+"""
+function list_sample_rates(c::Channel)
+    (ptr, len) = SoapySDRDevice_listSampleRates(c.device.ptr, c.direction, c.idx)
+    arr = unsafe_wrap(Array, Ptr{Float64}(ptr), (len,)) * Hz
+    SoapySDR_free(ptr)
+    arr
+end
+
 ### Frequency Setting
 struct FreqSpec{T}
     val::T
