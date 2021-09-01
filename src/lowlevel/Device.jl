@@ -761,3 +761,43 @@ function SoapySDRDevice_setFrequencyComponent(device, direction, channel, name, 
     @assert err == 0
     return nothing
 end
+
+
+##############
+## TIME API ##
+##############
+
+
+function SoapySDRDevice_listTimeSources(device)
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_listTimeSources, lib), Ptr{Ptr{Cstring}}, (Ptr{SoapySDRDevice}, Ref{Csize_t}), device, len)
+    (ptr, len[])
+end
+
+function SoapySDRDevice_setTimeSource(device, source)
+    len = Ref{Cstring}(source)
+    ptr = @check_error ccall((:SoapySDRDevice_listTimeSources, lib), Ptr{Ptr{Cstring}}, (Ptr{SoapySDRDevice}, Ref{Cstring}), device, len)
+    (ptr, len[])
+end
+
+function SoapySDRDevice_getTimeSource(device)
+end
+
+function SoapySDRDevice_hasHardwareTime(device, what)
+end
+
+function SoapySDRDevice_setHardwareTime(device, timeNs, what)
+end
+
+function SoapySDRDevice_setCommandTime(device, timeNs, what)
+end
+
+################
+## SENSOR API ##
+################
+
+function SoapySDRDevice_listSensors(device)
+end
+
+function SoapySDRDevice_listSensors(device)
+end
