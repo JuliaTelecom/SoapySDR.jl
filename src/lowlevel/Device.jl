@@ -767,37 +767,262 @@ end
 ## TIME API ##
 ##############
 
+"""
+Get the list of available time sources.
 
+param device a pointer to a device instance
+param [out] length the number of sources
+return a list of time source names
+"""
 function SoapySDRDevice_listTimeSources(device)
     len = Ref{Csize_t}()
     ptr = @check_error ccall((:SoapySDRDevice_listTimeSources, lib), Ptr{Ptr{Cstring}}, (Ptr{SoapySDRDevice}, Ref{Csize_t}), device, len)
     (ptr, len[])
 end
 
+"""
+Set the time source on the device
+
+param device a pointer to a device instance
+param source the name of a time source
+return an error code or 0 for success
+"""
 function SoapySDRDevice_setTimeSource(device, source)
     len = Ref{Cstring}(source)
     ptr = @check_error ccall((:SoapySDRDevice_listTimeSources, lib), Ptr{Ptr{Cstring}}, (Ptr{SoapySDRDevice}, Ref{Cstring}), device, len)
     (ptr, len[])
 end
 
+"""
+Get the time source of the device
+
+param device a pointer to a device instance
+return the name of a time source
+"""
 function SoapySDRDevice_getTimeSource(device)
 end
 
+"""
+Does this device have a hardware clock?
+
+param device a pointer to a device instance
+param what optional argument
+return true if the hardware clock exists
+"""
 function SoapySDRDevice_hasHardwareTime(device, what)
+
 end
 
+"""
+Read the time from the hardware clock on the device.
+The what argument can refer to a specific time counter.
+
+param device a pointer to a device instance
+param what optional argument
+return the time in nanoseconds
+"""
+function SoapySDRDevice_getHardwareTime(device, what)
+
+end
+"""
+Write the time to the hardware clock on the device.
+The what argument can refer to a specific time counter.
+
+param device a pointer to a device instance
+param timeNs time in nanoseconds
+param what optional argument
+return 0 for success or error code on failure
+"""
 function SoapySDRDevice_setHardwareTime(device, timeNs, what)
+
 end
 
+"""
+Set the time of subsequent configuration calls.
+The what argument can refer to a specific command queue.
+Implementations may use a time of 0 to clear.
+
+ !!deprecated replaced by setHardwareTime()
+
+param device a pointer to a device instance
+param timeNs time in nanoseconds
+param what optional argument
+return 0 for success or error code on failure
+"""
 function SoapySDRDevice_setCommandTime(device, timeNs, what)
+
 end
 
+
+
+##################
+## Clocking API ##
+##################
+"""
+Set the master clock rate of the device.
+
+param device a pointer to a device instance
+param rate the clock rate in Hz
+return an error code or 0 for success
+"""
+function SoapySDRDevice_setMasterClockRate(device,rate);
+end
+
+"""
+Get the master clock rate of the device.
+
+param device a pointer to a device instance
+return the clock rate in Hz
+"""
+function SoapySDRDevice_getMasterClockRate(device)
+end
+
+"""
+Get the range of available master clock rates.
+
+param device a pointer to a device instance
+param [out] length the number of ranges
+return a list of clock rate ranges in Hz
+"""
+function SoapySDRDevice_getMasterClockRates(device, length)
+end
+
+"""
+Set the reference clock rate of the device.
+
+param device a pointer to a device instance
+param rate the clock rate in Hz
+return an error code or 0 for success
+"""
+function SoapySDRDevice_setReferenceClockRate(device, rate)
+end
+
+"""
+Get the reference clock rate of the device.
+
+param device a pointer to a device instance
+return the clock rate in Hz
+"""
+function SoapySDRDevice_getReferenceClockRate(device)
+end
+
+"""
+Get the range of available reference clock rates.
+
+param device a pointer to a device instance
+param [out] length the number of sources
+return a list of clock rate ranges in Hz
+"""
+function SoapySDRDevice_getReferenceClockRates(device, length)
+end
+
+"""
+Get the list of available clock sources.
+
+param device a pointer to a device instance
+param [out] length the number of sources
+return a list of clock source names
+"""
+function SoapySDRDevice_listClockSources(device, length)
+end
+
+"""
+Set the clock source on the device
+
+param device a pointer to a device instance
+param source the name of a clock source
+return an error code or 0 for success
+"""
+function SoapySDRDevice_setClockSource(device, source)
+end
+
+"""
+Get the clock source of the device
+
+param device a pointer to a device instance
+return the name of a clock source
+"""
+function SoapySDRDevice_getClockSource(device)
+
+end
 ################
 ## SENSOR API ##
 ################
 
-function SoapySDRDevice_listSensors(device)
+"""
+List the available global readback sensors.
+A sensor can represent a reference lock, RSSI, temperature.
+
+param device a pointer to a device instance
+param [out] length the number of sensor names
+return a list of available sensor string names
+"""
+function SoapySDRDevice_listSensors(device,length)
+
 end
 
-function SoapySDRDevice_listSensors(device)
+"""
+Get meta-information about a sensor.
+Example: displayable name, type, range.
+
+param device a pointer to a device instance
+param key the ID name of an available sensor
+return meta-information about a sensor
+"""
+function SoapySDRDevice_getSensorInfo(device, key)
+
+end
+
+"""
+Readback a global sensor given the name.
+The value returned is a string which can represent
+a boolean ("true"/"false"), an integer, or float.
+
+param device a pointer to a device instance
+param key the ID name of an available sensor
+return the current value of the sensor
+"""
+function SoapySDRDevice_readSensor(device, key)
+end
+
+"""
+List the available channel readback sensors.
+A sensor can represent a reference lock, RSSI, temperature.
+
+param device a pointer to a device instance
+param direction the channel direction RX or TX
+param channel an available channel on the device
+param [out] length the number of sensor names
+return a list of available sensor string names
+"""
+function SoapySDRDevice_listChannelSensors(device, direction, channel, length)
+
+end
+"""
+Get meta-information about a channel sensor.
+Example: displayable name, type, range.
+
+param device a pointer to a device instance
+param direction the channel direction RX or TX
+param channel an available channel on the device
+param key the ID name of an available sensor
+return meta-information about a sensor
+"""
+function SoapySDRDevice_getChannelSensorInfo(device, direction, channel, key)
+
+end
+
+"""
+Readback a channel sensor given the name.
+The value returned is a string which can represent
+a boolean ("true"/"false"), an integer, or float.
+
+param device a pointer to a device instance
+param direction the channel direction RX or TX
+param channel an available channel on the device
+param key the ID name of an available sensor
+return the current value of the sensor
+"""
+function SoapySDRDevice_readChannelSensor(device, direction, channel, key)
+
 end
