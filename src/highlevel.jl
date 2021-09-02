@@ -36,7 +36,7 @@ struct KWArgsListRef <: KWArgs
     function Base.getindex(kwl::KWArgsList, i::Integer)
         checkbounds(kwl, i)
         new(kwl, i)
-    end    
+    end
 end
 
 function ptr(kwl::KWArgsListRef)
@@ -582,4 +582,35 @@ Note: Appropriate conversions need to be done by the user.
 """
 function read_sensor(d::Device, name)
     unsafe_string(SoapySDRDevice_readSensor(d.ptr, name))
+end
+
+
+## Time API
+
+
+"""
+    list_time_sources(::Device)
+
+List time sources available on the device
+"""
+function list_time_sources(d::Device)
+    StringList(SoapySDRDevice_listTimeSources(d.ptr)...)
+end
+
+"""
+    set_time_source!(::Device)
+
+List the current time source used by the Device.
+"""
+function set_time_source!(d::Device, s::String)
+    SoapySDRDevice_setTimeSource(d.ptr, s)
+end
+
+"""
+    get_time_source(::Device)
+
+Set the time source used by the Device.
+"""
+function get_time_source(d::Device)
+    unsafe_string(SoapySDRDevice_getTimeSource(d.ptr))
 end

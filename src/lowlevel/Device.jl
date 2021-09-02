@@ -775,8 +775,8 @@ param [out] length the number of sources
 return a list of time source names
 """
 function SoapySDRDevice_listTimeSources(device)
-    len = Ref{Csize_t}() #TODO: StringList in high level
-    ptr = @check_error ccall((:SoapySDRDevice_listTimeSources, lib), Ptr{Ptr{Cstring}}, (Ptr{SoapySDRDevice}, Ref{Csize_t}), device, len)
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_listTimeSources, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Ref{Csize_t}), device, len)
     (ptr, len[])
 end
 
@@ -788,9 +788,8 @@ param source the name of a time source
 return an error code or 0 for success
 """
 function SoapySDRDevice_setTimeSource(device, source)
-    len = Ref{Cstring}(source) # TODO: fix this
-    ptr = @check_error ccall((:SoapySDRDevice_listTimeSources, lib), Ptr{Ptr{Cstring}}, (Ptr{SoapySDRDevice}, Ref{Cstring}), device, len)
-    (ptr, len[])
+    ptr = @check_error ccall((:SoapySDRDevice_setTimeSource, lib), Cstring, (Ptr{SoapySDRDevice}, Cstring), device, source)
+    ptr
 end
 
 """
@@ -800,6 +799,8 @@ param device a pointer to a device instance
 return the name of a time source
 """
 function SoapySDRDevice_getTimeSource(device)
+    ptr = @check_error ccall((:SoapySDRDevice_getTimeSource, lib), Cstring, (Ptr{SoapySDRDevice},), device)
+    ptr
 end
 
 """
@@ -824,6 +825,7 @@ return the time in nanoseconds
 function SoapySDRDevice_getHardwareTime(device, what)
 
 end
+
 """
 Write the time to the hardware clock on the device.
 The what argument can refer to a specific time counter.
