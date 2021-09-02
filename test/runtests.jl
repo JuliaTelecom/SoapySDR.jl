@@ -61,6 +61,15 @@ end
     sensor_list = sd.list_sensors(dev)
     @test map(sensor -> sd.read_sensor(dev, sensor), sensor_list) == ["true", "1.0", "1.0"]
 
+    # test time API
+    time_sources = sd.list_time_sources(dev)
+    @test time_sources == ["sw_ticks", "hw_ticks"]
+    @test sd.get_time_source(dev) == "sw_ticks"
+    sd.set_time_source!(dev, "hw_ticks")
+    @test sd.get_time_source(dev) == "hw_ticks"
+
+
+
     rx_chan = dev.rx[1]
     tx_chan = dev.tx[1]
 
