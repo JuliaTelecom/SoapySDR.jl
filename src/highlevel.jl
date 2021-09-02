@@ -557,3 +557,29 @@ function Base.write(s::Stream{T}, buffers::NTuple{N, Vector{T}}; timeout = nothi
     @assert N == s.nchannels
     SoapySDRDevice_writeStream(s.d, s, Ref(map(pointer, buffers)), buflen, 0, 0, uconvert(u"μs", timeout).val)
 end
+
+
+
+## sensors
+
+"""
+    list_sensors(::Device)
+
+List the available sensors on a device.
+Returns: an array of sensor names.
+"""
+function list_sensors(d::Device)
+    StringList(SoapySDRDevice_listSensors(d.ptr)...)
+end
+
+
+"""
+    read_sensor(::Device, ::String)
+
+Read the sensor extracted from `list_sensors`. 
+Returns: the value as a string.
+Note: Appropriate conversions need to be done by the user.
+"""
+function read_sensor(d::Device, name)
+    unsafe_string(SoapySDRDevice_readSensor(d.ptr, name))
+end

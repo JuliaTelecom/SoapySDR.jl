@@ -775,7 +775,7 @@ param [out] length the number of sources
 return a list of time source names
 """
 function SoapySDRDevice_listTimeSources(device)
-    len = Ref{Csize_t}()
+    len = Ref{Csize_t}() #TODO: StringList in high level
     ptr = @check_error ccall((:SoapySDRDevice_listTimeSources, lib), Ptr{Ptr{Cstring}}, (Ptr{SoapySDRDevice}, Ref{Csize_t}), device, len)
     (ptr, len[])
 end
@@ -788,7 +788,7 @@ param source the name of a time source
 return an error code or 0 for success
 """
 function SoapySDRDevice_setTimeSource(device, source)
-    len = Ref{Cstring}(source)
+    len = Ref{Cstring}(source) # TODO: fix this
     ptr = @check_error ccall((:SoapySDRDevice_listTimeSources, lib), Ptr{Ptr{Cstring}}, (Ptr{SoapySDRDevice}, Ref{Cstring}), device, len)
     (ptr, len[])
 end
@@ -945,6 +945,7 @@ return the name of a clock source
 function SoapySDRDevice_getClockSource(device)
 
 end
+
 ################
 ## SENSOR API ##
 ################
@@ -957,8 +958,10 @@ param device a pointer to a device instance
 param [out] length the number of sensor names
 return a list of available sensor string names
 """
-function SoapySDRDevice_listSensors(device,length)
-
+function SoapySDRDevice_listSensors(device)
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_listSensors, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Ref{Csize_t}), device, len)
+    ptr, len[]
 end
 
 """
@@ -970,7 +973,7 @@ param key the ID name of an available sensor
 return meta-information about a sensor
 """
 function SoapySDRDevice_getSensorInfo(device, key)
-
+    # TODO, needs ArgInfo
 end
 
 """
@@ -983,6 +986,7 @@ param key the ID name of an available sensor
 return the current value of the sensor
 """
 function SoapySDRDevice_readSensor(device, key)
+    @check_error ccall((:SoapySDRDevice_readSensor, lib), Cstring, (Ptr{SoapySDRDevice}, Cstring), device, key)
 end
 
 """
@@ -996,7 +1000,7 @@ param [out] length the number of sensor names
 return a list of available sensor string names
 """
 function SoapySDRDevice_listChannelSensors(device, direction, channel, length)
-
+    #TODO
 end
 """
 Get meta-information about a channel sensor.
@@ -1009,7 +1013,7 @@ param key the ID name of an available sensor
 return meta-information about a sensor
 """
 function SoapySDRDevice_getChannelSensorInfo(device, direction, channel, key)
-
+    #TODO
 end
 
 """
@@ -1024,5 +1028,5 @@ param key the ID name of an available sensor
 return the current value of the sensor
 """
 function SoapySDRDevice_readChannelSensor(device, direction, channel, key)
-
+    #TODO
 end
