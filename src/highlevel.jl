@@ -598,7 +598,7 @@ function list_time_sources(d::Device)
 end
 
 """
-    set_time_source!(::Device)
+    set_time_source!(::Device, source::String)
 
 List the current time source used by the Device.
 """
@@ -613,4 +613,31 @@ Set the time source used by the Device.
 """
 function get_time_source(d::Device)
     unsafe_string(SoapySDRDevice_getTimeSource(d.ptr))
+end
+
+"""
+    has_hardware_time(::Device, what::String)
+
+Query if the Device has hardware time for the given source.
+"""
+function has_hardware_time(d::Device, what::String)
+    SoapySDRDevice_hasHardwareTime(d.ptr, what)
+end
+
+"""
+    get_hardware_time(::Device, what::String)
+
+Get hardware time for the given source.
+"""
+function get_hardware_time(d::Device, what::String)
+    SoapySDRDevice_getHardwareTime(d.ptr, what)
+end
+
+"""
+    has_hardware_time(::Device, timeNs::Int64 what::String)
+
+Set hardware time for the given source.
+"""
+function set_hardware_time(d::Device, timeNs::Int64, what::String)
+    SoapySDRDevice_setHardwareTime(d.ptr, timeNs, what)
 end

@@ -811,7 +811,7 @@ param what optional argument
 return true if the hardware clock exists
 """
 function SoapySDRDevice_hasHardwareTime(device, what)
-
+    @check_error ccall((:SoapySDRDevice_hasHardwareTime, lib), Bool, (Ptr{SoapySDRDevice}, Cstring), device, what)
 end
 
 """
@@ -823,7 +823,7 @@ param what optional argument
 return the time in nanoseconds
 """
 function SoapySDRDevice_getHardwareTime(device, what)
-
+    @check_error ccall((:SoapySDRDevice_getHardwareTime, lib), Clonglong, (Ptr{SoapySDRDevice}, Cstring), device, what)
 end
 
 """
@@ -836,23 +836,7 @@ param what optional argument
 return 0 for success or error code on failure
 """
 function SoapySDRDevice_setHardwareTime(device, timeNs, what)
-
-end
-
-"""
-Set the time of subsequent configuration calls.
-The what argument can refer to a specific command queue.
-Implementations may use a time of 0 to clear.
-
- !!deprecated replaced by setHardwareTime()
-
-param device a pointer to a device instance
-param timeNs time in nanoseconds
-param what optional argument
-return 0 for success or error code on failure
-"""
-function SoapySDRDevice_setCommandTime(device, timeNs, what)
-
+    @check_error ccall((:SoapySDRDevice_setHardwareTime, lib), Cvoid, (Ptr{SoapySDRDevice}, Clonglong, Cstring), device, timeNs, what)
 end
 
 
