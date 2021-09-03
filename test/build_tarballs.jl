@@ -7,7 +7,7 @@ version = v"0.1.0"
 
 # Collection of sources required to complete build
 sources = [
-    GitSource("https://github.com/JuliaTelecom/SoapyLoopback.git", "97b07744d83f21e031c1e7a7263d8b6c0567b684")
+    GitSource("https://github.com/JuliaTelecom/SoapyLoopback.git", "da9930830f6e7a97360fc959665c513a2d7aa4ea")
 ]
 
 dependencies = [
@@ -42,6 +42,8 @@ products = Product[
     LibraryProduct("libsoapyloopback", :librtlsdrSupport, ["lib/SoapySDR/modules0.8/"])
 ]
 
+args = ["--verbose"]
+
 # Build the tarballs, and possibly a `build.jl` as well.
 # gcc7 constraint from boost
-build_tarballs(ARGS, name, version, sources, script, platforms, products, dependencies; julia_compat="1.6")
+build_tarballs(args, name, version, sources, script, platforms, products, dependencies; julia_compat="1.6")

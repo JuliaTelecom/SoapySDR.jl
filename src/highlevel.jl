@@ -36,7 +36,7 @@ struct KWArgsListRef <: KWArgs
     function Base.getindex(kwl::KWArgsList, i::Integer)
         checkbounds(kwl, i)
         new(kwl, i)
-    end    
+    end
 end
 
 function ptr(kwl::KWArgsListRef)
@@ -108,7 +108,7 @@ function Base.show(io::IO, d::Devices)
 end
 
 """
-    `Device`
+    Device
 
 A device is a collection of SDR channels, obtained from the `Devices()` list.
 
@@ -413,6 +413,18 @@ function sample_rate_ranges(c::Channel)
     arr
 end
 
+"""
+    list_sample_rates(::Channel)
+
+List the natively supported sample rates for a given channel.
+"""
+function list_sample_rates(c::Channel)
+    (ptr, len) = SoapySDRDevice_listSampleRates(c.device.ptr, c.direction, c.idx)
+    arr = unsafe_wrap(Array, Ptr{Float64}(ptr), (len,)) * Hz
+    SoapySDR_free(ptr)
+    arr
+end
+
 ### Frequency Setting
 struct FreqSpec{T}
     val::T
@@ -544,4 +556,100 @@ function Base.write(s::Stream{T}, buffers::NTuple{N, Vector{T}}; timeout = nothi
     @assert all(buffer->length(buffer) == buflen, buffers)
     @assert N == s.nchannels
     SoapySDRDevice_writeStream(s.d, s, Ref(map(pointer, buffers)), buflen, 0, 0, uconvert(u"μs", timeout).val)
+end
+
+
+
+## sensors
+
+"""
+    list_sensors(::Device)
+
+List the available sensors on a device.
+Returns: an array of sensor names.
+"""
+function list_sensors(d::Device)
+    StringList(SoapySDRDevice_listSensors(d.ptr)...)
+end
+
+
+"""
+    read_sensor(::Device, ::String)
+
+Read the sensor extracted from `list_sensors`. 
+Returns: the value as a string.
+Note: Appropriate conversions need to be done by the user.
+"""
+function read_sensor(d::Device, name)
+    unsafe_string(SoapySDRDevice_readSensor(d.ptr, name))
+end
+
+"""
+    get_sensor_info(::Device, ::String)
+
+Read the sensor extracted from `list_sensors`. 
+Returns: the value as a string.
+Note: Appropriate conversions need to be done by the user.
+"""
+function get_sensor_info(d::Device, name)
+    SoapySDRDevice_getSensorInfo(d.ptr, name)
+end
+
+
+
+## Time API
+
+
+"""
+    list_time_sources(::Device)
+
+List time sources available on the device
+"""
+function list_time_sources(d::Device)
+    StringList(SoapySDRDevice_listTimeSources(d.ptr)...)
+end
+
+"""
+    set_time_source!(::Device, source::String)
+
+List the current time source used by the Device.
+"""
+function set_time_source!(d::Device, s::String)
+    SoapySDRDevice_setTimeSource(d.ptr, s)
+end
+
+"""
+    get_time_source(::Device)
+
+Set the time source used by the Device.
+"""
+function get_time_source(d::Device)
+    unsafe_string(SoapySDRDevice_getTimeSource(d.ptr))
+end
+
+"""
+    has_hardware_time(::Device, what::String)
+
+Query if the Device has hardware time for the given source.
+"""
+function has_hardware_time(d::Device, what::String)
+    SoapySDRDevice_hasHardwareTime(d.ptr, what)
+end
+
+"""
+    get_hardware_time(::Device, what::String)
+
+Get hardware time for the given source.
+"""
+function get_hardware_time(d::Device, what::String)
+    SoapySDRDevice_getHardwareTime(d.ptr, what)
+end
+
+"""
+    has_hardware_time(::Device, timeNs::Int64 what::String)
+
+Set hardware time for the given source.
+"""
+function set_hardware_time(d::Device, timeNs::Int64, what::String)
+    SoapySDRDevice_setHardwareTime(d.ptr, timeNs, what)
 end

@@ -448,6 +448,23 @@ function SoapySDRDevice_activateStream(device, stream, flags, timeNs, numElems)
 end
 
 """
+Get the stream's maximum transmission unit (MTU) in number of elements.
+The MTU specifies the maximum payload transfer in a stream operation.
+This value can be used as a stream buffer allocation size that can
+best optimize throughput given the underlying stream implementation.
+
+param device a pointer to a device instance
+param stream the opaque pointer to a stream handle
+return the MTU in number of stream elements (never zero)
+"""
+function SoapySDRDevice_getStreamMTU(device, stream)
+    mtu = ccall((:SoapySDRDevice_getStreamMTU, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}), device, stream)
+    return mtu
+end
+
+
+
+"""
 Read elements from a stream for reception.
 This is a multi-channel call, and buffs should be an array of void *,
 where each pointer will be filled with data from a different channel.
@@ -695,6 +712,21 @@ function SoapySDRDevice_getSampleRateRange(device, direction, channel)
     (ptr, len[])
 end
 
+"""
+Get the list of possible baseband sample rates.
+
+$CHANNEL_ARGS
+
+Returns a list of samples rates in samples per second
+
+$LL_DISCLAIMER
+"""
+function SoapySDRDevice_listSampleRates(device, direction, channel)
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_listSampleRates, lib), Ptr{Float64}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, len)
+    (ptr, len[])
+end
+
 
 """
 List available tunable elements in the chain.
@@ -728,4 +760,277 @@ function SoapySDRDevice_setFrequencyComponent(device, direction, channel, name, 
         device, direction, channel, name, val)
     @assert err == 0
     return nothing
+end
+
+
+##############
+## TIME API ##
+##############
+
+"""
+Get the list of available time sources.
+
+param device a pointer to a device instance
+param [out] length the number of sources
+return a list of time source names
+"""
+function SoapySDRDevice_listTimeSources(device)
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_listTimeSources, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Ref{Csize_t}), device, len)
+    (ptr, len[])
+end
+
+"""
+Set the time source on the device
+
+param device a pointer to a device instance
+param source the name of a time source
+return an error code or 0 for success
+"""
+function SoapySDRDevice_setTimeSource(device, source)
+    ptr = @check_error ccall((:SoapySDRDevice_setTimeSource, lib), Cstring, (Ptr{SoapySDRDevice}, Cstring), device, source)
+    ptr
+end
+
+"""
+Get the time source of the device
+
+param device a pointer to a device instance
+return the name of a time source
+"""
+function SoapySDRDevice_getTimeSource(device)
+    ptr = @check_error ccall((:SoapySDRDevice_getTimeSource, lib), Cstring, (Ptr{SoapySDRDevice},), device)
+    ptr
+end
+
+"""
+Does this device have a hardware clock?
+
+param device a pointer to a device instance
+param what optional argument
+return true if the hardware clock exists
+"""
+function SoapySDRDevice_hasHardwareTime(device, what)
+    @check_error ccall((:SoapySDRDevice_hasHardwareTime, lib), Bool, (Ptr{SoapySDRDevice}, Cstring), device, what)
+end
+
+"""
+Read the time from the hardware clock on the device.
+The what argument can refer to a specific time counter.
+
+param device a pointer to a device instance
+param what optional argument
+return the time in nanoseconds
+"""
+function SoapySDRDevice_getHardwareTime(device, what)
+    @check_error ccall((:SoapySDRDevice_getHardwareTime, lib), Clonglong, (Ptr{SoapySDRDevice}, Cstring), device, what)
+end
+
+"""
+Write the time to the hardware clock on the device.
+The what argument can refer to a specific time counter.
+
+param device a pointer to a device instance
+param timeNs time in nanoseconds
+param what optional argument
+return 0 for success or error code on failure
+"""
+function SoapySDRDevice_setHardwareTime(device, timeNs, what)
+    @check_error ccall((:SoapySDRDevice_setHardwareTime, lib), Cvoid, (Ptr{SoapySDRDevice}, Clonglong, Cstring), device, timeNs, what)
+end
+
+
+
+##################
+## Clocking API ##
+##################
+"""
+Set the master clock rate of the device.
+
+param device a pointer to a device instance
+param rate the clock rate in Hz
+return an error code or 0 for success
+"""
+function SoapySDRDevice_setMasterClockRate(device,rate);
+    @check_error ccall((:SoapySDRDevice_setMasterClockRate, lib), Cvoid, (Ptr{SoapySDRDevice}, Cdouble), device, rate)
+end
+
+"""
+Get the master clock rate of the device.
+
+param device a pointer to a device instance
+return the clock rate in Hz
+"""
+function SoapySDRDevice_getMasterClockRate(device)
+    @check_error ccall((:SoapySDRDevice_getMasterClockRate, lib), Cdouble, (Ptr{SoapySDRDevice},), device)
+end
+
+"""
+Get the range of available master clock rates.
+
+param device a pointer to a device instance
+param [out] length the number of ranges
+return a list of clock rate ranges in Hz
+"""
+function SoapySDRDevice_getMasterClockRates(device)
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_getMasterClockRates, lib), Ptr{SoapySDRRange}, (Ptr{SoapySDRDevice}, Ref{Csize_t}), device, len)
+    (ptr, len[])
+end
+
+"""
+Set the reference clock rate of the device.
+
+param device a pointer to a device instance
+param rate the clock rate in Hz
+return an error code or 0 for success
+"""
+function SoapySDRDevice_setReferenceClockRate(device, rate)
+    @check_error ccall((:SoapySDRDevice_setReferenceClockRate, lib), Cvoid, (Ptr{SoapySDRDevice}, Cdouble), device, rate)
+end
+
+"""
+Get the reference clock rate of the device.
+
+param device a pointer to a device instance
+return the clock rate in Hz
+"""
+function SoapySDRDevice_getReferenceClockRate(device)
+    @check_error ccall((:SoapySDRDevice_getReferenceClockRate, lib), Cdouble, (Ptr{SoapySDRDevice},), device)
+end
+
+"""
+Get the range of available reference clock rates.
+
+param device a pointer to a device instance
+
+return a list of clock rate ranges in Hz
+"""
+function SoapySDRDevice_getReferenceClockRates(device)
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_getReferenceClockRates, lib), Ptr{SoapySDRRange}, (Ptr{SoapySDRDevice}, Ref{Csize_t}), device, len)
+    (ptr, len[])
+end
+
+"""
+Get the list of available clock sources.
+
+param device a pointer to a device instance
+
+return a list of clock source names
+"""
+function SoapySDRDevice_listClockSources(device)
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_listClockSources, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Ref{Csize_t}), device, len)
+    (ptr, len[])
+end
+
+"""
+Set the clock source on the device
+
+param device a pointer to a device instance
+param source the name of a clock source
+return an error code or 0 for success
+"""
+function SoapySDRDevice_setClockSource(device, source)
+    @check_error ccall((:SoapySDRDevice_setClockSource, lib), Cstring, (Ptr{SoapySDRDevice}, Cstring), device, source)
+end
+
+"""
+Get the clock source of the device
+
+param device a pointer to a device instance
+return the name of a clock source
+"""
+function SoapySDRDevice_getClockSource(device)
+    ptr = @check_error ccall((:SoapySDRDevice_getClockSource, lib), Cstring, (Ptr{SoapySDRDevice},), device)
+    ptr
+end
+
+################
+## SENSOR API ##
+################
+
+"""
+List the available global readback sensors.
+A sensor can represent a reference lock, RSSI, temperature.
+
+param device a pointer to a device instance
+param [out] length the number of sensor names
+return a list of available sensor string names
+"""
+function SoapySDRDevice_listSensors(device)
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_listSensors, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Ref{Csize_t}), device, len)
+    ptr, len[]
+end
+
+"""
+Get meta-information about a sensor.
+Example: displayable name, type, range.
+
+param device a pointer to a device instance
+param key the ID name of an available sensor
+return meta-information about a sensor
+"""
+function SoapySDRDevice_getSensorInfo(device, key)
+    @check_error ccall((:SoapySDRDevice_getSensorInfo, lib), SoapySDRArgInfo, (Ptr{SoapySDRDevice}, Cstring), device, key)
+end
+
+"""
+Readback a global sensor given the name.
+The value returned is a string which can represent
+a boolean ("true"/"false"), an integer, or float.
+
+param device a pointer to a device instance
+param key the ID name of an available sensor
+return the current value of the sensor
+"""
+function SoapySDRDevice_readSensor(device, key)
+    @check_error ccall((:SoapySDRDevice_readSensor, lib), Cstring, (Ptr{SoapySDRDevice}, Cstring), device, key)
+end
+
+"""
+List the available channel readback sensors.
+A sensor can represent a reference lock, RSSI, temperature.
+
+param device a pointer to a device instance
+param direction the channel direction RX or TX
+param channel an available channel on the device
+
+return a list of available sensor string names
+"""
+function SoapySDRDevice_listChannelSensors(device, direction, channel)
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_listSensors, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, len)
+    (ptr, len[])
+end
+
+"""
+Get meta-information about a channel sensor.
+Example: displayable name, type, range.
+
+param device a pointer to a device instance
+param direction the channel direction RX or TX
+param channel an available channel on the device
+param key the ID name of an available sensor
+return meta-information about a sensor
+"""
+function SoapySDRDevice_getChannelSensorInfo(device, direction, channel, key)
+    @check_error ccall((:SoapySDRDevice_getChannelSensorInfo, lib), SoapySDRArgInfo, (Ptr{SoapySDRArgInfo}, Cint, Csize_t, Cstring), device, direction, channel, key)
+end
+
+"""
+Readback a channel sensor given the name.
+The value returned is a string which can represent
+a boolean ("true"/"false"), an integer, or float.
+
+param device a pointer to a device instance
+param direction the channel direction RX or TX
+param channel an available channel on the device
+param key the ID name of an available sensor
+return the current value of the sensor
+"""
+function SoapySDRDevice_readChannelSensor(device, direction, channel, key)
+    @check_error ccall((:SoapySDRDevice_readChannelSensor, lib), Cstring, (Ptr{SoapySDRArgInfo}, Cint, Csize_t, Cstring), device, direction, channel, key)
 end

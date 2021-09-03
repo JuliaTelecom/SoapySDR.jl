@@ -1,5 +1,7 @@
 using SoapySDR
 using Test
+using Unitful
+using Intervals
 
 const sd = SoapySDR
 
@@ -45,28 +47,80 @@ end
     @test_throws ErrorException sd.StreamFormat("nonsense")
 end
 @testset "High Level API" begin
+
     @test length(Devices()) == 1
     dev = Devices()[1]
 
+    @test typeof(dev) == sd.Device
     @test typeof(dev.info) == sd.OwnedKWArgs
     @test dev.driver == :LoopbackDriver
     @test dev.hardware == :LoopbackHardware
     dev.hardwareinfo #TODO
-
     rx_chan = dev.rx[1]
     tx_chan = dev.tx[1]
 
-    @show rx_chan.bandwidth
-    @show rx_chan.frequency
-    @show rx_chan.gain
-    @show rx_chan.sample_rate
+    @test typeof(rx_chan) == sd.Channel
+    @test typeof(tx_chan) == sd.Channel
+
+
+    # Test sensor API
+    sensor_list = sd.list_sensors(dev)
+    @test map(sensor -> sd.read_sensor(dev, sensor), sensor_list) == ["true", "1.0", "1.0"]
+    sensor_info_list = map(sensor -> sd.get_sensor_info(dev, sensor), sensor_list)
+
+
+    # test time API
+    time_sources = sd.list_time_sources(dev)
+    @test time_sources == ["sw_ticks", "hw_ticks"]
+    @test sd.get_time_source(dev) == "sw_ticks"
+    sd.set_time_source!(dev, "hw_ticks")
+    @test sd.get_time_source(dev) == "hw_ticks"
+
+
+
+
+    @show sd.list_sample_rates(rx_chan)
+
+    #@test gainrange(rx_chan) == 0u"dB"..53u"dB"
+    #@test gainrange(tx_chan) == 0u"dB"..53u"dB"
+    @show sd.frequency_ranges(rx_chan)
+    @show sd.frequency_ranges(tx_chan)
+    @show sd.bandwidth_ranges(rx_chan)
+    @show sd.bandwidth_ranges(tx_chan)
+    @show sd.sample_rate_ranges(rx_chan)
+    @show sd.sample_rate_ranges(tx_chan)
+
+    #@show sd.GainElement(rx_chan)
+    #@show sd.GainElement(tx_chan)
+
+    # Loopback initialized defaults
+    #@test rx_chan.bandwidth == 2.048e6u"Hz"
+    #@test rx_chan.frequency == 1.0e8u"Hz"
+    #@test rx_chan.gain == -53u"dB"
+    #@test rx_chan.sample_rate == 2.048e6u"Hz"
+    @show rx_chan.info
+    @show rx_chan.antenna
+    @show rx_chan.dc_offset_mode
+    @show rx_chan.dc_offset
+    @show rx_chan.iq_balance_mode
+    @show rx_chan.iq_balance
+    @show rx_chan.gain_mode
+    #@show rx_chan.gain_profile
+    @show rx_chan.frequency_correction
+
+    #@test tx_chan.bandwidth == 2.048e6u"Hz"
+    #@test tx_chan.frequency == 1.0e8u"Hz"
+    #@test tx_chan.gain == -53u"dB"
+    #@test tx_chan.sample_rate == 2.048e6u"Hz"
+
+    # setter/getter tests
+    rx_chan.sample_rate = 1e5u"Hz"
+    #@test rx_chan.sample_rate == 1e5u"Hz"
 
 
     rx_stream = sd.Stream(ComplexF32, [rx_chan])
 
     tx_stream = sd.Stream(ComplexF32, [tx_chan])
 
-    #@test dev.tx == [Channel(Loopback, Tx, 0)]
-    #@test dev.rx == [Channel(Loopback, Rx, 0)]
 end
 end
