@@ -7,7 +7,7 @@ version = v"0.1.0"
 
 # Collection of sources required to complete build
 sources = [
-    GitSource("https://github.com/JuliaTelecom/SoapyLoopback.git", "97b07744d83f21e031c1e7a7263d8b6c0567b684")
+    GitSource("https://github.com/JuliaTelecom/SoapyLoopback.git", "da9930830f6e7a97360fc959665c513a2d7aa4ea")
 ]
 
 dependencies = [
