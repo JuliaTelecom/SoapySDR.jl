@@ -896,20 +896,23 @@ end
 Get the range of available reference clock rates.
 
 param device a pointer to a device instance
-param [out] length the number of sources
+
 return a list of clock rate ranges in Hz
 """
-function SoapySDRDevice_getReferenceClockRates(device, length)
+function SoapySDRDevice_getReferenceClockRates(device)
 end
 
 """
 Get the list of available clock sources.
 
 param device a pointer to a device instance
-param [out] length the number of sources
+
 return a list of clock source names
 """
-function SoapySDRDevice_listClockSources(device, length)
+function SoapySDRDevice_listClockSources(device)
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_listClockSources, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Ref{Csize_t}), device, len)
+    (ptr, len[])
 end
 
 """
@@ -920,6 +923,7 @@ param source the name of a clock source
 return an error code or 0 for success
 """
 function SoapySDRDevice_setClockSource(device, source)
+    @check_error ccall((:SoapySDRDevice_setClockSource, lib), Cstring, (Ptr{SoapySDRDevice}, Cstring), device, source)
 end
 
 """
@@ -929,7 +933,8 @@ param device a pointer to a device instance
 return the name of a clock source
 """
 function SoapySDRDevice_getClockSource(device)
-
+    ptr = @check_error ccall((:SoapySDRDevice_getClockSource, lib), Cstring, (Ptr{SoapySDRDevice},), device)
+    ptr
 end
 
 ################
@@ -959,7 +964,7 @@ param key the ID name of an available sensor
 return meta-information about a sensor
 """
 function SoapySDRDevice_getSensorInfo(device, key)
-    # TODO, needs ArgInfo
+    @check_error ccall((:SoapySDRDevice_getSensorInfo, lib), SoapySDRArgInfo, (Ptr{SoapySDRDevice}, Cstring), device, key)
 end
 
 """
@@ -982,12 +987,15 @@ A sensor can represent a reference lock, RSSI, temperature.
 param device a pointer to a device instance
 param direction the channel direction RX or TX
 param channel an available channel on the device
-param [out] length the number of sensor names
+
 return a list of available sensor string names
 """
-function SoapySDRDevice_listChannelSensors(device, direction, channel, length)
-    #TODO
+function SoapySDRDevice_listChannelSensors(device, direction, channel)
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_listSensors, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, len)
+    (ptr, len[])
 end
+
 """
 Get meta-information about a channel sensor.
 Example: displayable name, type, range.
@@ -999,7 +1007,7 @@ param key the ID name of an available sensor
 return meta-information about a sensor
 """
 function SoapySDRDevice_getChannelSensorInfo(device, direction, channel, key)
-    #TODO
+    @check_error ccall((:SoapySDRDevice_getChannelSensorInfo, lib), SoapySDRArgInfo, (Ptr{SoapySDRArgInfo}, Cint, Csize_t, Cstring), device, direction, channel, key)
 end
 
 """
@@ -1014,5 +1022,5 @@ param key the ID name of an available sensor
 return the current value of the sensor
 """
 function SoapySDRDevice_readChannelSensor(device, direction, channel, key)
-    #TODO
+    @check_error ccall((:SoapySDRDevice_readChannelSensor, lib), Cstring, (Ptr{SoapySDRArgInfo}, Cint, Csize_t, Cstring), device, direction, channel, key)
 end
