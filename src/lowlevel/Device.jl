@@ -852,6 +852,7 @@ param rate the clock rate in Hz
 return an error code or 0 for success
 """
 function SoapySDRDevice_setMasterClockRate(device,rate);
+    @check_error ccall((:SoapySDRDevice_setMasterClockRate, lib), Cvoid, (Ptr{SoapySDRDevice}, Cdouble), device, rate)
 end
 
 """
@@ -861,6 +862,7 @@ param device a pointer to a device instance
 return the clock rate in Hz
 """
 function SoapySDRDevice_getMasterClockRate(device)
+    @check_error ccall((:SoapySDRDevice_getMasterClockRate, lib), Cdouble, (Ptr{SoapySDRDevice},), device)
 end
 
 """
@@ -870,7 +872,10 @@ param device a pointer to a device instance
 param [out] length the number of ranges
 return a list of clock rate ranges in Hz
 """
-function SoapySDRDevice_getMasterClockRates(device, length)
+function SoapySDRDevice_getMasterClockRates(device)
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_getMasterClockRates, lib), Ptr{SoapySDRRange}, (Ptr{SoapySDRDevice}, Ref{Csize_t}), device, len)
+    (ptr, len[])
 end
 
 """
@@ -881,6 +886,7 @@ param rate the clock rate in Hz
 return an error code or 0 for success
 """
 function SoapySDRDevice_setReferenceClockRate(device, rate)
+    @check_error ccall((:SoapySDRDevice_setReferenceClockRate, lib), Cvoid, (Ptr{SoapySDRDevice}, Cdouble), device, rate)
 end
 
 """
@@ -890,6 +896,7 @@ param device a pointer to a device instance
 return the clock rate in Hz
 """
 function SoapySDRDevice_getReferenceClockRate(device)
+    @check_error ccall((:SoapySDRDevice_getReferenceClockRate, lib), Cdouble, (Ptr{SoapySDRDevice},), device)
 end
 
 """
@@ -900,6 +907,9 @@ param device a pointer to a device instance
 return a list of clock rate ranges in Hz
 """
 function SoapySDRDevice_getReferenceClockRates(device)
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_getReferenceClockRates, lib), Ptr{SoapySDRRange}, (Ptr{SoapySDRDevice}, Ref{Csize_t}), device, len)
+    (ptr, len[])
 end
 
 """

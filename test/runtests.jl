@@ -47,6 +47,7 @@ end
     @test_throws ErrorException sd.StreamFormat("nonsense")
 end
 @testset "High Level API" begin
+
     @test length(Devices()) == 1
     dev = Devices()[1]
 
@@ -55,11 +56,18 @@ end
     @test dev.driver == :LoopbackDriver
     @test dev.hardware == :LoopbackHardware
     dev.hardwareinfo #TODO
+    rx_chan = dev.rx[1]
+    tx_chan = dev.tx[1]
+
+    @test typeof(rx_chan) == sd.Channel
+    @test typeof(tx_chan) == sd.Channel
 
 
     # Test sensor API
     sensor_list = sd.list_sensors(dev)
     @test map(sensor -> sd.read_sensor(dev, sensor), sensor_list) == ["true", "1.0", "1.0"]
+    sensor_info_list = map(sensor -> sd.get_sensor_info(dev, sensor), sensor_list)
+
 
     # test time API
     time_sources = sd.list_time_sources(dev)
@@ -70,11 +78,6 @@ end
 
 
 
-    rx_chan = dev.rx[1]
-    tx_chan = dev.tx[1]
-
-    @test typeof(rx_chan) == sd.Channel
-    @test typeof(tx_chan) == sd.Channel
 
     @show sd.list_sample_rates(rx_chan)
 
