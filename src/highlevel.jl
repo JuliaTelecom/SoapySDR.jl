@@ -242,6 +242,16 @@ function Base.show(io::IO, ::MIME"text/plain", c::Channel)
     end
 end
 
+"""
+    native_stream_format(c::Channel)
+
+Returns the format type and fullscale resolution of the native stream.
+"""
+function native_stream_format(c::Channel)
+    fmt, fullscale = SoapySDRDevice_getNativeStreamFormat(c.device.ptr, c.direction, c.idx)
+    _stream_type_soapy2jl[unsafe_string(fmt)], fullscale
+end
+
 struct ChannelList <: AbstractVector{Channel}
     device::Device
     direction::Direction
@@ -456,8 +466,8 @@ function Base.print(io::IO, sf::StreamFormat)
 end
 
 function StreamFormat(s::String)
-    if haskey(_stream_type_map, s)
-        T = _stream_type_map[s]
+    if haskey(_stream_type_soapy2jl, s)
+        T = _stream_type_soapy2jl[s]
         return StreamFormat(T)
     else
         error("Unknown format")
