@@ -370,6 +370,24 @@ function SoapySDRDevice_getStreamFormats(device, direction, channel)
 end
 
 """
+Get the hardware's native stream format for this channel.
+This is the format used by the underlying transport layer,
+and the direct buffer access API calls (when available).
+
+param device a pointer to a device instance
+param direction the channel direction RX or TX
+param channel an available channel on the device
+param [out] fullScale the maximum possible value
+return the native stream buffer format string
+"""
+function SoapySDRDevice_getNativeStreamFormat(device, direction, channel)
+    #SOAPY_SDR_API char *SoapySDRDevice_getNativeStreamFormat(const SoapySDRDevice *device, const int direction, const size_t channel, double *fullScale);
+    fullscale = Ref{Cdouble}()
+    fmt = @check_error ccall((:SoapySDRDevice_getNativeStreamFormat, lib), Cstring, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Cdouble}), device, direction, channel, fullscale)
+    return fmt, fullscale[]
+end
+
+"""
 Initialize a stream given a list of channels and stream arguments.
 The implementation may change switches or power-up components.
 All stream API calls should be usable with the new stream object
