@@ -7,20 +7,28 @@ version = "0.1.0"
 
 [deps]
 Intervals = "d8418881-c3e1-53bb-8760-2df7ec849ed5"
+SoapyLMS7_jll = "e7ed14a0-13eb-5dc7-93e2-6133b2eb8bed"
+SoapyRTLSDR_jll = "7bed6c1d-f2db-586c-9908-488058499e34"
+SoapyUHD_jll = "5710b6fb-c5a3-5f8f-93a5-d73c28ee0e84"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 soapysdr_jll = "343a40d9-ed99-5d34-8b56-649aaa4ecee6"
+xtrx_jll = "f7ce82bc-bc1e-5125-bd1d-6a84dd39bfb4"
 
 [compat]
-soapysdr_jll  = "0.8"
-Unitful = "1"
 Intervals = "1"
+Unitful = "1"
 julia = "1.6"
+soapysdr_jll = "0.8"
+SoapyLMS7_jll = "20.10.0"
+SoapyRTLSDR_jll = "0.3"
+SoapyUHD_jll = "0.4"
+xtrx_jll = "0.1"
 
 [extras]
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 BinaryBuilder = "12aac903-9f7c-5d81-afc2-d9565ea332ae"
-Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["Test", "Pkg", "BinaryBuilder", "Libdl"]
