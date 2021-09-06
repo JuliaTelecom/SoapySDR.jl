@@ -2,6 +2,9 @@
 # SoapySDR Modules API
 #
 # https://github.com/pothosware/SoapySDR/blob/1cf5a539a21414ff509ff7d0eedfc5fa8edb90c6/include/SoapySDR/Modules.h
+#
+# NOTE: This is an API for manually loading Soapy Modules. It is recommended that developers
+# package via BinaryBuilder+Yggdrasil for Julia.
 
 """ Query the root installation path"""
 function SoapySDR_getRootPath()
