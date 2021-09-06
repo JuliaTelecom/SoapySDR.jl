@@ -3,9 +3,17 @@ module SoapySDR
 using soapysdr_jll
 const lib = soapysdr_jll.libsoapysdr
 
+# Julia support for Units and Interval for Highlevel API
 using Intervals
 using Unitful
 using Unitful.DefaultSymbols
+
+# SoapySDR modules in Yggdrasil
+using SoapyLMS7_jll
+using SoapyRTLSDR_jll
+using SoapyUHD_jll
+using xtrx_jll
+
 const dB = u"dB"
 const GC = Base.GC
 
