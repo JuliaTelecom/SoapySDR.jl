@@ -536,10 +536,11 @@ Base.length(sb::SampleBuffer) = length(sb.bufs[1])
 function Base.read(s::Stream{T}, n::Int; kwargs...) where {T}
     bufs = ntuple(_->Vector{T}(undef, n), s.nchannels)
     nread, flags, timens = _read!(s, bufs; kwargs...)
-    if nread != n
-        @info("assertion debugging", nread, n)
-        @assert nread == n
-    end
+    # By definition of read, we can allow fewer samples than requested
+    #if nread != n
+    #    @info("assertion debugging", nread, n)
+    #    @assert nread == n
+    #end
     SampleBuffer(bufs, flags, timens)
 end
 
