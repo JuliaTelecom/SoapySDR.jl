@@ -460,37 +460,6 @@ end
 
 ### Streams
 
-#TODO {T} ?
-struct StreamFormat
-    T
-end
-function Base.print(io::IO, sf::StreamFormat)
-    T = sf.T
-    if T <: Complex
-        print(io, 'C')
-        T = real(T)
-    end
-    if T <: AbstractFloat
-        print(io, 'F')
-    elseif T <: Signed
-        print(io, 'S')
-    elseif T <: Unsigned
-        print(io, 'U')
-    else
-        error("Unknown format")
-    end
-    print(io, 8*sizeof(T))
-end
-
-function StreamFormat(s::String)
-    if haskey(_stream_type_soapy2jl, s)
-        T = _stream_type_soapy2jl[s]
-        return StreamFormat(T)
-    else
-        error("Unknown format")
-    end
-end
-
 function stream_formats(c::Channel)
     slist = StringList(SoapySDRDevice_getStreamFormats(c.device.ptr, c.direction, c.idx)...)
     map(StreamFormat, slist)
@@ -516,14 +485,13 @@ function Base.show(io::IO, s::Stream)
     print(io, "Stream on ", s.d.hardware)
 end
 
-function Stream(format::Union{StreamFormat, Type}, device::Device, direction::Direction; kwargs...)
-    format = StreamFormat(format) # TODO isa(format, StreamFormat) ? format : StreamFormat(format)?
+function Stream(format::Type, device::Device, direction::Direction; kwargs...)
     isempty(kwargs) || error("TODO")
     Stream{T}(device, 1, SoapySDRDevice_setupStream(device, direction, string(format), C_NULL, 0, C_NULL))
 end
 
-function Stream(format::Union{StreamFormat, Type}, channels::Vector{Channel}; kwargs...)
-    format = StreamFormat(format) # TODO isa(format, StreamFormat) ? format : StreamFormat(format)?
+function Stream(format::Type, channels::Vector{Channel}; kwargs...)
+    soapy_format = _stream_map_jl2soapy(format)
     isempty(kwargs) || error("TODO")
     isempty(channels) && error("Must specify at least one channel or use the device/direction constructor for automatic.")
     device = first(channels).device
@@ -533,7 +501,15 @@ function Stream(format::Union{StreamFormat, Type}, channels::Vector{Channel}; kw
             end
         throw(ArgumentError("Channels must agree on device and direction"))
     end
-    Stream{format.T}(device, length(channels), SoapySDRDevice_setupStream(device, direction, string(format), map(x->x.idx, channels), length(channels), C_NULL))
+    Stream{format}(device, length(channels), SoapySDRDevice_setupStream(device, direction, soapy_format, map(x->x.idx, channels), length(channels), C_NULL))
+end
+
+function Stream(channels::Vector{Channel}; kwargs...)
+    native_format = promote_type(map(c -> native_stream_format(c)[1], channels)...) # native_stream_format -> (type, fullsclae)
+    if native_format <: AbstractComplexInteger
+        @warn "$(string(native_format)) may be poorly supported, it is recommend to specify a different type with Stream(format::Type, channels)"
+    end
+    Stream(native_format, channels; kwargs...)
 end
 
 function _read!(s::Stream{T}, buffers::NTuple{N, Vector{T}}; timeout=nothing) where {N, T}
