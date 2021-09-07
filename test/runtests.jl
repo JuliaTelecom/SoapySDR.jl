@@ -61,6 +61,8 @@ end
     @test typeof(rx_chan) == sd.Channel
     @test typeof(tx_chan) == sd.Channel
 
+    @test sd.native_stream_format(rx_chan)[1] == SoapySDR.ComplexInt{12} #, fullscale
+    @test sd.stream_formats(rx_chan) == [Complex{Int8}, SoapySDR.ComplexInt{12}, Complex{Int16}, ComplexF32]
 
     # Test sensor API
     sensor_list = sd.list_sensors(dev)

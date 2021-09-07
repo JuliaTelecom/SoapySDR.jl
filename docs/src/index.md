@@ -51,7 +51,7 @@ channel.gain = 42u"dB"
 channel.sample_rate = 2.1u"MHz"
 
 # Open a (potentially multichannel) stream on this channel
-stream = SoapySDR.Stream(ComplexF32, [channel])
+stream = SoapySDR.Stream([channel])
 SoapySDR.activate!(stream)
 
 # Write out random noise
@@ -70,9 +70,9 @@ channel.gain = 42u"dB"
 channel.sample_rate = 2.1u"MHz"
 
 # Open a (potentially multichannel) stream on this channel
-stream = SoapySDR.Stream(ComplexF32, [channel])
+stream = SoapySDR.Stream([channel])
 SoapySDR.activate!(stream)
 
-# Collect data
-Base.read(stream, 10000)
+# Collect all available samples in the buffer
+Base.read(stream)
 ```

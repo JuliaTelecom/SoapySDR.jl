@@ -256,16 +256,6 @@ function Base.show(io::IO, ::MIME"text/plain", c::Channel)
     end
 end
 
-"""
-    native_stream_format(c::Channel)
-
-Returns the format type and fullscale resolution of the native stream.
-"""
-function native_stream_format(c::Channel)
-    fmt, fullscale = SoapySDRDevice_getNativeStreamFormat(c.device.ptr, c.direction, c.idx)
-    _stream_type_soapy2jl[unsafe_string(fmt)], fullscale
-end
-
 struct ChannelList <: AbstractVector{Channel}
     device::Device
     direction::Direction
@@ -458,11 +448,36 @@ struct FreqSpec{T}
     kwargs::Dict{Any, String}
 end
 
-### Streams
+### Stream Utility Functions
 
+"""
+    stream_formats(::Channel)
+
+Returns the stream formats supported by the device. 
+
+Note: Since Julia is a multiple dispatch and generic language, it is
+preferrable to use `native_stream_format(c::Channel)` for optimal processing throughput.
+Only use this function if non-standard formats such as Complex Int12 and Complex Int4
+are native to the device and not handled by dispatch on `Complex`.
+"""
 function stream_formats(c::Channel)
     slist = StringList(SoapySDRDevice_getStreamFormats(c.device.ptr, c.direction, c.idx)...)
-    map(StreamFormat, slist)
+    map(_stream_map_soapy2jl, slist)
+end
+
+# Internal, reflected in Stream.mtu
+function mtu(d::Device, stream::Ptr{SoapySDRStream})
+    SoapySDRDevice_getStreamMTU(d.ptr, stream)
+end
+
+"""
+    native_stream_format(c::Channel) -> Type, fullscale
+
+Returns the format type and fullscale resolution of the native stream.
+"""
+function native_stream_format(c::Channel)
+    fmt, fullscale = SoapySDRDevice_getNativeStreamFormat(c.device.ptr, c.direction, c.idx)
+    _stream_map_soapy2jl(unsafe_string(fmt)), fullscale
 end
 
 ## Stream
@@ -470,9 +485,10 @@ end
 mutable struct Stream{T}
     d::Device
     nchannels::Int
+    mtu::Int
     ptr::Ptr{SoapySDRStream}
     function Stream{T}(d::Device, nchannels::Int, ptr::Ptr{SoapySDRStream}) where {T}
-        this = new{T}(d, nchannels, ptr)
+        this = new{T}(d, nchannels, mtu(d, ptr), ptr)
         finalizer(SoapySDRDevice_closeStream, this)
         return this
     end
@@ -542,6 +558,10 @@ function Base.read(s::Stream{T}, n::Int; kwargs...) where {T}
     #    @assert nread == n
     #end
     SampleBuffer(bufs, flags, timens)
+end
+
+function Base.read(s::Stream; kwargs...)
+    read(s, s.mtu; kwargs...)
 end
 
 function activate!(s::Stream; flags = 0, timens = nothing, numElems=0)
