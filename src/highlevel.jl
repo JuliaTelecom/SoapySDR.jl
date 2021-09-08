@@ -201,6 +201,15 @@ function print_unit_interval(io::IO, min, max)
         print_unit(io, max)
     end
 end
+
+function print_unit_steprange(io::IO, min, max, step)
+    print_unit(io, min)
+    print(io, ":")
+    print_unit(io, step)
+    print(io, ":")
+    print_unit(io, max)
+end
+
 print_unit_interval(io::IO, x::Interval{<:Any, Closed, Closed}) =
     print_unit_interval(io, minimum(x), maximum(x))
 
@@ -208,6 +217,11 @@ using Intervals: Closed
 function print_hz_range(io::IO, x::Interval{<:Any, Closed, Closed})
     min, max = pick_freq_unit(minimum(x)), pick_freq_unit(maximum(x))
     print_unit_interval(io, min, max)
+end
+
+function print_hz_range(io::IO, x::AbstractRange)
+    min, step, max = pick_freq_unit(first(x)), pick_freq_unit(Base.step(x)), pick_freq_unit(last(x))
+    print_unit_steprange(io, min, max, step)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", c::Channel)
@@ -372,7 +386,10 @@ function _gainrange(soapyr::SoapySDRRange)
         # Represents an interval rather than a range
         return (soapyr.minimum*dB)..(soapyr.maximum*dB)
     end
-    return range(soapyr.minimum*dB; stop=soapyr.maximum*dB, step=soapyr.step*dB)
+    # TODO
+    @warn "Step ranges are not supported for gain elements. Returning Interval instead. Step: $(soapyr.step*dB)"
+    #return range(soapyr.minimum*dB; stop=soapyr.maximum*dB, step=soapyr.step*dB)
+    return (soapyr.minimum*dB)..(soapyr.maximum*dB)
 end
 
 function gainrange(c::Channel)

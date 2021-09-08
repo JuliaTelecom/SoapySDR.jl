@@ -1,6 +1,8 @@
 using SoapySDR
 using Test
 using Unitful
+using Unitful.DefaultSymbols
+const dB = u"dB"
 using Intervals
 
 const sd = SoapySDR
@@ -45,6 +47,30 @@ end
 
     # Should throw
     @test_throws ErrorException sd.StreamFormat("nonsense")
+end
+@testset "Ranges/Display" begin
+    intervalrange = sd.SoapySDRRange(0, 1, 0)
+    steprange = sd.SoapySDRRange(0, 1, 0.1)
+
+    intervalrangedb = sd._gainrange(intervalrange)
+    steprangedb = sd._gainrange(steprange) #TODO
+
+    intervalrangehz = sd._hzrange(intervalrange)
+    steprangehz = sd._hzrange(steprange)
+
+    hztype = typeof(1.0*Hz)
+
+    @test typeof(intervalrangedb) == Interval{Gain{Unitful.LogInfo{:Decibel, 10, 10}, :?, Float64}, Closed, Closed}
+    @test typeof(steprangedb) == Interval{Gain{Unitful.LogInfo{:Decibel, 10, 10}, :?, Float64}, Closed, Closed}
+    @test typeof(intervalrangehz) == Interval{hztype, Closed, Closed}
+    @test typeof(steprangehz) == StepRangeLen{hztype, Base.TwicePrecision{hztype}, Base.TwicePrecision{hztype}}
+
+    io = IOBuffer(read=true, write=true)
+
+    sd.print_hz_range(io, intervalrangehz)
+    @test String(take!(io)) == "00..0.001 kHz"
+    sd.print_hz_range(io, steprangehz)
+    @test String(take!(io)) == "00 Hz:0.0001 kHz:0.001 kHz"
 end
 @testset "High Level API" begin
 
