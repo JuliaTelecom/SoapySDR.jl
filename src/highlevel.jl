@@ -256,16 +256,6 @@ function Base.show(io::IO, ::MIME"text/plain", c::Channel)
     end
 end
 
-"""
-    native_stream_format(c::Channel)
-
-Returns the format type and fullscale resolution of the native stream.
-"""
-function native_stream_format(c::Channel)
-    fmt, fullscale = SoapySDRDevice_getNativeStreamFormat(c.device.ptr, c.direction, c.idx)
-    _stream_type_soapy2jl[unsafe_string(fmt)], fullscale
-end
-
 struct ChannelList <: AbstractVector{Channel}
     device::Device
     direction::Direction
@@ -458,42 +448,36 @@ struct FreqSpec{T}
     kwargs::Dict{Any, String}
 end
 
-### Streams
+### Stream Utility Functions
 
-#TODO {T} ?
-struct StreamFormat
-    T
-end
-function Base.print(io::IO, sf::StreamFormat)
-    T = sf.T
-    if T <: Complex
-        print(io, 'C')
-        T = real(T)
-    end
-    if T <: AbstractFloat
-        print(io, 'F')
-    elseif T <: Signed
-        print(io, 'S')
-    elseif T <: Unsigned
-        print(io, 'U')
-    else
-        error("Unknown format")
-    end
-    print(io, 8*sizeof(T))
-end
+"""
+    stream_formats(::Channel)
 
-function StreamFormat(s::String)
-    if haskey(_stream_type_soapy2jl, s)
-        T = _stream_type_soapy2jl[s]
-        return StreamFormat(T)
-    else
-        error("Unknown format")
-    end
-end
+Returns the stream formats supported by the device. 
 
+Note: Since Julia is a multiple dispatch and generic language, it is
+preferrable to use `native_stream_format(c::Channel)` for optimal processing throughput.
+Only use this function if non-standard formats such as Complex Int12 and Complex Int4
+are native to the device and not handled by dispatch on `Complex`.
+"""
 function stream_formats(c::Channel)
     slist = StringList(SoapySDRDevice_getStreamFormats(c.device.ptr, c.direction, c.idx)...)
-    map(StreamFormat, slist)
+    map(_stream_map_soapy2jl, slist)
+end
+
+# Internal, reflected in Stream.mtu
+function mtu(d::Device, stream::Ptr{SoapySDRStream})
+    SoapySDRDevice_getStreamMTU(d.ptr, stream)
+end
+
+"""
+    native_stream_format(c::Channel) -> Type, fullscale
+
+Returns the format type and fullscale resolution of the native stream.
+"""
+function native_stream_format(c::Channel)
+    fmt, fullscale = SoapySDRDevice_getNativeStreamFormat(c.device.ptr, c.direction, c.idx)
+    _stream_map_soapy2jl(unsafe_string(fmt)), fullscale
 end
 
 ## Stream
@@ -501,9 +485,10 @@ end
 mutable struct Stream{T}
     d::Device
     nchannels::Int
+    mtu::Int
     ptr::Ptr{SoapySDRStream}
     function Stream{T}(d::Device, nchannels::Int, ptr::Ptr{SoapySDRStream}) where {T}
-        this = new{T}(d, nchannels, ptr)
+        this = new{T}(d, nchannels, mtu(d, ptr), ptr)
         finalizer(SoapySDRDevice_closeStream, this)
         return this
     end
@@ -516,14 +501,13 @@ function Base.show(io::IO, s::Stream)
     print(io, "Stream on ", s.d.hardware)
 end
 
-function Stream(format::Union{StreamFormat, Type}, device::Device, direction::Direction; kwargs...)
-    format = StreamFormat(format) # TODO isa(format, StreamFormat) ? format : StreamFormat(format)?
+function Stream(format::Type, device::Device, direction::Direction; kwargs...)
     isempty(kwargs) || error("TODO")
     Stream{T}(device, 1, SoapySDRDevice_setupStream(device, direction, string(format), C_NULL, 0, C_NULL))
 end
 
-function Stream(format::Union{StreamFormat, Type}, channels::Vector{Channel}; kwargs...)
-    format = StreamFormat(format) # TODO isa(format, StreamFormat) ? format : StreamFormat(format)?
+function Stream(format::Type, channels::Vector{Channel}; kwargs...)
+    soapy_format = _stream_map_jl2soapy(format)
     isempty(kwargs) || error("TODO")
     isempty(channels) && error("Must specify at least one channel or use the device/direction constructor for automatic.")
     device = first(channels).device
@@ -533,7 +517,15 @@ function Stream(format::Union{StreamFormat, Type}, channels::Vector{Channel}; kw
             end
         throw(ArgumentError("Channels must agree on device and direction"))
     end
-    Stream{format.T}(device, length(channels), SoapySDRDevice_setupStream(device, direction, string(format), map(x->x.idx, channels), length(channels), C_NULL))
+    Stream{format}(device, length(channels), SoapySDRDevice_setupStream(device, direction, soapy_format, map(x->x.idx, channels), length(channels), C_NULL))
+end
+
+function Stream(channels::Vector{Channel}; kwargs...)
+    native_format = promote_type(map(c -> native_stream_format(c)[1], channels)...) # native_stream_format -> (type, fullsclae)
+    if native_format <: AbstractComplexInteger
+        @warn "$(string(native_format)) may be poorly supported, it is recommend to specify a different type with Stream(format::Type, channels)"
+    end
+    Stream(native_format, channels; kwargs...)
 end
 
 function _read!(s::Stream{T}, buffers::NTuple{N, Vector{T}}; timeout=nothing) where {N, T}
@@ -541,9 +533,9 @@ function _read!(s::Stream{T}, buffers::NTuple{N, Vector{T}}; timeout=nothing) wh
     buflen = length(first(buffers))
     @assert all(buffer->length(buffer) == buflen, buffers)
     @assert N == s.nchannels
-    n, flags, timens = SoapySDRDevice_readStream(s.d, s, Ref(map(pointer, buffers)), buflen, uconvert(u"μs", timeout).val)
+    nread, flags, timens = SoapySDRDevice_readStream(s.d, s, Ref(map(pointer, buffers)), buflen, uconvert(u"μs", timeout).val)
     timens = timens * u"ns"
-    n, flags, timens
+    nread, flags, timens
 end
 
 function Base.read!(s, buffers; kwargs...)
@@ -557,14 +549,29 @@ struct SampleBuffer{N, T}
 end
 Base.length(sb::SampleBuffer) = length(sb.bufs[1])
 
-function Base.read(s::Stream{T}, n::Int; kwargs...) where {T}
+"""
+read(s::SoapySDR.Stream, nb::Integer; all=true)
+
+Read at most nb bytes from s, returning a `SampleBuffer`
+
+If all is true (the default), this function will block repeatedly trying to read all requested bytes, until an error or
+end-of-file occurs. If all is false, at most one read call is performed, and the amount of data returned is device-dependent.
+Note that not all stream types support the all option.
+"""
+function Base.read(s::Stream{T}, n::Int; all=true, kwargs...) where {T}
     bufs = ntuple(_->Vector{T}(undef, n), s.nchannels)
     nread, flags, timens = _read!(s, bufs; kwargs...)
-    if nread != n
+    # By definition of read, we can allow fewer samples than requested, unless all=false
+    if nread != n && all
+        @info "could not read requested length, suggest using read(...;all=false)"
         @info("assertion debugging", nread, n)
         @assert nread == n
     end
     SampleBuffer(bufs, flags, timens)
+end
+
+function Base.read(s::Stream; all=true, kwargs...)
+    read(s, s.mtu; all=true, kwargs...)
 end
 
 function activate!(s::Stream; flags = 0, timens = nothing, numElems=0)
