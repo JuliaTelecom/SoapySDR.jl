@@ -533,9 +533,9 @@ function _read!(s::Stream{T}, buffers::NTuple{N, Vector{T}}; timeout=nothing) wh
     buflen = length(first(buffers))
     @assert all(buffer->length(buffer) == buflen, buffers)
     @assert N == s.nchannels
-    n, flags, timens = SoapySDRDevice_readStream(s.d, s, Ref(map(pointer, buffers)), buflen, uconvert(u"μs", timeout).val)
+    nread, flags, timens = SoapySDRDevice_readStream(s.d, s, Ref(map(pointer, buffers)), buflen, uconvert(u"μs", timeout).val)
     timens = timens * u"ns"
-    n, flags, timens
+    nread, flags, timens
 end
 
 function Base.read!(s, buffers; kwargs...)
@@ -549,19 +549,29 @@ struct SampleBuffer{N, T}
 end
 Base.length(sb::SampleBuffer) = length(sb.bufs[1])
 
-function Base.read(s::Stream{T}, n::Int; kwargs...) where {T}
+"""
+read(s::SoapySDR.Stream, nb::Integer; all=true)
+
+Read at most nb bytes from s, returning a `SampleBuffer`
+
+If all is true (the default), this function will block repeatedly trying to read all requested bytes, until an error or
+end-of-file occurs. If all is false, at most one read call is performed, and the amount of data returned is device-dependent.
+Note that not all stream types support the all option.
+"""
+function Base.read(s::Stream{T}, n::Int; all=true, kwargs...) where {T}
     bufs = ntuple(_->Vector{T}(undef, n), s.nchannels)
     nread, flags, timens = _read!(s, bufs; kwargs...)
-    # By definition of read, we can allow fewer samples than requested
-    #if nread != n
-    #    @info("assertion debugging", nread, n)
-    #    @assert nread == n
-    #end
+    # By definition of read, we can allow fewer samples than requested, unless all=false
+    if nread != n && all
+        @info "could not read requested length, suggest using read(...;all=false)"
+        @info("assertion debugging", nread, n)
+        @assert nread == n
+    end
     SampleBuffer(bufs, flags, timens)
 end
 
-function Base.read(s::Stream; kwargs...)
-    read(s, s.mtu; kwargs...)
+function Base.read(s::Stream; all=true, kwargs...)
+    read(s, s.mtu; all=true, kwargs...)
 end
 
 function activate!(s::Stream; flags = 0, timens = nothing, numElems=0)
