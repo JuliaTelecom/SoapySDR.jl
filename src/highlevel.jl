@@ -506,7 +506,7 @@ function Stream(format::Type, device::Device, direction::Direction; kwargs...)
     Stream{T}(device, 1, SoapySDRDevice_setupStream(device, direction, string(format), C_NULL, 0, C_NULL))
 end
 
-function Stream(format::Type, channels::Vector{Channel}; kwargs...)
+function Stream(format::Type, channels::AbstractVector{T}; kwargs...) where {T <: Channel}
     soapy_format = _stream_map_jl2soapy(format)
     isempty(kwargs) || error("TODO")
     isempty(channels) && error("Must specify at least one channel or use the device/direction constructor for automatic.")
@@ -520,7 +520,7 @@ function Stream(format::Type, channels::Vector{Channel}; kwargs...)
     Stream{format}(device, length(channels), SoapySDRDevice_setupStream(device, direction, soapy_format, map(x->x.idx, channels), length(channels), C_NULL))
 end
 
-function Stream(channels::Vector{Channel}; kwargs...)
+function Stream(channels::AbstractVector{T}; kwargs...) where {T <: Channel}
     native_format = promote_type(map(c -> native_stream_format(c)[1], channels)...) # native_stream_format -> (type, fullsclae)
     if native_format <: AbstractComplexInteger
         @warn "$(string(native_format)) may be poorly supported, it is recommend to specify a different type with Stream(format::Type, channels)"
