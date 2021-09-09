@@ -573,6 +573,40 @@ function SoapySDRDevice_closeStream(device, stream)
     @check_error ccall((:SoapySDRDevice_closeStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}), device, stream)
 end
 
+"""
+Readback status information about a stream.
+This call is typically used on a transmit stream
+to report time errors, underflows, and burst completion.
+
+**Client code compatibility:**
+Client code may continually poll readStreamStatus() in a loop.
+Implementations of readStreamStatus() should wait in the call
+for a status change event or until the timeout expiration.
+When stream status is not implemented on a particular stream,
+readStreamStatus() should return SOAPY_SDR_NOT_SUPPORTED.
+Client code may use this indication to disable a polling loop.
+
+param device a pointer to a device instance
+param stream the opaque pointer to a stream handle
+param chanMask to which channels this status applies
+param flags optional input flags and output flags
+param timeNs the buffer's timestamp in nanoseconds
+param timeoutUs the timeout in microseconds
+return 0 for success or error code like timeout
+"""
+function SoapySDRDevice_readStreamStatus(device, stream, channel_mask, flags, timeNs, timeoutUs)
+    #SOAPY_SDR_API int SoapySDRDevice_readStreamStatus(SoapySDRDevice *device,
+    #    SoapySDRStream *stream,
+    #    size_t *chanMask,
+    #    int *flags,
+    #    long long *timeNs,
+    #    const long timeoutUs);
+    flags = Ref{Cint}(flags)
+    @check_error ccall((:SoapySDRDevice_readStreamStatus, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Csize_t, Cint, Clonglong, Clong),
+                                                                       device, stream, channel_mask, flags, timeNs, timeoutUs)
+    flags[]
+end
+
 ### Various channel queries
 for (prop, T, may_be_missing, desc) in [
         (:DCOffsetMode, Bool, true, "automatic DC offset corrections mode"),
