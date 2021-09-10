@@ -601,10 +601,15 @@ function SoapySDRDevice_readStreamStatus(device, stream, channel_mask, flags, ti
     #    int *flags,
     #    long long *timeNs,
     #    const long timeoutUs);
+
     flags = Ref{Cint}(flags)
-    @check_error ccall((:SoapySDRDevice_readStreamStatus, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Csize_t, Cint, Clonglong, Clong),
+
+    # we really don't want to throw here since it is a check, so we return the "condition", really an "error code"
+    # This sometime varies between implementation and so both the flag and "condition" should be checked in the 
+    # high level API, though support for this call seems to vary between implementations
+    condition = ccall((:SoapySDRDevice_readStreamStatus, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Csize_t, Cint, Clonglong, Clong),
                                                                        device, stream, channel_mask, flags, timeNs, timeoutUs)
-    flags[]
+    condition, flags[]
 end
 
 ### Various channel queries
