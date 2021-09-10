@@ -123,10 +123,12 @@ end
     @test typeof(rx_stream) == sd.Stream{ComplexF32}
     tx_stream = sd.Stream(ComplexF32, [tx_chan])
     @test typeof(tx_stream) == sd.Stream{ComplexF32}
+    @test sd.streamtype(rx_stream) == ComplexF32
 
     rx_stream = sd.Stream([rx_chan])
     @test typeof(rx_stream) == sd.Stream{sd.ComplexInt{12}}
     tx_stream = sd.Stream([tx_chan])
     @test typeof(tx_stream) == sd.Stream{sd.ComplexInt{12}}
+    @test sd.streamtype(tx_stream) == sd.ComplexInt{12}
 end
 end

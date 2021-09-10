@@ -480,15 +480,26 @@ function native_stream_format(c::Channel)
     _stream_map_soapy2jl(unsafe_string(fmt)), fullscale
 end
 
-## Stream
+"""
+    SoapySDR.Stream(::AbstractVector{T}) where T <: Channel
 
+A stream is a data source or sink for data. It is created by passing a list of channels.
+
+fields:
+- d: the device
+- nchannels: the number of channels
+- mtu: the maximum transmission unit of the stream
+- fullscale: the fullscale resolution of the stream
+- ptr: the underlying SoapySDRStream object
+"""
 mutable struct Stream{T}
     d::Device
     nchannels::Int
     mtu::Int
+    fullscale::Float64
     ptr::Ptr{SoapySDRStream}
-    function Stream{T}(d::Device, nchannels::Int, ptr::Ptr{SoapySDRStream}) where {T}
-        this = new{T}(d, nchannels, mtu(d, ptr), ptr)
+    function Stream{T}(d::Device, nchannels::Int, mtu::Int, fullscale::Float64, ptr::Ptr{SoapySDRStream}) where {T}
+        this = new{T}(d, nchannels, mtu, fullscale, ptr)
         finalizer(SoapySDRDevice_closeStream, this)
         return this
     end
@@ -497,35 +508,50 @@ Base.cconvert(::Type{<:Ptr{SoapySDRStream}}, s::Stream) = s
 Base.unsafe_convert(::Type{<:Ptr{SoapySDRStream}}, s::Stream) = s.ptr
 SoapySDRDevice_closeStream(s::Stream) = SoapySDRDevice_closeStream(s.d, s)
 
+"""
+    streamtype(::SoapySDR.Stream)
+
+Get the type of a stream. Useful when using device native formats.
+"""
+streamtype(::Stream{T}) where T = T
+
 function Base.show(io::IO, s::Stream)
     print(io, "Stream on ", s.d.hardware)
 end
 
 function Stream(format::Type, device::Device, direction::Direction; kwargs...)
     isempty(kwargs) || error("TODO")
-    Stream{T}(device, 1, SoapySDRDevice_setupStream(device, direction, string(format), C_NULL, 0, C_NULL))
-end
-
-function Stream(format::Type, channels::AbstractVector{T}; kwargs...) where {T <: Channel}
     soapy_format = _stream_map_jl2soapy(format)
-    isempty(kwargs) || error("TODO")
-    isempty(channels) && error("Must specify at least one channel or use the device/direction constructor for automatic.")
-    device = first(channels).device
-    direction = first(channels).direction
-    if !all(channels) do channel
-                channel.device == device && channel.direction == direction
-            end
-        throw(ArgumentError("Channels must agree on device and direction"))
-    end
-    Stream{format}(device, length(channels), SoapySDRDevice_setupStream(device, direction, soapy_format, map(x->x.idx, channels), length(channels), C_NULL))
+    Stream{T}(device, 1, SoapySDRDevice_setupStream(device, direction, string(soapy_format), C_NULL, 0, C_NULL))
 end
 
 function Stream(channels::AbstractVector{T}; kwargs...) where {T <: Channel}
-    native_format = promote_type(map(c -> native_stream_format(c)[1], channels)...) # native_stream_format -> (type, fullsclae)
+    isempty(kwargs) || error("TODO")
+    isempty(channels) && error("Must specify at least one channel or use the device/direction constructor for automatic.")
+
+    # Check homogeneity
+    device = first(channels).device
+    direction = first(channels).direction
+    native_format, fullscale = native_stream_format(first(channels))
+    if !all(channels) do channel
+                cf, cfs = native_stream_format(channel)
+
+                channel.device == device &&
+                channel.direction == direction &&
+                cf == native_format &&
+                cfs == fullscale
+            end
+        throw(ArgumentError("Channels must agree on device, direction, and stream type!"))
+    end
     if native_format <: AbstractComplexInteger
         @warn "$(string(native_format)) may be poorly supported, it is recommend to specify a different type with Stream(format::Type, channels)"
     end
-    Stream(native_format, channels; kwargs...)
+
+    soapy_format = _stream_map_jl2soapy(native_format)
+
+    ptr = SoapySDRDevice_setupStream(device, direction, soapy_format, map(x->x.idx, channels), length(channels), C_NULL)
+
+    Stream{format}(device, length(channels), mtu, fullscale, ptr)
 end
 
 function _read!(s::Stream{T}, buffers::NTuple{N, Vector{T}}; timeout=nothing) where {N, T}
