@@ -528,7 +528,7 @@ function Stream(channels::AbstractVector{T}; kwargs...) where {T <: Channel}
     Stream(native_format, channels; kwargs...)
 end
 
-function _read!(s::Stream{T}, buffers::NTuple{N, Vector{T}}; timeout=nothing) where {N, T}
+function _read!(s::Stream{T}, buffers::NTuple{N, Vector{T}}; all=true, timeout=nothing) where {N, T}
     timeout === nothing && (timeout = 0.1u"s") # Default from SoapySDR upstream
     buflen = length(first(buffers))
     @assert all(buffer->length(buffer) == buflen, buffers)
@@ -542,6 +542,16 @@ function Base.read!(s, buffers; kwargs...)
     _read!(s, buffers; kwargs...)[1]
 end
 
+"""
+    SampleBuffer{N, T}
+
+Represents a buffer of samples, of `N` channels producing data of type `T`.
+
+Fields:
+    bufs::NTuple{N, Vector{T}}
+    flags::Cint
+    timens::typeof(1u"ns")
+"""
 struct SampleBuffer{N, T}
     bufs::NTuple{N, Vector{T}}
     flags::Cint
@@ -550,7 +560,7 @@ end
 Base.length(sb::SampleBuffer) = length(sb.bufs[1])
 
 """
-read(s::SoapySDR.Stream, nb::Integer; all=true)
+    read(s::SoapySDR.Stream, nb::Integer; all=true)
 
 Read at most nb bytes from s, returning a `SampleBuffer`
 
