@@ -502,10 +502,10 @@ param [out] timeNs the buffer's timestamp in nanoseconds
 param timeoutUs the timeout in microseconds
 return the number of elements read per buffer or error code
 """
-function SoapySDRDevice_readStream(device, stream, buffs, numElems, timeoutUs)
+function SoapySDRDevice_readStream(device, stream, buffs::BT, numElems, timeoutUs) where BT
     flags = Ref{Cint}()
     timeNs = Ref{Clonglong}()
-    nelems = @check_error ccall((:SoapySDRDevice_readStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Ptr{Cvoid}, Csize_t, Ptr{Cint}, Ptr{Clonglong}, Clong),
+    nelems = @check_error ccall((:SoapySDRDevice_readStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, BT, Csize_t, Ptr{Cint}, Ptr{Clonglong}, Clong),
         device, stream, buffs, numElems, flags, timeNs, timeoutUs)
     if nelems < 0
         throw(SoapySDRAPIError(nelems))
@@ -534,9 +534,9 @@ or timeout expiration.
 
 Returns the number of elements written per buffer, output flags
 """
-function SoapySDRDevice_writeStream(device, stream, buffs, numElems, flags, timeNs, timeoutUs)
+function SoapySDRDevice_writeStream(device, stream, buffs::BT, numElems, flags, timeNs, timeoutUs) where BT
     flags = Ref{Cint}(flags)
-    nelems = @check_error ccall((:SoapySDRDevice_writeStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Ptr{Cvoid}, Csize_t, Ptr{Cint}, Clonglong, Clong),
+    nelems = @check_error ccall((:SoapySDRDevice_writeStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, BT, Csize_t, Ptr{Cint}, Clonglong, Clong),
         device, stream, buffs, numElems, flags, timeNs, timeoutUs)
     if nelems < 0
         throw(SoapySDRAPIError(nelems))
