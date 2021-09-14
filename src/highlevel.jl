@@ -558,7 +558,9 @@ struct SampleBuffer{N, T}
     timens::Vector{Pair{Int, typeof(1u"ns")}}
 end
 Base.length(sb::SampleBuffer) = length(first(sb.bufs))
-
+Base.getindex(sb::SampleBuffer, i::Int) = sb.bufs[i]
+Base.setindex(sb::SampleBuffer, i::Int, v) = (sb.bufs[i] = v)
+Base.eachindex(::SampleBuffer{N,T}) where {N, T} = 1:N
 SampleBuffer(s::Stream) = SampleBuffer(s, s.mtu)
 
 function SampleBuffer(s::Stream{T}, length; round::RoundingMode{RM}=RoundDown, vectortype=Vector) where {T, RM}
@@ -582,9 +584,9 @@ function SampleBuffer(s::Stream{T}, length; round::RoundingMode{RM}=RoundDown, v
         @info "get MTU with SoapySDR.mtu(::Stream)."
     end
 
-    packet_count = length/s.mtu
+    packet_count = Int(length/s.mtu)
     bufs = ntuple(_->vectortype{T}(undef, length), s.nchannels)
-    SampleBuffer(bufs, length, Int(packet_count), Vector{Pair{Int, typeof(1u"ns")}}(undef, length))
+    SampleBuffer(bufs, length, packet_count, Vector{Pair{Int, typeof(1u"ns")}}(undef, packet_count))
 end
 
 
@@ -593,7 +595,7 @@ end
 
 Read data from the device into the given buffer.
 """
-function Base.read!(s::Stream{T}, samplebuffer::SampleBuffer{N, VT}; timeout=nothing) where {N, T, VT <: AbstractVector{T}}
+function Base.read!(s::Stream{T}, samplebuffer::SampleBuffer{N, VT}; timeout=nothing, activate=true, deactivate=true) where {N, T, VT <: AbstractVector{T}}
     timeout === nothing && (timeout = 0.1u"s") # Default from SoapySDR upstream
 
     # check length did not change
@@ -601,6 +603,7 @@ function Base.read!(s::Stream{T}, samplebuffer::SampleBuffer{N, VT}; timeout=not
         @assert length(samplebuffer.bufs[i]) == samplebuffer.length
     end
 
+    activate && activate!(s)
     for packet in 1:samplebuffer.packet_count
         offset = (packet-1)*s.mtu
         @show offset
@@ -616,6 +619,8 @@ function Base.read!(s::Stream{T}, samplebuffer::SampleBuffer{N, VT}; timeout=not
 
         samplebuffer.timens[packet] = (offset => timens)
     end
+    deactivate && deactivate!(s)
+
     samplebuffer
 end
 
@@ -629,7 +634,7 @@ function deactivate!(s::Stream; flags = 0, timens = nothing)
     nothing
 end
 
-function Base.write(s::Stream{T}, samplebuffer::SampleBuffer{N, VT}; timeout = nothing) where {N, T, VT <: AbstractVector{T}}
+function Base.write(s::Stream{T}, samplebuffer::SampleBuffer{N, VT}; timeout = nothing, activate=true, deactivate=true) where {N, T, VT <: AbstractVector{T}}
     timeout === nothing && (timeout = 0.1u"s") # Default from SoapySDR upstream
 
     # check length did not change
@@ -637,6 +642,7 @@ function Base.write(s::Stream{T}, samplebuffer::SampleBuffer{N, VT}; timeout = n
         @assert length(samplebuffer.bufs[i]) == samplebuffer.length
     end
 
+    activate && activate!(s)
     for packet in 1:samplebuffer.packet_count
         offset = (packet-1)*s.mtu
         
@@ -648,6 +654,8 @@ function Base.write(s::Stream{T}, samplebuffer::SampleBuffer{N, VT}; timeout = n
         end
 
     end
+    deactivate && deactivate!(s)
+
     samplebuffer
 end
 
