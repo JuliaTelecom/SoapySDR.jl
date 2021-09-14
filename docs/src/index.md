@@ -39,40 +39,44 @@ julia> using SoapySDR, SoapyRTLSDR_jll
 
 ### Transmitting and Receiving
 
-TX:
 ```
-# Open first TX-capable channel on first device
-channel = Devices()[1].tx[1]
+# Open all TX-capable channels on first device
+tx_channels = Devices()[1].tx
 
-# Configure channel with appropriate parameters
-channel.bandwidth = 800u"kHz"
-channel.frequency = 30u"MHz"
-channel.gain = 42u"dB"
-channel.sample_rate = 2.1u"MHz"
+# Open all RX-capable channels on first device
+rx_channels = Devices()[1].rx
 
-# Open a (potentially multichannel) stream on this channel
-stream = SoapySDR.Stream([channel])
-SoapySDR.activate!(stream)
+# Configure a TX channel with appropriate parameters
+# configure the RX channel with similar for e.g. a loopback test
+# Be sure to check your local regulations before transmitting!
+tx_channel[1].bandwidth = 800u"kHz"
+tx_channel[1].frequency = 30u"MHz"
+tx_channel[1].gain = 42u"dB"
+tx_channel[1].sample_rate = 2.1u"MHz"
 
-# Write out random noise
-Base.write(stream, (randn(ComplexF32, 10000),))
-```
+# Open a (potentially multichannel) stream on the channels
+tx_stream = SoapySDR.Stream(tx_channels)
+rx_stream = SoapySDR.Stream(rx_channels)
 
-RX:
-```
-# Open first RX-capable channel on first device
-channel = Devices()[1].rx[1]
+# Setup a sample buffer optimized for the device
+# The data can be access with e.g. tx_buf.bufs
+# Note: we ask for 10,000 samples, but the API will re-size correctly for the device
+tx_buf = SoapySDR.SampleBuffer(tx_stream, 10_000)
+rx_buf = SoapySDR.SampleBuffer(rx_stream, 10_000)
 
-# Configure channel with appropriate parameters
-channel.bandwidth = 800u"kHz"
-channel.frequency = 30u"MHz"
-channel.gain = 42u"dB"
-channel.sample_rate = 2.1u"MHz"
+# Setup some data to transmit on each channel
+for i in eachindex(tx_buf)
+    tx_buf[i] = randn(SoapySDR.streamtype(tx_stream), length(tx_buf))
+end
 
-# Open a (potentially multichannel) stream on this channel
-stream = SoapySDR.Stream([channel])
-SoapySDR.activate!(stream)
+# Spawn two tasks for full duplex operation
+# The tasks will run in parallel and for best resuslts run julia with --threads=auto
+read_task = Threads.@spawn read!(rx_stream, rx_buf)
+write_task = Threads.@spawn write(tx_stream, tx_buf)
 
-# Collect all available samples in the buffer
-Base.read(stream)
+# Wait for the tasks to complete
+wait(read_task)
+wait(write_task)
+
+@show rx_buf[1][1:100] # show the first 100 samples of the first buffer
 ```
