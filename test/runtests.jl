@@ -47,20 +47,64 @@ end
 end
 @testset "High Level API" begin
 
-    @test length(Devices()) == 1
-    dev = Devices()[1]
+    io = IOBuffer(read=true, write=true)
 
+    # Device constructor, show, iterator
+    @test length(Devices()) == 1
+    show(io, Devices())
+    dev = Devices()[1]
+    show(io, dev)
+    for dev in Devices()
+        show(io, dev)
+    end
     @test typeof(dev) == sd.Device
     @test typeof(dev.info) == sd.OwnedKWArgs
     @test dev.driver == :LoopbackDriver
     @test dev.hardware == :LoopbackHardware
     dev.hardwareinfo #TODO
+
+    # Channels
+    rx_chan_list = dev.rx
+    tx_chan_list = dev.tx
+    @test typeof(rx_chan_list) == sd.ChannelList
+    @test typeof(tx_chan_list) == sd.ChannelList
+    show(io, rx_chan_list)
+    show(io, tx_chan_list)
     rx_chan = dev.rx[1]
     tx_chan = dev.tx[1]
-
     @test typeof(rx_chan) == sd.Channel
     @test typeof(tx_chan) == sd.Channel
+    show(io, rx_chan)
+    show(io, tx_chan)
 
+    #channel set/get properties
+    rx_chan.info
+    rx_chan.antenna
+    rx_chan.gain
+    rx_chan.dc_offset_mode
+    rx_chan.dc_offset
+    rx_chan.iq_balance_mode
+    rx_chan.iq_balance
+    rx_chan.gain_mode
+    rx_chan.frequency_correction
+    rx_chan.sample_rate
+    rx_chan.bandwidth
+    rx_chan.frequency
+
+    tx_chan.info
+    tx_chan.antenna
+    tx_chan.gain
+    tx_chan.dc_offset_mode
+    tx_chan.dc_offset
+    tx_chan.iq_balance_mode
+    tx_chan.iq_balance
+    tx_chan.gain_mode
+    tx_chan.frequency_correction
+    tx_chan.sample_rate
+    tx_chan.bandwidth
+    tx_chan.frequency
+
+    # Stream Formats
     @test sd.native_stream_format(rx_chan)[1] == SoapySDR.ComplexInt{12} #, fullscale
     @test sd.stream_formats(rx_chan) == [Complex{Int8}, SoapySDR.ComplexInt{12}, Complex{Int16}, ComplexF32]
 
