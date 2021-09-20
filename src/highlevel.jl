@@ -10,7 +10,9 @@ mutable struct OwnedKWArgs <: KWArgs
     ptr::SoapySDRKwargs
     function OwnedKWArgs(kw::SoapySDRKwargs)
         this = new(kw)
-        finalizer(SoapySDRKwargs_clear, this)
+        finalizer(this) do this
+            SoapySDRKwargs_clear(this.ptr)
+        end
         this
     end
 end
@@ -24,7 +26,9 @@ mutable struct KWArgsList <: AbstractVector{KWArgs}
     length::Csize_t
     function KWArgsList(ptr::Ptr{SoapySDRKwargs}, length::Csize_t)
         this = new(ptr, length)
-        finalizer(SoapySDRKwargsList_clear, this)
+        finalizer(this) do this
+            SoapySDRKwargsList_clear(this.ptr, this.length)
+        end
         this
     end
 end
@@ -124,7 +128,9 @@ mutable struct Device
     ptr::Ptr{SoapySDRDevice}
     function Device(ptr::Ptr{SoapySDRDevice})
         this = new(ptr)
-        finalizer(SoapySDRDevice_unmake, this)
+        finalizer(this) do this
+            SoapySDRDevice_unmake(this.ptr)
+        end
         return this
     end
 end
