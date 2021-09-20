@@ -8,10 +8,10 @@ rx_channels = Devices()[1].rx
 # Configure a TX channel with appropriate parameters
 # configure the RX channel with similar for e.g. a loopback test
 # Be sure to check your local regulations before transmitting!
-tx_channel[1].bandwidth = 800u&quot;kHz&quot;
-tx_channel[1].frequency = 30u&quot;MHz&quot;
-tx_channel[1].gain = 42u&quot;dB&quot;
-tx_channel[1].sample_rate = 2.1u&quot;MHz&quot;
+tx_channels[1].bandwidth = 800u&quot;kHz&quot;
+tx_channels[1].frequency = 30u&quot;MHz&quot;
+tx_channels[1].gain = 42u&quot;dB&quot;
+tx_channels[1].sample_rate = 2.1u&quot;MHz&quot;
 
 # Open a (potentially multichannel) stream on the channels
 tx_stream = SoapySDR.Stream(tx_channels)
@@ -25,7 +25,7 @@ rx_buf = SoapySDR.SampleBuffer(rx_stream, 10_000)
 
 # Setup some data to transmit on each channel
 for i in eachindex(tx_buf)
-    tx_buf[i] = randn(SoapySDR.streamtype(tx_stream), length(tx_buf))
+    tx_buf[i] .= rand(SoapySDR.streamtype(tx_stream), length(tx_buf))
 end
 
 # Spawn two tasks for full duplex operation
@@ -37,4 +37,4 @@ write_task = Threads.@spawn write(tx_stream, tx_buf)
 wait(read_task)
 wait(write_task)
 
-@show rx_buf[1][1:100] # show the first 100 samples of the first buffer</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="tutorial/">Tutorial »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Tuesday 14 September 2021 20:27">Tuesday 14 September 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+@show rx_buf[1][1:100] # show the first 100 samples of the first buffer</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="tutorial/">Tutorial »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Monday 20 September 2021 14:56">Monday 20 September 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
