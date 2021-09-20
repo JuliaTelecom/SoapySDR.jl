@@ -49,10 +49,10 @@ rx_channels = Devices()[1].rx
 # Configure a TX channel with appropriate parameters
 # configure the RX channel with similar for e.g. a loopback test
 # Be sure to check your local regulations before transmitting!
-tx_channel[1].bandwidth = 800u"kHz"
-tx_channel[1].frequency = 30u"MHz"
-tx_channel[1].gain = 42u"dB"
-tx_channel[1].sample_rate = 2.1u"MHz"
+tx_channels[1].bandwidth = 800u"kHz"
+tx_channels[1].frequency = 30u"MHz"
+tx_channels[1].gain = 42u"dB"
+tx_channels[1].sample_rate = 2.1u"MHz"
 
 # Open a (potentially multichannel) stream on the channels
 tx_stream = SoapySDR.Stream(tx_channels)
@@ -66,7 +66,7 @@ rx_buf = SoapySDR.SampleBuffer(rx_stream, 10_000)
 
 # Setup some data to transmit on each channel
 for i in eachindex(tx_buf)
-    tx_buf[i] = randn(SoapySDR.streamtype(tx_stream), length(tx_buf))
+    tx_buf[i] .= rand(SoapySDR.streamtype(tx_stream), length(tx_buf))
 end
 
 # Spawn two tasks for full duplex operation
