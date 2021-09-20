@@ -18,13 +18,18 @@ Base.unsafe_load(o::OwnedKWArgs) = o.ptr
 function ptr(kw::OwnedKWArgs)
     return pointer_from_objref(kw)
 end
+function SoapySDRKwargs_clear(kw::OwnedKWArgs)
+    SoapySDRKwargs_clear(ptr(kw))
+end
 
 mutable struct KWArgsList <: AbstractVector{KWArgs}
     ptr::Ptr{SoapySDRKwargs}
     length::Csize_t
     function KWArgsList(ptr::Ptr{SoapySDRKwargs}, length::Csize_t)
         this = new(ptr, length)
-        finalizer(SoapySDRKwargsList_clear, this)
+        finalizer(this) do this
+            SoapySDRKwargsList_clear(this.ptr, this.length)
+        end
         this
     end
 end
@@ -56,9 +61,6 @@ end
 
 Base.iterate(kw::KWArgs, i=1) = i > length(kw) ? nothing : (_getindex(kw, i), i+1)
 
-function SoapySDRKwargs_clear(kw::OwnedKWArgs)
-    SoapySDRKwargs_clear(pointer(kw))
-end
 
 function SoapySDRKwargsList_clear(list::KWArgsList)
     SoapySDRKwargsList_clear(list.ptr, list.length)
@@ -124,7 +126,9 @@ mutable struct Device
     ptr::Ptr{SoapySDRDevice}
     function Device(ptr::Ptr{SoapySDRDevice})
         this = new(ptr)
-        finalizer(SoapySDRDevice_unmake, this)
+        finalizer(this) do this
+            SoapySDRDevice_unmake(this.ptr)
+        end
         return this
     end
 end
