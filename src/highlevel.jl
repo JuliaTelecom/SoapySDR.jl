@@ -10,15 +10,16 @@ mutable struct OwnedKWArgs <: KWArgs
     ptr::SoapySDRKwargs
     function OwnedKWArgs(kw::SoapySDRKwargs)
         this = new(kw)
-        finalizer(this) do this
-            SoapySDRKwargs_clear(this.ptr)
-        end
+        finalizer(SoapySDRKwargs_clear, this)
         this
     end
 end
 Base.unsafe_load(o::OwnedKWArgs) = o.ptr
 function ptr(kw::OwnedKWArgs)
     return pointer_from_objref(kw)
+end
+function SoapySDRKwargs_clear(kw::OwnedKWArgs)
+    SoapySDRKwargs_clear(ptr(kw))
 end
 
 mutable struct KWArgsList <: AbstractVector{KWArgs}
@@ -60,9 +61,6 @@ end
 
 Base.iterate(kw::KWArgs, i=1) = i > length(kw) ? nothing : (_getindex(kw, i), i+1)
 
-function SoapySDRKwargs_clear(kw::OwnedKWArgs)
-    SoapySDRKwargs_clear(pointer(kw))
-end
 
 function SoapySDRKwargsList_clear(list::KWArgsList)
     SoapySDRKwargsList_clear(list.ptr, list.length)
