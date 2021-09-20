@@ -8,18 +8,10 @@ abstract type KWArgs <: AbstractDict{Symbol, String}; end
 
 mutable struct OwnedKWArgs <: KWArgs
     ptr::SoapySDRKwargs
-    function OwnedKWArgs(kw::SoapySDRKwargs)
-        this = new(kw)
-        finalizer(SoapySDRKwargs_clear, this)
-        this
-    end
 end
 Base.unsafe_load(o::OwnedKWArgs) = o.ptr
 function ptr(kw::OwnedKWArgs)
     return pointer_from_objref(kw)
-end
-function SoapySDRKwargs_clear(kw::OwnedKWArgs)
-    SoapySDRKwargs_clear(ptr(kw))
 end
 
 mutable struct KWArgsList <: AbstractVector{KWArgs}
@@ -147,7 +139,7 @@ Base.iterate(d::Devices, state=1) = state > length(d) ? nothing : (d[state], sta
 
 function Base.getproperty(d::Device, s::Symbol)
     if s === :info
-        OwnedKWArgs(SoapySDRDevice_getHardwareInfo(d))
+        SoapySDRDevice_getHardwareInfo(d)
     elseif s === :driver
         Symbol(unsafe_string(SoapySDRDevice_getDriverKey(d)))
     elseif s === :hardware

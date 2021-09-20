@@ -12,6 +12,11 @@ struct SoapySDRKwargs
     size::Csize_t
     keys::Ptr{Cstring}
     vals::Ptr{Cstring}
+    function SoapySDRKwargs(s,k,v)
+        this = new(s,k,v)
+        finalizer(SoapySDRKwargs_clear, this)
+        this
+    end
 end
 
 """
