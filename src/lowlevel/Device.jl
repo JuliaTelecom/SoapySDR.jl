@@ -1091,3 +1091,95 @@ return the current value of the sensor
 function SoapySDRDevice_readChannelSensor(device, direction, channel, key)
     @check_error ccall((:SoapySDRDevice_readChannelSensor, lib), Cstring, (Ptr{SoapySDRArgInfo}, Cint, Csize_t, Cstring), device, direction, channel, key)
 end
+
+#################
+## SETTINGSAPI ##
+#################
+
+
+"""
+Describe the allowed keys and values used for settings.
+
+param device a pointer to a device instance
+param [out] length the number of sensor names
+return a list of argument info structures
+"""
+function SoapySDRDevice_getSettingInfo(device)
+    #SOAPY_SDR_API SoapySDRArgInfo *SoapySDRDevice_getSettingInfo(const SoapySDRDevice *device, size_t *length);
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_getSettingInfo, lib), Ptr{SoapySDRArgInfo}, (Ptr{SoapySDRDevice}, Ref{Csize_t}), device, len)
+    (ptr, len[])
+end
+
+"""
+Write an arbitrary setting on the device.
+The interpretation is up the implementation.
+
+param device a pointer to a device instance
+param key the setting identifier
+param value the setting value
+return 0 for success or error code on failure
+"""
+function SoapySDRDevice_writeSetting(device, key, value)
+    #SOAPY_SDR_API int SoapySDRDevice_writeSetting(SoapySDRDevice *device, const char *key, const char *value);
+    @check_error ccall((:SoapySDRDevice_writeSetting, lib), Cint, (Ptr{SoapySDRDevice}, Cstring, Cstring), device, key, value)
+end
+
+"""
+Read an arbitrary setting on the device.
+
+param device a pointer to a device instance
+param key the setting identifier
+return the setting value
+"""
+function SoapySDRDevice_readSetting(device, key)
+    #SOAPY_SDR_API char *SoapySDRDevice_readSetting(const SoapySDRDevice *device, const char *key);
+    @check_error ccall((:SoapySDRDevice_readSetting, lib), Cstring, (Ptr{SoapySDRDevice}, Cstring), device, key)
+end
+
+
+"""
+Describe the allowed keys and values used for channel settings.
+
+param device a pointer to a device instance
+param direction the channel direction RX or TX
+param channel an available channel on the device
+param [out] length the number of sensor names
+return a list of argument info structures
+"""
+function SoapySDRDevice_getChannelSettingInfo(device, direction, channel)
+    #SOAPY_SDR_API SoapySDRArgInfo *SoapySDRDevice_getChannelSettingInfo(const SoapySDRDevice *device, const int direction, const size_t channel, size_t *length);
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_getChannelSettingInfo, lib), Ptr{SoapySDRArgInfo}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, len)
+    (ptr, len[])
+end
+
+"""
+Write an arbitrary channel setting on the device.
+The interpretation is up the implementation.
+
+param device a pointer to a device instance
+param direction the channel direction RX or TX
+param channel an available channel on the device
+param key the setting identifier
+param value the setting value
+return 0 for success or error code on failure
+"""
+function SoapySDRDevice_writeChannelSetting(device, direction, channel, key, value)
+    #SOAPY_SDR_API int SoapySDRDevice_writeChannelSetting(SoapySDRDevice *device, const int direction, const size_t channel, const char *key, const char *value);
+    @check_error ccall((:SoapySDRDevice_writeChannelSetting, lib), Cint, (Ptr{SoapySDRDevice}, Cint, Csize_t, Cstring, Cstring), device, direction, channel, key, value)
+end
+
+"""
+Read an arbitrary channel setting on the device.
+
+param device a pointer to a device instance
+param direction the channel direction RX or TX
+param channel an available channel on the device
+param key the setting identifier
+return the setting value
+"""
+function SoapySDRDevice_readChannelSetting(device, direction, channel, key)
+    #SOAPY_SDR_API char *SoapySDRDevice_readChannelSetting(const SoapySDRDevice *device, const int direction, const size_t channel, const char *key);
+    @check_error ccall((:SoapySDRDevice_readChannelSetting, lib), Cstring, (Ptr{SoapySDRDevice}, Cint, Csize_t, Cstring), device, direction, channel, key)
+end
