@@ -11,6 +11,13 @@ const LL_DISCLAIMER =
     For end-users in Julia, the higher-level Julia APIs are preferred
     """
 
+const CHANNEL_ARGS = 
+    """
+    `device` a pointer to a device instance
+    `direction` the channel direction RX or TX
+    `channel` the channel number to get info for
+    """
+
 # Forward declaration of device handle
 mutable struct SoapySDRDevice
 end
@@ -151,7 +158,7 @@ function SoapySDRDevice_unmake_list(devices, length::Cint)
 end
 
 ########################
-## Identification API ##    # have not checked any of these
+## Identification API ##
 ########################
 
 """
@@ -187,22 +194,47 @@ function SoapySDRDevice_getHardwareInfo(device)
     ccall((:SoapySDRDevice_getHardwareInfo, lib), SoapySDRKwargs, (Ptr{SoapySDRDevice},), device)
 end
 
+##################
+## Channels API ##
+##################
+
+"""
+Set the frontend mapping of available DSP units to RF frontends.
+This mapping controls channel mapping and channel availability.
+
+param device a pointer to a device instance
+param direction the channel direction RX or TX
+param mapping a vendor-specific mapping string
+return an error code or 0 for success
+"""
+function SoapySDRDevice_setFrontendMapping(device, direction, mapping)
+    #SOAPY_SDR_API int SoapySDRDevice_setFrontendMapping(SoapySDRDevice *device, const int direction, const char *mapping);
+    ccall((:SoapySDRDevice_setFrontendMapping, lib), Cint, (Ptr{SoapySDRDevice}, Cint, Cstring), device, direction, mapping)
+end
+
+"""
+Get the mapping configuration string.
+
+param device a pointer to a device instance
+param direction the channel direction RX or TX
+return the vendor-specific mapping string
+"""
+function SoapySDRDevice_getFrontendMapping(device, direction)
+    #SOAPY_SDR_API char *SoapySDRDevice_getFrontendMapping(const SoapySDRDevice *device, const int direction);
+    ccall((:SoapySDRDevice_getFrontendMapping, lib), Cstring, (Ptr{SoapySDRDevice}, Cint), device, direction)
+end
+
 """
 Get a number of channels given the streaming direction
+
 param device a pointer to a device instance
 param direction the channel direction RX or TX
 return the number of channels
 """
 function SoapySDRDevice_getNumChannels(device, direction)
-    num_channels = ccall((:SoapySDRDevice_getNumChannels, lib), Csize_t, (Ptr{SoapySDRDevice}, Cint), device, direction)
-    return Int(num_channels)
+    ccall((:SoapySDRDevice_getNumChannels, lib), Csize_t, (Ptr{SoapySDRDevice}, Cint), device, direction)
 end
 
-const CHANNEL_ARGS = """
-*  `device` a pointer to a device instance
-*  `direction` the channel direction RX or TX
-*  `channel` the channel number to get info for
-"""
 
 """
     SoapySDRDevice_getChannelInfo(device, direction, channel)
@@ -216,6 +248,19 @@ $LL_DISCLAIMER
 """
 function SoapySDRDevice_getChannelInfo(device, direction, channel);
     return @check_error ccall((:SoapySDRDevice_getChannelInfo, lib), SoapySDRKwargs, (Ptr{SoapySDRDevice}, Cint, Csize_t), device, direction, channel)
+end
+
+"""
+Find out if the specified channel is full or half duplex.
+
+param device a pointer to a device instance
+param direction the channel direction RX or TX
+param channel an available channel on the device
+return true for full duplex, false for half duplex
+"""
+function SoapySDRDevice_getFullDuplex(device, direction, channel)
+    #SOAPY_SDR_API bool SoapySDRDevice_getFullDuplex(const SoapySDRDevice *device, const int direction, const size_t channel);
+    ccall((:SoapySDRDevice_getFullDuplex, lib), Cint, (Ptr{SoapySDRDevice}, Cint, Csize_t), device, direction, channel)
 end
 
 #################
@@ -385,6 +430,22 @@ function SoapySDRDevice_getNativeStreamFormat(device, direction, channel)
     fullscale = Ref{Cdouble}()
     fmt = @check_error ccall((:SoapySDRDevice_getNativeStreamFormat, lib), Cstring, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Cdouble}), device, direction, channel, fullscale)
     return fmt, fullscale[]
+end
+
+"""
+Query the argument info description for stream args.
+
+param device a pointer to a device instance
+param direction the channel direction RX or TX
+param channel an available channel on the device
+param [out] length the number of argument infos
+return a list of argument info structures
+"""
+function SoapySDRDevice_getStreamArgsInfo(device, direction, channel)
+    len = Ref{Csize_t}()
+    #SOAPY_SDR_API SoapySDRArgInfo *SoapySDRDevice_getStreamArgsInfo(const SoapySDRDevice *device, const int direction, const size_t channel, size_t *length);
+    ptr = @check_error ccall((:SoapySDRDevice_getStreamArgsInfo, lib), Ptr{SoapySDRArgInfo}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, len)
+    ptr, len[]
 end
 
 """
@@ -610,6 +671,155 @@ function SoapySDRDevice_readStreamStatus(device, stream, channel_mask, flags, ti
     condition = ccall((:SoapySDRDevice_readStreamStatus, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Csize_t, Cint, Clonglong, Clong),
                                                                        device, stream, channel_mask, flags, timeNs, timeoutUs)
     condition, flags[]
+end
+
+
+############################
+# Direct buffer access API #
+############################
+
+"""
+How many direct access buffers can the stream provide?
+This is the number of times the user can call acquire()
+on a stream without making subsequent calls to release().
+A return value of 0 means that direct access is not supported.
+
+param device a pointer to a device instance
+param stream the opaque pointer to a stream handle
+return the number of direct access buffers or 0
+"""
+function SoapySDRDevice_getNumDirectAccessBuffers(device, stream)
+    #SOAPY_SDR_API size_t SoapySDRDevice_getNumDirectAccessBuffers(SoapySDRDevice *device, SoapySDRStream *stream);
+    ccall((:SoapySDRDevice_getNumDirectAccessBuffers, lib), Csize_t, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}), device, stream)
+end
+
+"""
+Get the buffer addresses for a scatter/gather table entry.
+When the underlying DMA implementation uses scatter/gather
+then this call provides the user addresses for that table.
+
+Example: The caller may query the DMA memory addresses once
+after stream creation to pre-allocate a re-usable ring-buffer.
+
+param device a pointer to a device instance
+param stream the opaque pointer to a stream handle
+param handle an index value between 0 and num direct buffers - 1
+param buffs an array of void* buffers num chans in size
+return 0 for success or error code when not supported
+"""
+function SoapySDRDevice_getDirectAccessBufferAddrs(device, stream, handle, buffs)
+    #SOAPY_SDR_API int SoapySDRDevice_getDirectAccessBufferAddrs(SoapySDRDevice *device, SoapySDRStream *stream, const size_t handle, void **buffs);
+    ccall((:SoapySDRDevice_getDirectAccessBufferAddrs, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Csize_t, Ptr{Cvoid}), device, stream, handle, buffs)
+end
+
+"""
+Acquire direct buffers from a receive stream.
+This call is part of the direct buffer access API.
+
+The buffs array will be filled with a stream pointer for each channel.
+Each pointer can be read up to the number of return value elements.
+
+The handle will be set by the implementation so that the caller
+may later release access to the buffers with releaseReadBuffer().
+Handle represents an index into the internal scatter/gather table
+such that handle is between 0 and num direct buffers - 1.
+
+param device a pointer to a device instance
+param stream the opaque pointer to a stream handle
+param handle an index value used in the release() call
+param buffs an array of void* buffers num chans in size
+param flags optional flag indicators about the result
+param timeNs the buffer's timestamp in nanoseconds
+param timeoutUs the timeout in microseconds
+return the number of elements read per buffer or error code
+"""
+function SoapySDRDevice_acquireReadBuffer(device, stream, handle, buffs, flags, timeNs, timeoutUs)
+    #SOAPY_SDR_API int SoapySDRDevice_acquireReadBuffer(SoapySDRDevice *device,
+    #    SoapySDRStream *stream,
+    #    size_t *handle,
+    #    const void **buffs,
+    #    int *flags,
+    #    long long *timeNs,
+    #    const long timeoutUs);
+    handle = Ref{Csize_t}(handle)
+    flags = Ref{Cint}(flags)
+    ccall((:SoapySDRDevice_acquireReadBuffer, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Csize_t, Ptr{Cvoid}, Cint, Clonglong, Clong),
+                                                                device, stream, handle, buffs, flags, timeNs, timeoutUs)
+    handle, flags[]
+end
+
+"""
+Release an acquired buffer back to the receive stream.
+This call is part of the direct buffer access API.
+
+param device a pointer to a device instance
+param stream the opaque pointer to a stream handle
+param handle the opaque handle from the acquire() call
+"""
+function SoapySDRDevice_releaseReadBuffer(device, stream, handle)
+    #SOAPY_SDR_API void SoapySDRDevice_releaseReadBuffer(SoapySDRDevice *device,
+    #    SoapySDRStream *stream,
+    #    const size_t handle);
+    ccall((:SoapySDRDevice_releaseReadBuffer, lib), Cvoid, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Csize_t), device, stream, handle)
+end
+
+"""
+Acquire direct buffers from a transmit stream.
+This call is part of the direct buffer access API.
+
+The buffs array will be filled with a stream pointer for each channel.
+Each pointer can be written up to the number of return value elements.
+
+The handle will be set by the implementation so that the caller
+may later release access to the buffers with releaseWriteBuffer().
+Handle represents an index into the internal scatter/gather table
+such that handle is between 0 and num direct buffers - 1.
+
+param device a pointer to a device instance
+param stream the opaque pointer to a stream handle
+param handle an index value used in the release() call
+param buffs an array of void* buffers num chans in size
+param timeoutUs the timeout in microseconds
+return the number of available elements per buffer or error
+"""
+function SoapySDRDevice_acquireWriteBuffer(device, stream, handle, buffs, timeoutUs)
+    #SOAPY_SDR_API int SoapySDRDevice_acquireWriteBuffer(SoapySDRDevice *device,
+    #    SoapySDRStream *stream,
+    #    size_t *handle,
+    #    void **buffs,
+    #    const long timeoutUs);
+    handle = Ref{Csize_t}(handle)
+    ccall((:SoapySDRDevice_acquireWriteBuffer, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Csize_t, Ptr{Cvoid}, Clong),
+                                                    device, stream, handle, buffs, timeoutUs)
+end
+
+"""
+Release an acquired buffer back to the transmit stream.
+This call is part of the direct buffer access API.
+
+Stream meta-data is provided as part of the release call,
+and not the acquire call so that the caller may acquire
+buffers without committing to the contents of the meta-data,
+which can be determined by the user as the buffers are filled.
+
+param device a pointer to a device instance
+param stream the opaque pointer to a stream handle
+param handle the opaque handle from the acquire() call
+param numElems the number of elements written to each buffer
+param flags optional input flags and output flags
+param timeNs the buffer's timestamp in nanoseconds
+"""
+function SoapySDRDevice_releaseWriteBuffer(device, stream, handle, numElems, flags, timeNs)
+    #SOAPY_SDR_API void SoapySDRDevice_releaseWriteBuffer(SoapySDRDevice *device,
+    #    SoapySDRStream *stream,
+    #    const size_t handle,
+    #    const size_t numElems,
+    #    int *flags,
+    #    const long long timeNs);
+    flags = Ref{Cint}(flags)
+    ccall((:SoapySDRDevice_releaseWriteBuffer, lib), Cvoid, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Csize_t, Csize_t, Cint, Clonglong),
+                                                device, stream, handle, numElems, flags, timeNs)
+    flags[]
 end
 
 ### Various channel queries
@@ -1090,4 +1300,96 @@ return the current value of the sensor
 """
 function SoapySDRDevice_readChannelSensor(device, direction, channel, key)
     @check_error ccall((:SoapySDRDevice_readChannelSensor, lib), Cstring, (Ptr{SoapySDRArgInfo}, Cint, Csize_t, Cstring), device, direction, channel, key)
+end
+
+#################
+## SETTINGSAPI ##
+#################
+
+
+"""
+Describe the allowed keys and values used for settings.
+
+param device a pointer to a device instance
+param [out] length the number of sensor names
+return a list of argument info structures
+"""
+function SoapySDRDevice_getSettingInfo(device)
+    #SOAPY_SDR_API SoapySDRArgInfo *SoapySDRDevice_getSettingInfo(const SoapySDRDevice *device, size_t *length);
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_getSettingInfo, lib), Ptr{SoapySDRArgInfo}, (Ptr{SoapySDRDevice}, Ref{Csize_t}), device, len)
+    (ptr, len[])
+end
+
+"""
+Write an arbitrary setting on the device.
+The interpretation is up the implementation.
+
+param device a pointer to a device instance
+param key the setting identifier
+param value the setting value
+return 0 for success or error code on failure
+"""
+function SoapySDRDevice_writeSetting(device, key, value)
+    #SOAPY_SDR_API int SoapySDRDevice_writeSetting(SoapySDRDevice *device, const char *key, const char *value);
+    @check_error ccall((:SoapySDRDevice_writeSetting, lib), Cint, (Ptr{SoapySDRDevice}, Cstring, Cstring), device, key, value)
+end
+
+"""
+Read an arbitrary setting on the device.
+
+param device a pointer to a device instance
+param key the setting identifier
+return the setting value
+"""
+function SoapySDRDevice_readSetting(device, key)
+    #SOAPY_SDR_API char *SoapySDRDevice_readSetting(const SoapySDRDevice *device, const char *key);
+    @check_error ccall((:SoapySDRDevice_readSetting, lib), Cstring, (Ptr{SoapySDRDevice}, Cstring), device, key)
+end
+
+
+"""
+Describe the allowed keys and values used for channel settings.
+
+param device a pointer to a device instance
+param direction the channel direction RX or TX
+param channel an available channel on the device
+param [out] length the number of sensor names
+return a list of argument info structures
+"""
+function SoapySDRDevice_getChannelSettingInfo(device, direction, channel)
+    #SOAPY_SDR_API SoapySDRArgInfo *SoapySDRDevice_getChannelSettingInfo(const SoapySDRDevice *device, const int direction, const size_t channel, size_t *length);
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_getChannelSettingInfo, lib), Ptr{SoapySDRArgInfo}, (Ptr{SoapySDRDevice}, Cint, Csize_t, Ref{Csize_t}), device, direction, channel, len)
+    (ptr, len[])
+end
+
+"""
+Write an arbitrary channel setting on the device.
+The interpretation is up the implementation.
+
+param device a pointer to a device instance
+param direction the channel direction RX or TX
+param channel an available channel on the device
+param key the setting identifier
+param value the setting value
+return 0 for success or error code on failure
+"""
+function SoapySDRDevice_writeChannelSetting(device, direction, channel, key, value)
+    #SOAPY_SDR_API int SoapySDRDevice_writeChannelSetting(SoapySDRDevice *device, const int direction, const size_t channel, const char *key, const char *value);
+    @check_error ccall((:SoapySDRDevice_writeChannelSetting, lib), Cint, (Ptr{SoapySDRDevice}, Cint, Csize_t, Cstring, Cstring), device, direction, channel, key, value)
+end
+
+"""
+Read an arbitrary channel setting on the device.
+
+param device a pointer to a device instance
+param direction the channel direction RX or TX
+param channel an available channel on the device
+param key the setting identifier
+return the setting value
+"""
+function SoapySDRDevice_readChannelSetting(device, direction, channel, key)
+    #SOAPY_SDR_API char *SoapySDRDevice_readChannelSetting(const SoapySDRDevice *device, const int direction, const size_t channel, const char *key);
+    @check_error ccall((:SoapySDRDevice_readChannelSetting, lib), Cstring, (Ptr{SoapySDRDevice}, Cint, Csize_t, Cstring), device, direction, channel, key)
 end
