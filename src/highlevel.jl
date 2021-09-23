@@ -25,6 +25,10 @@ function Base.show(io::IO, d::Devices)
     end
 end
 
+####################################################################################################
+#    Device
+####################################################################################################
+
 """
     Device
 
@@ -34,7 +38,6 @@ Fields:
 - `info`
 - `driver`
 - `hardware`
-- `hardwareinfo`
 - `tx`
 - `rx`
 """
@@ -53,7 +56,12 @@ Base.cconvert(::Type{<:Ptr{SoapySDRDevice}}, d::Device) = d
 Base.unsafe_convert(::Type{<:Ptr{SoapySDRDevice}}, d::Device) = d.ptr
 
 function Base.show(io::IO, d::Device)
-    print(io, "SoapySDR ", d.hardware, " device (driver: ", d.driver, ") w/ ", length(d.tx), " TX channels and ", length(d.rx), " RX channels")
+    println(io, "SoapySDR ", d.hardware, " device")
+    println(io, "  driver: ", d.driver)
+    println(io, "  number of TX channels:", length(d.tx))
+    println(io, "  number of RX channels:", length(d.rx))
+    println(io, "  sensors: ", d.sensors)
+    println(io, "  timesources:", d.timesources)
 end
 
 function Base.getindex(d::Devices, i::Integer)
@@ -68,19 +76,45 @@ function Base.getproperty(d::Device, s::Symbol)
         Symbol(unsafe_string(SoapySDRDevice_getDriverKey(d)))
     elseif s === :hardware
         Symbol(unsafe_string(SoapySDRDevice_getHardwareKey(d)))
-    elseif s === :hardwareinfo #TODO
-        SoapySDRDevice_getHardwareInfo(d) # TODO wrap
     elseif s === :tx
         ChannelList(d, Tx)
     elseif s === :rx
         ChannelList(d, Rx)
+    elseif s === :sensors
+        SensorComponentList(d)
+    elseif s === :timesources
+        list_time_sources(d)
     else
         getfield(d, s)
     end
 end
 
-##
+function Base.propertynames(c::Device)
+    return (:ptr, :info, :driver, :hardware, :tx, :rx, :sensors, :time)
+end
 
+####################################################################################################
+#    Channel
+####################################################################################################
+"""
+    Channel
+
+A channel on the given `Device`. Has the following properties:
+- `direction`: `Tx` or `Rx`
+- `index`: channel index
+- `info`: channel info
+- `rate`: sample rate
+- `gain`: gain range
+- `freq`: frequency range
+- `bw`: bandwidth range
+- `antenna`: antenna list
+- `dc`: DC offset correction
+- `iq`: IQ imbalance correction
+- `sensors`: sensor list
+
+Note: A Channel can be created from a `Device` or extracted from a `ChannelList`. It should rarely
+be necessary to create a Channel directly.
+"""
 struct Channel
     device::Device
     direction::Direction
@@ -88,6 +122,11 @@ struct Channel
 end
 Base.show(io::IO, c::Channel) =
     print(io, "Channel(", c.device.hardware, ", ", c.direction, ", ", c.idx, ")")
+
+####################################################################################################
+#    Unit Printing
+####################################################################################################
+
 
 # Express everything in (kHz, MHz, GHz)
 function pick_freq_unit(val::Quantity)
@@ -165,6 +204,10 @@ function Base.show(io::IO, ::MIME"text/plain", c::Channel)
             for element in GainElementList(c)
                 println(io, "    ", element, " ", gainrange(c,element), ": ", c[element])
             end
+        println(io, "  gain_mode: ", c.gain_mode)
+        println(io, "  fullduplex: ", c.fullduplex)
+        println(io, "  stream_formats: ", c.stream_formats)
+        println(io, "  native_stream_format: ", c.native_stream_format)
         print(io, "  Sample Rate [ ", )
             join(io, map(x->sprint(print_hz_range, x), sample_rate_ranges(c)), ", ")
             println(io, " ]: ", pick_freq_unit(c.sample_rate))
@@ -234,9 +277,43 @@ function Base.getproperty(c::Channel, s::Symbol)
         return SoapySDRDevice_getBandwidth(c.device.ptr, c.direction, c.idx) * Hz
     elseif s === :frequency
         return SoapySDRDevice_getFrequency(c.device.ptr, c.direction, c.idx) * Hz
+    elseif s === :fullduplex
+        return Bool(SoapySDRDevice_getFullDuplex(c.device.ptr, c.direction, c.idx))
+    elseif s === :stream_formats
+        slist = StringList(SoapySDRDevice_getStreamFormats(c.device.ptr, c.direction, c.idx)...)
+        return map(_stream_map_soapy2jl, slist)
+    elseif s === :native_stream_format
+        fmt, _ = SoapySDRDevice_getNativeStreamFormat(c.device.ptr, c.direction, c.idx)
+        return _stream_map_soapy2jl(unsafe_string(fmt))
+    elseif s === :fullscale
+        _, fullscale = SoapySDRDevice_getNativeStreamFormat(c.device.ptr, c.direction, c.idx)
+        return fullscale
     else
         return getfield(c, s)
     end
+end
+
+function Base.propertynames(::SoapySDR.Channel)
+    return (:device,
+            :direction,
+            :idx,
+            :info,
+            :antenna,
+            :gain,
+            :dc_offset_mode,
+            :dc_offset,
+            :iq_balance_mode,
+            :iq_balance,
+            :gain_mode,
+            :frequency_correction,
+            :sample_rate,
+            :bandwidth,
+            :frequency,
+            :fullduplex,
+            :native_stream_format,
+            :stream_formats,
+            :fullscale,
+            :sensors)
 end
 
 function Base.setproperty!(c::Channel, s::Symbol, v)
@@ -259,25 +336,47 @@ function Base.setproperty!(c::Channel, s::Symbol, v)
     end
 end
 
-## Antenna/GainElement/FrequencyComponent
+####################################################################################################
+#    Components
+####################################################################################################
 
-abstract type Component; end
-Base.print(io::IO, c::Component) = print(io, c.name)
+# Components is an internal mechaism to allow for dispatch and interface through the Julia API
+# For example there may be several GainElements we list in a Channel. A Julian idiom for this is
+# the set/getindex class of functions. 
 
-struct ComponentList{T<:Component} <: AbstractVector{T}
+abstract type AbstractComponent; end
+Base.print(io::IO, c::AbstractComponent) = print(io, c.name)
+
+struct TimeSource <: AbstractComponent; name::Symbol; end
+struct GainElement <: AbstractComponent; name::Symbol; end
+struct Antenna <: AbstractComponent; name::Symbol; end
+struct FrequencyComponent <: AbstractComponent; name::Symbol; end
+struct SensorComponent <: AbstractComponent; name::Symbol; end
+
+struct ComponentList{T<:AbstractComponent} <: AbstractVector{T}
     s::StringList
 end
 Base.size(l::ComponentList) = (length(l.s),)
 Base.getindex(l::ComponentList{T}, i::Integer) where {T} = T(Symbol(l.s[i]))
-    
-for (e, f) in zip((:Antenna, :GainElement, :FrequencyComponent),
-               (:SoapySDRDevice_listAntennas, :SoapySDRDevice_listGains, :SoapySDRDevice_listFrequencies))
+function Base.show(io::IO, l::ComponentList{T}) where {T}
+    print(io, T, "[")
+    for c in l
+        print(io, c, ",")
+    end
+    print(io, "]")
+end
+
+for (e, f) in zip((:Antenna, :GainElement, :FrequencyComponent, :SensorComponent),
+               (:SoapySDRDevice_listAntennas, :SoapySDRDevice_listGains, :SoapySDRDevice_listFrequencies, :SoapySDRDevice_listSensors))
     @eval begin
-        struct $e <: Component; name::Symbol; end
         $f(channel::Channel) =
             $f(channel.device, channel.direction, channel.idx)
         $(Symbol(string(e, "List")))(channel::Channel) = ComponentList{$e}(StringList($f(channel)...))
     end
+end
+
+function SensorComponentList(d::Device)
+    ComponentList{SensorComponent}(StringList(SoapySDRDevice_listSensors(d.ptr)...))
 end
 
 using Base: unsafe_convert
@@ -288,6 +387,15 @@ end
 function Base.getindex(c::Channel, fe::FrequencyComponent)
     SoapySDRDevice_getFrequencyComponent(c.device, c.direction, c.idx, Cstring(unsafe_convert(Ptr{UInt8}, fe.name))) * Hz
 end
+
+function Base.getindex(c::Channel, se::SensorComponent)
+    unsafe_string(SoapySDRDevice_readChannelSensor(c.device, c.direction, c.idx, Cstring(unsafe_convert(Ptr{UInt8}, se.name))))
+end
+
+function Base.getindex(d::Device, se::SensorComponent)
+    unsafe_string(SoapySDRDevice_readSensor(d.ptr, Cstring(unsafe_convert(Ptr{UInt8}, se.name))))
+end
+
 
 ## GainElement
 
@@ -368,47 +476,20 @@ struct FreqSpec{T}
     kwargs::Dict{Any, String}
 end
 
-### Stream Utility Functions
+####################################################################################################
+#    Stream
+####################################################################################################
 
 """
-    stream_formats(::Channel)
-
-Returns the stream formats supported by the device. 
-
-Note: Since Julia is a multiple dispatch and generic language, it is
-preferrable to use `native_stream_format(c::Channel)` for optimal processing throughput.
-Only use this function if non-standard formats such as Complex Int12 and Complex Int4
-are native to the device and not handled by dispatch on `Complex`.
-"""
-function stream_formats(c::Channel)
-    slist = StringList(SoapySDRDevice_getStreamFormats(c.device.ptr, c.direction, c.idx)...)
-    map(_stream_map_soapy2jl, slist)
-end
-
-# Internal, reflected in Stream.mtu
-function mtu(d::Device, stream::Ptr{SoapySDRStream})
-    SoapySDRDevice_getStreamMTU(d.ptr, stream)
-end
+    Stream{T}
 
 """
-    native_stream_format(c::Channel) -> Type, fullscale
-
-Returns the format type and fullscale resolution of the native stream.
-"""
-function native_stream_format(c::Channel)
-    fmt, fullscale = SoapySDRDevice_getNativeStreamFormat(c.device.ptr, c.direction, c.idx)
-    _stream_map_soapy2jl(unsafe_string(fmt)), fullscale
-end
-
-## Stream
-
 mutable struct Stream{T}
     d::Device
     nchannels::Int
-    mtu::Int
     ptr::Ptr{SoapySDRStream}
     function Stream{T}(d::Device, nchannels::Int, ptr::Ptr{SoapySDRStream}) where {T}
-        this = new{T}(d, nchannels, mtu(d, ptr), ptr)
+        this = new{T}(d, nchannels, ptr)
         finalizer(SoapySDRDevice_closeStream, this)
         return this
     end
@@ -418,7 +499,22 @@ Base.unsafe_convert(::Type{<:Ptr{SoapySDRStream}}, s::Stream) = s.ptr
 SoapySDRDevice_closeStream(s::Stream) = SoapySDRDevice_closeStream(s.d, s)
 
 streamtype(::Stream{T}) where T = T
-mtu(s::Stream) = s.mtu
+
+function Base.setproperty!(c::Stream, s::Symbol, v)
+    if s === :mtu
+        c.mtu
+    else
+        return setfield!(c, s, v)
+    end
+end
+
+function Base.getproperty(c::Stream, s::Symbol)
+    if s === :mtu
+        SoapySDRDevice_getStreamMTU(c.device.ptr, c.ptr)
+    else
+        return getfield(c, s)
+    end
+end
 
 function Base.show(io::IO, s::Stream)
     print(io, "Stream on ", s.d.hardware)
@@ -501,7 +597,7 @@ function SampleBuffer(s::Stream{T}, length; round::RoundingMode{RM}=RoundDown, v
     end
     if realigned
         @info "requested 'length' is not aligned to MTU! Aligning to length of $(length) samples"
-        @info "get MTU with SoapySDR.mtu(::Stream)."
+        @info "get MTU with stream.mtu"
     end
 
     packet_count = Int(length/s.mtu)
@@ -581,30 +677,6 @@ end
 
 
 
-## sensors
-
-"""
-    list_sensors(::Device)
-
-List the available sensors on a device.
-Returns: an array of sensor names.
-"""
-function list_sensors(d::Device)
-    StringList(SoapySDRDevice_listSensors(d.ptr)...)
-end
-
-
-"""
-    read_sensor(::Device, ::String)
-
-Read the sensor extracted from `list_sensors`. 
-Returns: the value as a string.
-Note: Appropriate conversions need to be done by the user.
-"""
-function read_sensor(d::Device, name)
-    unsafe_string(SoapySDRDevice_readSensor(d.ptr, name))
-end
-
 """
     get_sensor_info(::Device, ::String)
 
@@ -620,6 +692,7 @@ end
 
 ## Time API
 
+## TODO ADD CLOCK SOURCE
 
 """
     list_time_sources(::Device)
@@ -667,7 +740,7 @@ function get_hardware_time(d::Device, what::String)
 end
 
 """
-    has_hardware_time(::Device, timeNs::Int64 what::String)
+    set_hardware_time(::Device, timeNs::Int64 what::String)
 
 Set hardware time for the given source.
 """
