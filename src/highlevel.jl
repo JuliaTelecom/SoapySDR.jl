@@ -62,6 +62,8 @@ function Base.show(io::IO, d::Device)
     println(io, "  number of RX channels:", length(d.rx))
     println(io, "  sensors: ", d.sensors)
     println(io, "  timesources:", d.timesources)
+    println(io, "  frontendmapping_rx: ", d.frontendmapping_rx)
+    println(io, "  frontendmapping_tx: ", d.frontendmapping_tx)
 end
 
 function Base.getindex(d::Devices, i::Integer)
@@ -81,13 +83,30 @@ function Base.getproperty(d::Device, s::Symbol)
     elseif s === :rx
         ChannelList(d, Rx)
     elseif s === :sensors
-        SensorComponentList(d)
+        ComponentList(SensorComponent, d)
     elseif s === :timesources
-        list_time_sources(d)
+        ComponentList(TimeSource, d)
+    elseif s === :timesource
+        SoapySDRDevice_getTimeSource(d.ptr)
+    elseif s === :frontendmapping_tx
+        unsafe_string(SoapySDRDevice_getFrontendMapping(d, Tx))
+    elseif s === :frontendmapping_rx
+        unsafe_string(SoapySDRDevice_getFrontendMapping(d, Rx))
     else
         getfield(d, s)
     end
 end
+
+function Base.setproperty!(c::Device, s::Symbol, v)
+    if s === :frontendmapping_tx
+        SoapySDRDevice_setFrontendMapping(c.device, Tx, v)
+    elseif s === :frontendmapping_rx
+        SoapySDRDevice_setFrontendMapping(c.device, Rx, v)
+    else
+        return setfield!(c, s, v)
+    end
+end
+
 
 function Base.propertynames(c::Device)
     return (:ptr, :info, :driver, :hardware, :tx, :rx, :sensors, :time)
@@ -204,18 +223,18 @@ function Base.show(io::IO, ::MIME"text/plain", c::Channel)
             for element in GainElementList(c)
                 println(io, "    ", element, " ", gainrange(c,element), ": ", c[element])
             end
-        println(io, "  gain_mode: ", c.gain_mode)
+        println(io, "  gain_mode (AGC=true/false/missing): ", c.gain_mode)
         println(io, "  fullduplex: ", c.fullduplex)
         println(io, "  stream_formats: ", c.stream_formats)
         println(io, "  native_stream_format: ", c.native_stream_format)
         print(io, "  Sample Rate [ ", )
             join(io, map(x->sprint(print_hz_range, x), sample_rate_ranges(c)), ", ")
             println(io, " ]: ", pick_freq_unit(c.sample_rate))
-        c.dc_offset_mode !== missing && println(io, "  Automatic DC offset correction: ", c.dc_offset_mode ? "ON" : "OFF")
-        c.dc_offset !== missing && println(io, "  DC offset correction: ", c.dc_offset)
-        c.iq_balance_mode !== missing && println(io, "  Automatic IQ balance correction: ", c.iq_balance_mode ? "ON" : "OFF")
-        c.iq_balance !== missing && println(io, "  IQ balance correction: ", c.iq_balance)
-        c.frequency_correction !== missing && println(io, "  Frequency correction: ", c.frequency_correction, " ppm")
+        println(io, "  dc_offset_mode (true/false/missing): ", c.dc_offset_mode)
+        println(io, "  dc_offset (if has dc_offset_mode): ", c.dc_offset)
+        println(io, "  iq_balance_mode (true/false/missing): ", c.iq_balance_mode)
+        println(io, "  iq_balance: ", c.iq_balance)
+        println(io, "  frequency_correction: ", c.frequency_correction, " ppm")
     end
 end
 
@@ -327,6 +346,8 @@ function Base.setproperty!(c::Channel, s::Symbol, v)
         end
     elseif s === :bandwidth
         SoapySDRDevice_setBandwidth(c.device.ptr, c.direction, c.idx, uconvert(u"Hz", v).val)
+    elseif s === :gain_mode
+        SoapySDRDevice_setGainMode(c.device.ptr, c.direction, c.idx, v)
     elseif s === :gain
         SoapySDRDevice_setGain(c.device.ptr, c.direction, c.idx, uconvert(u"dB", v).val)
     elseif s === :sample_rate
@@ -347,11 +368,13 @@ end
 abstract type AbstractComponent; end
 Base.print(io::IO, c::AbstractComponent) = print(io, c.name)
 
-struct TimeSource <: AbstractComponent; name::Symbol; end
-struct GainElement <: AbstractComponent; name::Symbol; end
-struct Antenna <: AbstractComponent; name::Symbol; end
-struct FrequencyComponent <: AbstractComponent; name::Symbol; end
-struct SensorComponent <: AbstractComponent; name::Symbol; end
+for e in (:TimeSource, :GainElement, :Antenna, :FrequencyComponent, :SensorComponent)
+    @eval begin
+        struct $e <: AbstractComponent;
+            name::Symbol
+        end
+    end
+end
 
 struct ComponentList{T<:AbstractComponent} <: AbstractVector{T}
     s::StringList
@@ -375,8 +398,12 @@ for (e, f) in zip((:Antenna, :GainElement, :FrequencyComponent, :SensorComponent
     end
 end
 
-function SensorComponentList(d::Device)
-    ComponentList{SensorComponent}(StringList(SoapySDRDevice_listSensors(d.ptr)...))
+function ComponentList(::Type{T}, d::Device) where {T <: AbstractComponent}
+    if T <: SensorComponent
+        ComponentList{SensorComponent}(StringList(SoapySDRDevice_listSensors(d.ptr)...))
+    elseif T <: TimeSource
+        ComponentList{TimeSource}(StringList(SoapySDRDevice_listTimeSources(d.ptr)...))
+    end
 end
 
 using Base: unsafe_convert
@@ -692,34 +719,6 @@ end
 
 ## Time API
 
-## TODO ADD CLOCK SOURCE
-
-"""
-    list_time_sources(::Device)
-
-List time sources available on the device
-"""
-function list_time_sources(d::Device)
-    StringList(SoapySDRDevice_listTimeSources(d.ptr)...)
-end
-
-"""
-    set_time_source!(::Device, source::String)
-
-List the current time source used by the Device.
-"""
-function set_time_source!(d::Device, s::String)
-    SoapySDRDevice_setTimeSource(d.ptr, s)
-end
-
-"""
-    get_time_source(::Device)
-
-Set the time source used by the Device.
-"""
-function get_time_source(d::Device)
-    unsafe_string(SoapySDRDevice_getTimeSource(d.ptr))
-end
 
 """
     has_hardware_time(::Device, what::String)
