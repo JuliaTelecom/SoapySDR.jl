@@ -61,7 +61,10 @@ end
     @test typeof(dev.info) == sd.OwnedKWArgs
     @test dev.driver == :LoopbackDriver
     @test dev.hardware == :LoopbackHardware
-    dev.hardwareinfo #TODO
+    @test dev.timesources == SoapySDR.TimeSource[:sw_ticks,:hw_ticks] 
+    @test dev.timesource == SoapySDR.TimeSource(:sw_ticks)
+    dev.timesource = "hw_ticks"
+    @test dev.timesource == SoapySDR.TimeSource(:hw_ticks)
 
     # Channels
     rx_chan_list = dev.rx
@@ -78,6 +81,11 @@ end
     show(io, tx_chan)
 
     #channel set/get properties
+    @test rx_chan.native_stream_format == SoapySDR.ComplexInt{12} #, fullscale
+    @test rx_chan.stream_formats == [Complex{Int8}, SoapySDR.ComplexInt{12}, Complex{Int16}, ComplexF32]
+    @test tx_chan.native_stream_format == SoapySDR.ComplexInt{12} #, fullscale
+    @test tx_chan.stream_formats == [Complex{Int8}, SoapySDR.ComplexInt{12}, Complex{Int16}, ComplexF32]
+
     rx_chan.info
     rx_chan.antenna
     rx_chan.gain
@@ -104,27 +112,6 @@ end
     tx_chan.bandwidth
     tx_chan.frequency
 
-    # Stream Formats
-    @test sd.native_stream_format(rx_chan)[1] == SoapySDR.ComplexInt{12} #, fullscale
-    @test sd.stream_formats(rx_chan) == [Complex{Int8}, SoapySDR.ComplexInt{12}, Complex{Int16}, ComplexF32]
-
-    # Test sensor API
-    sensor_list = sd.list_sensors(dev)
-    @test map(sensor -> sd.read_sensor(dev, sensor), sensor_list) == ["true", "1.0", "1.0"]
-    sensor_info_list = map(sensor -> sd.get_sensor_info(dev, sensor), sensor_list)
-
-
-    # test time API
-    time_sources = sd.list_time_sources(dev)
-    @test time_sources == ["sw_ticks", "hw_ticks"]
-    @test sd.get_time_source(dev) == "sw_ticks"
-    sd.set_time_source!(dev, "hw_ticks")
-    @test sd.get_time_source(dev) == "hw_ticks"
-
-
-
-
-    @show sd.list_sample_rates(rx_chan)
 
     #@test gainrange(rx_chan) == 0u"dB"..53u"dB"
     #@test gainrange(tx_chan) == 0u"dB"..53u"dB"

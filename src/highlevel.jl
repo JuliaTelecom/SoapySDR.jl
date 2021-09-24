@@ -87,7 +87,7 @@ function Base.getproperty(d::Device, s::Symbol)
     elseif s === :timesources
         ComponentList(TimeSource, d)
     elseif s === :timesource
-        SoapySDRDevice_getTimeSource(d.ptr)
+        TimeSource(Symbol(unsafe_string(SoapySDRDevice_getTimeSource(d.ptr))))
     elseif s === :frontendmapping_tx
         unsafe_string(SoapySDRDevice_getFrontendMapping(d, Tx))
     elseif s === :frontendmapping_rx
@@ -99,9 +99,11 @@ end
 
 function Base.setproperty!(c::Device, s::Symbol, v)
     if s === :frontendmapping_tx
-        SoapySDRDevice_setFrontendMapping(c.device, Tx, v)
+        SoapySDRDevice_setFrontendMapping(c.ptr, Tx, v)
     elseif s === :frontendmapping_rx
-        SoapySDRDevice_setFrontendMapping(c.device, Rx, v)
+        SoapySDRDevice_setFrontendMapping(c.ptr, Rx, v)
+    elseif s === :timesource
+        SoapySDRDevice_setTimeSource(c.ptr, v)
     else
         return setfield!(c, s, v)
     end
@@ -367,6 +369,8 @@ end
 
 abstract type AbstractComponent; end
 Base.print(io::IO, c::AbstractComponent) = print(io, c.name)
+Base.convert(::Type{T}, s::Symbol) where {T <: AbstractComponent} = T(s)
+Base.convert(::Type{T}, s::String) where {T <: AbstractComponent} = T(Symbol(s))
 
 for e in (:TimeSource, :GainElement, :Antenna, :FrequencyComponent, :SensorComponent)
     @eval begin
@@ -567,7 +571,7 @@ function Stream(format::Type, channels::AbstractVector{T}; kwargs...) where {T <
 end
 
 function Stream(channels::AbstractVector{T}; kwargs...) where {T <: Channel}
-    native_format = promote_type(map(c -> native_stream_format(c)[1], channels)...) # native_stream_format -> (type, fullsclae)
+    native_format = promote_type(map(c -> c.native_stream_format, channels)...)
     if native_format <: AbstractComplexInteger
         @warn "$(string(native_format)) may be poorly supported, it is recommend to specify a different type with Stream(format::Type, channels)"
     end
