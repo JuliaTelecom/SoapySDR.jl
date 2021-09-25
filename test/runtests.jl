@@ -79,6 +79,8 @@ end
     @test typeof(tx_chan) == sd.Channel
     show(io, rx_chan)
     show(io, tx_chan)
+    show(io, MIME"text/plain"(), rx_chan)
+    show(io, MIME"text/plain"(), tx_chan)
 
     #channel set/get properties
     @test rx_chan.native_stream_format == SoapySDR.ComplexInt{12} #, fullscale
@@ -86,57 +88,17 @@ end
     @test tx_chan.native_stream_format == SoapySDR.ComplexInt{12} #, fullscale
     @test tx_chan.stream_formats == [Complex{Int8}, SoapySDR.ComplexInt{12}, Complex{Int16}, ComplexF32]
 
-    rx_chan.info
-    rx_chan.antenna
-    rx_chan.gain
-    rx_chan.dc_offset_mode
-    rx_chan.dc_offset
-    rx_chan.iq_balance_mode
-    rx_chan.iq_balance
-    rx_chan.gain_mode
-    rx_chan.frequency_correction
-    rx_chan.sample_rate
-    rx_chan.bandwidth
-    rx_chan.frequency
+    # channel gain tests
+    @test rx_chan.gain_mode == false
+    rx_chan.gain_mode = true
+    @test rx_chan.gain_mode == true
 
-    tx_chan.info
-    tx_chan.antenna
-    tx_chan.gain
-    tx_chan.dc_offset_mode
-    tx_chan.dc_offset
-    tx_chan.iq_balance_mode
-    tx_chan.iq_balance
-    tx_chan.gain_mode
-    tx_chan.frequency_correction
-    tx_chan.sample_rate
-    tx_chan.bandwidth
-    tx_chan.frequency
+    @test rx_chan.gain_elements == SoapySDR.GainElement[:IF1, :IF2, :IF3, :IF4, :IF5, :IF6, :TUNER]
+    if1 = rx_chan.gain_elements[1]
+    @show rx_chan[if1]
+    rx_chan[if1] = 0.5u"dB"
+    @test rx_chan[if1] == 0.5u"dB"
 
-
-    #@test gainrange(rx_chan) == 0u"dB"..53u"dB"
-    #@test gainrange(tx_chan) == 0u"dB"..53u"dB"
-    @show sd.frequency_ranges(rx_chan)
-    @show sd.frequency_ranges(tx_chan)
-    @show sd.bandwidth_ranges(rx_chan)
-    @show sd.bandwidth_ranges(tx_chan)
-    @show sd.sample_rate_ranges(rx_chan)
-    @show sd.sample_rate_ranges(tx_chan)
-
-    #@show sd.GainElement(rx_chan)
-    #@show sd.GainElement(tx_chan)
-
-    # Loopback initialized defaults
-    #@test rx_chan.bandwidth == 2.048e6u"Hz"
-    #@test rx_chan.frequency == 1.0e8u"Hz"
-    #@test rx_chan.gain == -53u"dB"
-    #@test rx_chan.sample_rate == 2.048e6u"Hz"
-    @show rx_chan.info
-    @show rx_chan.antenna
-    @show rx_chan.dc_offset_mode
-    @show rx_chan.dc_offset
-    @show rx_chan.iq_balance_mode
-    @show rx_chan.iq_balance
-    @show rx_chan.gain_mode
     #@show rx_chan.gain_profile
     @show rx_chan.frequency_correction
 

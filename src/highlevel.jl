@@ -459,6 +459,11 @@ function Base.getindex(d::Device, se::SensorComponent)
     unsafe_string(SoapySDRDevice_readSensor(d.ptr, Cstring(unsafe_convert(Ptr{UInt8}, se.name))))
 end
 
+function Base.setindex!(c::Channel, gain::typeof(1.0dB), ge::GainElement)
+    SoapySDRDevice_setGainElement(c.device, c.direction, c.idx, Cstring(unsafe_convert(Ptr{UInt8}, ge.name)), gain.val)
+    return gain
+end
+
 
 ## GainElement
 
@@ -480,10 +485,6 @@ end
 gainrange(c::Channel, ge::GainElement) =
     return _gainrange(SoapySDRDevice_getGainElementRange(c.device, c.direction, c.idx, Cstring(unsafe_convert(Ptr{UInt8}, ge.name))))
 
-function Base.setindex!(c::Channel, gain::typeof(1.0dB), ge::GainElement)
-    SoapySDRDevice_setGainElement(c.device, c.direction, c.idx, Cstring(unsafe_convert(Ptr{UInt8}, ge.name, gain.val)))
-    return gain
-end
 
 function _hzrange(soapyr::SoapySDRRange)
     if soapyr.step == 0.0
