@@ -120,21 +120,50 @@ end
 """
     Channel
 
-A channel on the given `Device`. Has the following properties:
-- `direction`: `Tx` or `Rx`
-- `index`: channel index
-- `info`: channel info
-- `rate`: sample rate
-- `gain`: gain range
-- `freq`: frequency range
-- `bw`: bandwidth range
-- `antenna`: antenna list
-- `dc`: DC offset correction
-- `iq`: IQ imbalance correction
-- `sensors`: sensor list
+A channel on the given `Device`.
 
-Note: A Channel can be created from a `Device` or extracted from a `ChannelList`. It should rarely
+Note!!: A Channel can be created from a `Device` or extracted from a `ChannelList`. It should rarely
 be necessary to create a Channel directly.
+
+Has the following properties:
+- `device::Device` - `Device` to which the `Channel` belongs
+- `direction` - either `Tx` or `Rx`
+- `idx` - channel index used by Soapy
+- `info` - channel info consiting of `OwnedKWArgs`
+- `antenna` - antenna name
+- `gain_mode` - Automatic Gain control, `true`, `false`, or `missing`
+- `gain_elements` - list of `GainElements` of the channel
+- `gain` - effective gain, distributed amongst the `GainElements`
+- `dc_offset_mode` - Automatic DC offset mode, `true`, `false` or `missing`
+- `dc_offset` -  DC offset value
+- `iq_balance_mode` -  Automatic IQ balance mode, `true`, `false` or `missing`
+- `iq_balance` - IQ balance value
+- `frequency_correction` - frequency correction value
+- `sample_rate` - sample rate
+- `bandwidth` - bandwidth
+- `frequency` - center frequency
+- `fullduplex` - full duplex mode with other (TX/RX) channels
+- `native_stream_format` - native stream format
+- `stream_formats` - supported stream formats (converted by Soapy)
+- `fullscale` - full scale value
+- `sensors` - sensor list
+
+
+## Reading and writing to Components
+
+gains, antennas, and sensors may consist of a chain or selectable subcomponets.
+To set or read e.g. a sensors, one may use the following syntax:
+
+```
+dev = Devices()[1]
+cr = dev.rx[1]
+# read a sensor value
+s1 = cr.sensors[1]
+cr[s1]
+# read and set the gain element
+g1 = cr.gain_elements[1]
+cr[g1]
+cr[g1] = 4*u"dB"
 """
 struct Channel
     device::Device
@@ -207,13 +236,12 @@ end
 function Base.show(io::IO, ::MIME"text/plain", c::Channel)
     println(io, c.direction == Tx ? "TX" : "RX", " Channel #", c.idx + 1, " on ", c.device.hardware)
     if !get(io, :compact, false)
-        print(io, "  Selected Antenna [")
-            join(io, AntennaList(c), ", ")
-            println(io, "]: ", c.antenna)
-        print(io, "  Bandwidth [ ")
+        println(io, "  antenna: ", c.antenna)
+        println(io, "  antennas: ", c.antennas)
+        print(io, "  bandwidth [ ")
             join(io, map(x->sprint(print_hz_range, x), bandwidth_ranges(c)), ", ")
             println(io, " ]: ", pick_freq_unit(c.bandwidth))
-        print(io, "  Frequency [ ")
+        print(io, "  frequency [ ")
                 join(io, map(x->sprint(print_hz_range, x), frequency_ranges(c)), ", ")
                 println(io, " ]: ", pick_freq_unit(c.frequency))
             for element in FrequencyComponentList(c)
@@ -221,15 +249,13 @@ function Base.show(io::IO, ::MIME"text/plain", c::Channel)
                 join(io, map(x->sprint(print_hz_range, x), frequency_ranges(c, element)), ", ")
                 println(io, " ]: ", pick_freq_unit(c[element]))
             end  
-        println(io, "  Gain ", gainrange(c), ": ", c.gain)
-            for element in GainElementList(c)
-                println(io, "    ", element, " ", gainrange(c,element), ": ", c[element])
-            end
         println(io, "  gain_mode (AGC=true/false/missing): ", c.gain_mode)
+        println(io, "  gain: ", c.gain)
+        println(io, "  gain_elements: ", c.gain_elements)
         println(io, "  fullduplex: ", c.fullduplex)
         println(io, "  stream_formats: ", c.stream_formats)
         println(io, "  native_stream_format: ", c.native_stream_format)
-        print(io, "  Sample Rate [ ", )
+        print(io, "  sample_rate [ ", )
             join(io, map(x->sprint(print_hz_range, x), sample_rate_ranges(c)), ", ")
             println(io, " ]: ", pick_freq_unit(c.sample_rate))
         println(io, "  dc_offset_mode (true/false/missing): ", c.dc_offset_mode)
@@ -259,8 +285,12 @@ function Base.getproperty(c::Channel, s::Symbol)
         return OwnedKWArgs(SoapySDRDevice_getChannelInfo(c.device.ptr, c.direction, c.idx))
     elseif s === :antenna
         return Antenna(Symbol(unsafe_string(SoapySDRDevice_getAntenna(c.device.ptr, c.direction, c.idx))))
+    elseif s === :antennas
+        return AntennaList(c)
     elseif s === :gain
         return SoapySDRDevice_getGain(c.device.ptr, c.direction, c.idx)*dB
+    elseif s === :gain_elements
+        return GainElementList(c)
     elseif s === :dc_offset_mode
         if !SoapySDRDevice_hasDCOffsetMode(c.device.ptr, c.direction, c.idx)
             return missing
@@ -320,6 +350,8 @@ function Base.propertynames(::SoapySDR.Channel)
             :idx,
             :info,
             :antenna,
+            :antennas,
+            :gain_elements,
             :gain,
             :dc_offset_mode,
             :dc_offset,
