@@ -565,18 +565,14 @@ SoapySDRDevice_closeStream(s::Stream) = SoapySDRDevice_closeStream(s.d, s)
 streamtype(::Stream{T}) where T = T
 
 function Base.setproperty!(c::Stream, s::Symbol, v)
-    if s === :mtu
-        c.mtu
-    else
-        return setfield!(c, s, v)
-    end
+    return setfield!(c, s, v)
 end
 
-function Base.getproperty(c::Stream, s::Symbol)
+function Base.getproperty(stream::Stream, s::Symbol)
     if s === :mtu
-        SoapySDRDevice_getStreamMTU(c.device.ptr, c.ptr)
+        SoapySDRDevice_getStreamMTU(stream.d.ptr, stream.ptr)
     else
-        return getfield(c, s)
+        return getfield(stream, s)
     end
 end
 
