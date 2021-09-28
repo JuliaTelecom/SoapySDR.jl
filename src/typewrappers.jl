@@ -82,3 +82,16 @@ function Base.getindex(s::StringList, i::Integer)
 end
 
 SoapySDRStrings_clear(s::StringList) = @GC.preserve s SoapySDRStrings_clear(pointer_from_objref(s), s.length)
+
+
+function Base.show(io::IO, s::SoapySDRArgInfo)
+    println(io, "name: ", unsafe_string(s.units))
+    println(io, "key: ", unsafe_string(s.key))
+    println(io, "value: ", unsafe_string(s.name))
+    println(io, "description: ", unsafe_string(s.description))
+    println(io, "units: ", unsafe_string(s.units))
+    #type
+    #range
+    println(io, "options: ", StringList(s.options, s.numOptions))
+    println(io, "optionNames: ", StringList(s.optionNames, s.numOptions))
+end

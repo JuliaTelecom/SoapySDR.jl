@@ -307,10 +307,21 @@ function SoapySDRDevice_getGainElement(device, direction, channel, name)
         device, direction, channel, name)
 end
 
+
+"""
+Set the value of a amplification element in a chain.
+
+param device a pointer to a device instance
+param direction the channel direction RX or TX
+param channel an available channel on the device
+param name the name of an amplification element
+param value the new amplification value in dB
+return an error code or 0 for success
+"""
 function SoapySDRDevice_setGainElement(device, direction, channel, name, val)
-    err = @check_error ccall((:SoapySDRDevice_getGainElement, lib), Cint, (Ptr{SoapySDRDevice}, Cint, Csize_t, Cstring, Cdouble),
+    # note: the C API does not match the C++ API. c++ returns void here w/o error code
+    @check_error ccall((:SoapySDRDevice_getGainElement, lib), Cvoid, (Ptr{SoapySDRDevice}, Cint, Csize_t, Cstring, Cdouble),
         device, direction, channel, name, val)
-    @assert err == 0
     return nothing
 end
 
