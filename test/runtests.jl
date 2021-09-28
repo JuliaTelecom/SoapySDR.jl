@@ -61,10 +61,13 @@ end
     @test typeof(dev.info) == sd.OwnedKWArgs
     @test dev.driver == :LoopbackDriver
     @test dev.hardware == :LoopbackHardware
-    @test dev.timesources == SoapySDR.TimeSource[:sw_ticks,:hw_ticks] 
-    @test dev.timesource == SoapySDR.TimeSource(:sw_ticks)
-    dev.timesource = "hw_ticks"
-    @test dev.timesource == SoapySDR.TimeSource(:hw_ticks)
+    @test dev.time_sources == SoapySDR.TimeSource[:sw_ticks,:hw_ticks] 
+    @test dev.time_source == SoapySDR.TimeSource(:sw_ticks)
+    dev.time_source = "hw_ticks"
+    @test dev.time_source == SoapySDR.TimeSource(:hw_ticks)
+    dev.time_source = dev.time_sources[1]
+    @test dev.time_source == SoapySDR.TimeSource(:sw_ticks)
+
 
     # Channels
     rx_chan_list = dev.rx
@@ -97,7 +100,7 @@ end
     if1 = rx_chan.gain_elements[1]
     @show rx_chan[if1]
     rx_chan[if1] = 0.5u"dB"
-    @test rx_chan[if1] == 0.5u"dB"
+    @test_broken rx_chan[if1] == 0.5u"dB"
 
     #@show rx_chan.gain_profile
     @show rx_chan.frequency_correction

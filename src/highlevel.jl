@@ -40,6 +40,11 @@ Fields:
 - `hardware`
 - `tx`
 - `rx`
+- `sensors`
+- `time_source`
+- `time_sources`
+- `frontendmapping_rx`
+- `frontendmapping_tx`
 """
 mutable struct Device
     ptr::Ptr{SoapySDRDevice}
@@ -61,7 +66,8 @@ function Base.show(io::IO, d::Device)
     println(io, "  number of TX channels:", length(d.tx))
     println(io, "  number of RX channels:", length(d.rx))
     println(io, "  sensors: ", d.sensors)
-    println(io, "  timesources:", d.timesources)
+    println(io, "  time_source: ", d.time_source)
+    println(io, "  time_sources:", d.time_sources)
     println(io, "  frontendmapping_rx: ", d.frontendmapping_rx)
     println(io, "  frontendmapping_tx: ", d.frontendmapping_tx)
 end
@@ -84,9 +90,9 @@ function Base.getproperty(d::Device, s::Symbol)
         ChannelList(d, Rx)
     elseif s === :sensors
         ComponentList(SensorComponent, d)
-    elseif s === :timesources
+    elseif s === :time_sources
         ComponentList(TimeSource, d)
-    elseif s === :timesource
+    elseif s === :time_source
         TimeSource(Symbol(unsafe_string(SoapySDRDevice_getTimeSource(d.ptr))))
     elseif s === :frontendmapping_tx
         unsafe_string(SoapySDRDevice_getFrontendMapping(d, Tx))
@@ -102,7 +108,7 @@ function Base.setproperty!(c::Device, s::Symbol, v)
         SoapySDRDevice_setFrontendMapping(c.ptr, Tx, v)
     elseif s === :frontendmapping_rx
         SoapySDRDevice_setFrontendMapping(c.ptr, Rx, v)
-    elseif s === :timesource
+    elseif s === :time_source
         SoapySDRDevice_setTimeSource(c.ptr, v)
     else
         return setfield!(c, s, v)
@@ -154,12 +160,13 @@ Has the following properties:
 gains, antennas, and sensors may consist of a chain or selectable subcomponets.
 To set or read e.g. a sensors, one may use the following syntax:
 
-```
 dev = Devices()[1]
 cr = dev.rx[1]
+
 # read a sensor value
 s1 = cr.sensors[1]
 cr[s1]
+
 # read and set the gain element
 g1 = cr.gain_elements[1]
 cr[g1]
@@ -266,6 +273,12 @@ function Base.show(io::IO, ::MIME"text/plain", c::Channel)
     end
 end
 
+"""
+    ChannelList
+
+A grouping of channels on the Device.
+Note: This should not be called directly, but rather through the Device.rx and Device.tx properties.
+"""
 struct ChannelList <: AbstractVector{Channel}
     device::Device
     direction::Direction
@@ -278,7 +291,7 @@ end
 function Base.getindex(cl::ChannelList, i::Integer)
     checkbounds(cl, i)
     Channel(cl.device, cl.direction, i-1)
-end    
+end
 
 function Base.getproperty(c::Channel, s::Symbol)
     if s === :info
@@ -403,6 +416,7 @@ abstract type AbstractComponent; end
 Base.print(io::IO, c::AbstractComponent) = print(io, c.name)
 Base.convert(::Type{T}, s::Symbol) where {T <: AbstractComponent} = T(s)
 Base.convert(::Type{T}, s::String) where {T <: AbstractComponent} = T(Symbol(s))
+Base.convert(::Type{Cstring}, s::AbstractComponent) =  Cstring(unsafe_convert(Ptr{UInt8}, s.name))
 
 for e in (:TimeSource, :GainElement, :Antenna, :FrequencyComponent, :SensorComponent)
     @eval begin
