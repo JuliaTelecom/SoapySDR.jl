@@ -559,15 +559,26 @@ end
 ####################################################################################################
 
 """
-    Stream{T}
+    SoapySDR.Stream(channels)
+    SoapySDR.Stream(::Type{T}, channels)
 
+Constructs a `Stream{T}` where `T` is the stream type of the device. If unspecified,
+the native format will be used.
+
+Fields:
+- mtu - The stream Maximum Transmission Unit
+
+## Example
+```
+SoapySDR.Stream(Devices()[1].rx)
+```
 """
 mutable struct Stream{T}
     d::Device
     nchannels::Int
     ptr::Ptr{SoapySDRStream}
-    function Stream{T}(d::Device, nchannels::Int, ptr::Ptr{SoapySDRStream}) where {T}
-        this = new{T}(d, nchannels, ptr)
+    function Stream{T}(d::Device, nchannels, ptr::Ptr{SoapySDRStream}) where {T}
+        this = new{T}(d, Int(nchannels), ptr)
         finalizer(SoapySDRDevice_closeStream, this)
         return this
     end
