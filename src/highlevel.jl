@@ -633,96 +633,27 @@ function Stream(channels::AbstractVector{T}; kwargs...) where {T <: Channel}
 end
 
 """
-    SampleBuffer(s::SoapySDR.Stream)
-    SampleBuffer(s::SoapySDR.Stream, n::Int)
-
-Constructs a sample buffer for a given stream. Can contain multiple channels and be of arbitrary length.
-To avoid undefined behavior, this requested length with be aligned to the device MTU. It is therefore
-important to ensure that subsequent calls and calculations use this length.
-
-Returns a `SampleBuffer{N,T}` with fields:
-    bufs::NTuple{N, T}
-    packet_count::Int
-    timens::Vector{Pair{Int,typeof(1u"ns")}}
-
-where N is the number of channels and T is the vector type of the buffer (default: Vector).
-
-`bufs` are the buffers for each channel.
-`length` length of the buffer.
-`packet_count` are the number of transactions of MTU size required by subsequent `read` and `write` operations.
-`timens` are the offset and time stamp pairs for each packet.
-"""
-struct SampleBuffer{N, T}
-    bufs::NTuple{N, T}
-    length::Int
-    packet_count::Int
-    timens::Vector{Pair{Int, typeof(1u"ns")}}
-end
-Base.length(sb::SampleBuffer) = length(first(sb.bufs))
-Base.getindex(sb::SampleBuffer, i::Int) = sb.bufs[i]
-Base.setindex(sb::SampleBuffer, i::Int, v) = (sb.bufs[i] = v)
-Base.eachindex(::SampleBuffer{N,T}) where {N, T} = 1:N
-SampleBuffer(s::Stream) = SampleBuffer(s, s.mtu)
-
-function SampleBuffer(s::Stream{T}, length; round::RoundingMode{RM}=RoundDown, vectortype=Vector) where {T, RM}
-
-    # align to MTU
-    overrun = length%s.mtu
-    realigned = false
-    if length < s.mtu
-        length = s.mtu
-        realigned = true
-    elseif length > s.mtu && overrun != 0
-        length = if RM == :Down
-                      length - overrun
-                  elseif RM == :Up
-                      length + s.mtu - overrun
-                  end
-        realigned = true
-    end
-    if realigned
-        @info "requested 'length' is not aligned to MTU! Aligning to length of $(length) samples"
-        @info "get MTU with stream.mtu"
-    end
-
-    packet_count = Int(length/s.mtu)
-    bufs = ntuple(_->vectortype{T}(undef, length), s.nchannels)
-    SampleBuffer(bufs, length, packet_count, Vector{Pair{Int, typeof(1u"ns")}}(undef, packet_count))
-end
-
-
-"""
-    read!(s::SoapySDR.Stream, buf::SampleBuffer; timeout::Int)
+    read!(s::SoapySDR.Stream{T}, buffer::NTuple{N, Vector{T}}; [timeout]) where {N, T}
 
 Read data from the device into the given buffer.
 """
-function Base.read!(s::Stream{T}, samplebuffer::SampleBuffer{N, VT}; timeout=nothing, activate=true, deactivate=true) where {N, T, VT <: AbstractVector{T}}
+function Base.read!(s::Stream{T}, buffer::NTuple{N, Vector{T}}; timeout=nothing) where {N, T}
     timeout === nothing && (timeout = 0.1u"s") # Default from SoapySDR upstream
 
-    # check length did not change
-    for i in eachindex(samplebuffer.bufs)
-        @assert length(samplebuffer.bufs[i]) == samplebuffer.length
-    end
+    total_nread = 0
+    to_read_ct = length(buffer[1]) # TODO assert all equal
 
-    activate && activate!(s)
-    for packet in 1:samplebuffer.packet_count
-        offset = (packet-1)*s.mtu
-        @show offset
-        nread, flags, timens = SoapySDRDevice_readStream(s.d, s, Ref(map(b -> pointer(b, offset), samplebuffer.bufs)), s.mtu, uconvert(u"μs", timeout).val)
+    while total_nread < to_read_ct
+
+        nread, flags, timens = SoapySDRDevice_readStream(s.d, s, Ref(map(b -> pointer(b, total_nread), buffer)), to_read_ct-total_nread, uconvert(u"μs", timeout).val)
         timens = timens * u"ns"
 
-        @assert flags & SOAPY_SDR_MORE_FRAGMENTS == 0
+        total_nread += nread
+        #@assert flags & SOAPY_SDR_MORE_FRAGMENTS == 0
 
-        if nread != s.mtu
-            @info("assertion debugging", nread, n)
-            @assert nread == n
-        end
-
-        samplebuffer.timens[packet] = (offset => timens)
     end
-    deactivate && deactivate!(s)
 
-    samplebuffer
+    buffer
 end
 
 function activate!(s::Stream; flags = 0, timens = nothing, numElems=0)
@@ -735,29 +666,26 @@ function deactivate!(s::Stream; flags = 0, timens = nothing)
     nothing
 end
 
-function Base.write(s::Stream{T}, samplebuffer::SampleBuffer{N, VT}; timeout = nothing, activate=true, deactivate=true) where {N, T, VT <: AbstractVector{T}}
+"""
+    write(s::SoapySDR.Stream{T}, buffer::NTuple{N, Vector{T}}; [timeout]) where {N, T}
+
+Write data from the device into the given buffer.
+"""
+function Base.write(s::Stream{T}, buffer::NTuple{N, Vector{T}}; timeout = nothing) where {N, T}
     timeout === nothing && (timeout = 0.1u"s") # Default from SoapySDR upstream
 
-    # check length did not change
-    for i in eachindex(samplebuffer.bufs)
-        @assert length(samplebuffer.bufs[i]) == samplebuffer.length
-    end
+    total_nwritten = 0
+    to_write_ct = length(buffer[1])
 
-    activate && activate!(s)
-    for packet in 1:samplebuffer.packet_count
-        offset = (packet-1)*s.mtu
+    while total_nread < to_read_ct
         
-        nelem, flags = SoapySDRDevice_writeStream(s.d, s, Ref(map(b -> pointer(b, offset), samplebuffer.bufs)), s.mtu, 0, 0, uconvert(u"μs", timeout).val)
-
-        if nelem != s.mtu
-            @info("assertion debugging", nelem, n)
-            @assert nelem == n
-        end
+        nelem, flags = SoapySDRDevice_writeStream(s.d, s, Ref(map(b -> pointer(b,total_nwritten), buffer)), to_write_ct-total_nwritten, 0, 0, uconvert(u"μs", timeout).val)
+    
+        total_nwritten += nelem
 
     end
-    deactivate && deactivate!(s)
 
-    samplebuffer
+    buffer
 end
 
 
