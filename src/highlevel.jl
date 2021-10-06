@@ -642,17 +642,12 @@ function Base.read!(s::Stream{T}, buffer::NTuple{N, Vector{T}}; timeout=nothing)
 
     total_nread = 0
     to_read_ct = length(buffer[1]) # TODO assert all equal
-
     while total_nread < to_read_ct
-
-        nread, flags, timens = SoapySDRDevice_readStream(s.d, s, Ref(map(b -> pointer(b, total_nread), buffer)), to_read_ct-total_nread, uconvert(u"μs", timeout).val)
+        nread, flags, timens = SoapySDRDevice_readStream(s.d, s, Ref(map(b -> pointer(b, total_nread+1), buffer)), to_read_ct-total_nread, uconvert(u"μs", timeout).val)
         timens = timens * u"ns"
-
         total_nread += nread
         #@assert flags & SOAPY_SDR_MORE_FRAGMENTS == 0
-
     end
-
     buffer
 end
 
@@ -677,12 +672,9 @@ function Base.write(s::Stream{T}, buffer::NTuple{N, Vector{T}}; timeout = nothin
     total_nwritten = 0
     to_write_ct = length(buffer[1])
 
-    while total_nread < to_read_ct
-        
-        nelem, flags = SoapySDRDevice_writeStream(s.d, s, Ref(map(b -> pointer(b,total_nwritten), buffer)), to_write_ct-total_nwritten, 0, 0, uconvert(u"μs", timeout).val)
-    
+    while total_nwritten < to_write_ct
+        nelem, flags = SoapySDRDevice_writeStream(s.d, s, Ref(map(b -> pointer(b,total_nwritten+1), buffer)), to_write_ct-total_nwritten, 0, 0, uconvert(u"μs", timeout).val)
         total_nwritten += nelem
-
     end
 
     buffer
