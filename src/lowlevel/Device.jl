@@ -1404,3 +1404,20 @@ function SoapySDRDevice_readChannelSetting(device, direction, channel, key)
     #SOAPY_SDR_API char *SoapySDRDevice_readChannelSetting(const SoapySDRDevice *device, const int direction, const size_t channel, const char *key);
     @check_error ccall((:SoapySDRDevice_readChannelSetting, lib), Cstring, (Ptr{SoapySDRDevice}, Cint, Csize_t, Cstring), device, direction, channel, key)
 end
+
+#####################
+# Native Access API
+#####################
+
+"""
+A handle to the native device used by the driver.
+The implementation may return a null value if it does not support
+or does not wish to provide access to the native handle.
+
+param: device a pointer to a device instance
+return: a handle to the native device or null
+"""
+function SoapySDRDevice_getNativeHandle(device)
+    #SOAPY_SDR_API void* SoapySDRDevice_getNativeDeviceHandle(const SoapySDRDevice *device);
+    @check_error ccall((:SoapySDRDevice_getNativeHandle, lib), Ptr{Cvoid}, (Ptr{SoapySDRDevice}, ), device)
+end
