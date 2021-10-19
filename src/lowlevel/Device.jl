@@ -1417,7 +1417,7 @@ or does not wish to provide access to the native handle.
 param: device a pointer to a device instance
 return: a handle to the native device or null
 """
-function SoapySDRDevice_getNativeHandle(device)
+function SoapySDRDevice_getNativeDeviceHandle(device)
     #SOAPY_SDR_API void* SoapySDRDevice_getNativeDeviceHandle(const SoapySDRDevice *device);
-    @check_error ccall((:SoapySDRDevice_getNativeHandle, lib), Ptr{Cvoid}, (Ptr{SoapySDRDevice}, ), device)
+    @check_error ccall((:SoapySDRDevice_getNativeDeviceHandle, lib), Ptr{Cvoid}, (Ptr{SoapySDRDevice}, ), device)
 end
