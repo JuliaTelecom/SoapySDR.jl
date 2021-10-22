@@ -1,40 +1,68 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Home · SoapySDR.jl</title><script data-outdated-warner src="assets/warner.js"></script><link rel="canonical" href="https://JuliaTelecom.github.io/SoapySDR.jl/"/><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href>SoapySDR.jl</a></span></div><form class="docs-search" action="search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>Home</a><ul class="internal"><li><a class="tocitem" href="#Quick-Start"><span>Quick Start</span></a></li></ul></li><li><a class="tocitem" href="tutorial/">Tutorial</a></li><li><a class="tocitem" href="highlevel/">High Level API</a></li><li><a class="tocitem" href="lowlevel/">Low Level API</a></li><li><a class="tocitem" href="troubleshooting/">Troubleshooting</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Home</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Home</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaTelecom/SoapySDR.jl/blob/master/docs/src/index.md#" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="SoapySDR"><a class="docs-heading-anchor" href="#SoapySDR">SoapySDR</a><a id="SoapySDR-1"></a><a class="docs-heading-anchor-permalink" href="#SoapySDR" title="Permalink"></a></h1><p>Documentation for <a href="https://github.com/JuliaTelecom/SoapySDR.jl">SoapySDR</a>.</p><p>This package provides a Julia wrapper for the <a href="https://github.com/pothosware/SoapySDR">SoapySDR</a> C++ library.</p><h2 id="Quick-Start"><a class="docs-heading-anchor" href="#Quick-Start">Quick Start</a><a id="Quick-Start-1"></a><a class="docs-heading-anchor-permalink" href="#Quick-Start" title="Permalink"></a></h2><h3 id="Loading-a-Driver-Module"><a class="docs-heading-anchor" href="#Loading-a-Driver-Module">Loading a Driver Module</a><a id="Loading-a-Driver-Module-1"></a><a class="docs-heading-anchor-permalink" href="#Loading-a-Driver-Module" title="Permalink"></a></h3><p>Below is a list of driver modules that may be installed with the Julia package manager.</p><table><tr><th style="text-align: right">Device</th><th style="text-align: right">Julia Package</th></tr><tr><td style="text-align: right">xrtx</td><td style="text-align: right">xtrx_jll</td></tr><tr><td style="text-align: right">RTL-SDR</td><td style="text-align: right">SoapyRTLSDR_jll</td></tr><tr><td style="text-align: right">LimeSDR</td><td style="text-align: right">SoapyLMS7_jll</td></tr><tr><td style="text-align: right">USRP</td><td style="text-align: right">SoapyUHD_jll</td></tr><tr><td style="text-align: right">Pluto SDR</td><td style="text-align: right">SoapyPlutoSDR_jll</td></tr></table><p>If you need a driver module that is not listed, you can search <a href="https://juliahub.com">JuliaHub</a> to see if it may have been added to the package manager. If not, please file an <a href="https://github.com/JuliaTelecom/SoapySDR.jl/issues">issue</a>.</p><p>To activate the driver and module, simply use the package along with SoapySDR. For example:</p><pre><code class="nohighlight hljs">julia&gt; using SoapySDR, xtrx_jll</code></pre><p>or:</p><pre><code class="nohighlight hljs">julia&gt; using SoapySDR, SoapyRTLSDR_jll</code></pre><h3 id="Transmitting-and-Receiving"><a class="docs-heading-anchor" href="#Transmitting-and-Receiving">Transmitting and Receiving</a><a id="Transmitting-and-Receiving-1"></a><a class="docs-heading-anchor-permalink" href="#Transmitting-and-Receiving" title="Permalink"></a></h3><pre><code class="nohighlight hljs"># Open all TX-capable channels on first device
-tx_channels = Devices()[1].tx
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Home · SoapySDR.jl</title><script data-outdated-warner src="assets/warner.js"></script><link rel="canonical" href="https://JuliaTelecom.github.io/SoapySDR.jl/"/><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href>SoapySDR.jl</a></span></div><form class="docs-search" action="search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>Home</a><ul class="internal"><li><a class="tocitem" href="#Quick-Start"><span>Quick Start</span></a></li></ul></li><li><a class="tocitem" href="tutorial/">Tutorial</a></li><li><a class="tocitem" href="highlevel/">High Level API</a></li><li><a class="tocitem" href="lowlevel/">Low Level API</a></li><li><a class="tocitem" href="troubleshooting/">Troubleshooting</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Home</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Home</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaTelecom/SoapySDR.jl/blob/master/docs/src/index.md#" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="SoapySDR"><a class="docs-heading-anchor" href="#SoapySDR">SoapySDR</a><a id="SoapySDR-1"></a><a class="docs-heading-anchor-permalink" href="#SoapySDR" title="Permalink"></a></h1><p>Documentation for <a href="https://github.com/JuliaTelecom/SoapySDR.jl">SoapySDR</a>.</p><p>This package provides a Julia wrapper for the <a href="https://github.com/pothosware/SoapySDR">SoapySDR</a> C++ library.</p><h2 id="Quick-Start"><a class="docs-heading-anchor" href="#Quick-Start">Quick Start</a><a id="Quick-Start-1"></a><a class="docs-heading-anchor-permalink" href="#Quick-Start" title="Permalink"></a></h2><h3 id="Loading-a-Driver-Module"><a class="docs-heading-anchor" href="#Loading-a-Driver-Module">Loading a Driver Module</a><a id="Loading-a-Driver-Module-1"></a><a class="docs-heading-anchor-permalink" href="#Loading-a-Driver-Module" title="Permalink"></a></h3><p>Below is a list of driver modules that may be installed with the Julia package manager.</p><table><tr><th style="text-align: right">Device</th><th style="text-align: right">Julia Package</th></tr><tr><td style="text-align: right">xrtx</td><td style="text-align: right">xtrx_jll</td></tr><tr><td style="text-align: right">RTL-SDR</td><td style="text-align: right">SoapyRTLSDR_jll</td></tr><tr><td style="text-align: right">LimeSDR</td><td style="text-align: right">SoapyLMS7_jll</td></tr><tr><td style="text-align: right">USRP</td><td style="text-align: right">SoapyUHD_jll</td></tr><tr><td style="text-align: right">Pluto SDR</td><td style="text-align: right">SoapyPlutoSDR_jll</td></tr></table><p>If you need a driver module that is not listed, you can search <a href="https://juliahub.com">JuliaHub</a> to see if it may have been added to the package manager. If not, please file an <a href="https://github.com/JuliaTelecom/SoapySDR.jl/issues">issue</a>.</p><p>To activate the driver and module, simply use the package along with SoapySDR. For example:</p><pre><code class="nohighlight hljs">julia&gt; using SoapySDR, xtrx_jll</code></pre><p>or:</p><pre><code class="nohighlight hljs">julia&gt; using SoapySDR, SoapyRTLSDR_jll</code></pre><h3 id="Transmitting-and-Receiving-(loopback)"><a class="docs-heading-anchor" href="#Transmitting-and-Receiving-(loopback)">Transmitting and Receiving (loopback)</a><a id="Transmitting-and-Receiving-(loopback)-1"></a><a class="docs-heading-anchor-permalink" href="#Transmitting-and-Receiving-(loopback)" title="Permalink"></a></h3><pre><code class="language-julia hljs">using SoapySDR
 
-# Open all RX-capable channels on first device
-rx_channels = Devices()[1].rx
+# Don&#39;t forget to add/import a device-specific plugin package!
+# using xtrx_jll
+# using SoapyLMS7_jll
+# using SoapyRTLSDR_jll
+# using SoapyPlutoSDR_jll
 
-# Configure a TX channel with appropriate parameters
-# configure the RX channel with similar for e.g. a loopback test
-# Be sure to check your local regulations before transmitting!
-tx_channels[1].bandwidth = 800u&quot;kHz&quot;
-tx_channels[1].frequency = 30u&quot;MHz&quot;
-tx_channels[1].gain = 42u&quot;dB&quot;
-tx_channels[1].sample_rate = 2.1u&quot;MHz&quot;
+# Open first channels on first device
+c_tx = Devices()[1].tx[1]
+c_rx = Devices()[1].rx[1]
 
-# Open a (potentially multichannel) stream on the channels
-tx_stream = SoapySDR.Stream(tx_channels)
-rx_stream = SoapySDR.Stream(rx_channels)
+# Configure channel with appropriate parameters.  We choose to sneak into
+# the very high end of the 2.4 GHz ISM band, above Wifi channel 14 (which
+# itself is well outside of the typical US equipment range, which only goes
+# up to channel 11, e.g. 2.473 GHz).
+c_tx.bandwidth = 2u&quot;MHz&quot;
+c_rx.bandwidth = 2u&quot;MHz&quot;
+c_tx.frequency = 2.498u&quot;GHz&quot;
+c_rx.frequency = 2.498u&quot;GHz&quot;
+c_tx.gain = 52u&quot;dB&quot;
+c_rx.gain = -2u&quot;dB&quot;
+c_tx.sample_rate = 4u&quot;MHz&quot;
+c_rx.sample_rate = 4u&quot;MHz&quot;
 
-# Setup a sample buffer optimized for the device
-# The data can be access with e.g. tx_buf.bufs
-# Note: we ask for 10,000 samples, but the API will re-size correctly for the device
-tx_buf = SoapySDR.SampleBuffer(tx_stream, 10_000)
-rx_buf = SoapySDR.SampleBuffer(rx_stream, 10_000)
 
-# Setup some data to transmit on each channel
-for i in eachindex(tx_buf)
-    tx_buf[i] .= rand(SoapySDR.streamtype(tx_stream), length(tx_buf))
+# Write out a sinusoid oscillating at 100KHz, lasting 10ms
+t = (1:round(Int, 0.01*4e6))./4e6
+data_tx = ComplexF32.(sin.(2π.*t.*100e3), 0.0f0)
+data_tx_zeros = zeros(ComplexF32, length(data_tx))
+
+# Open both RX and TX streams
+s_tx = SoapySDR.Stream(ComplexF32, [c_tx])
+s_rx = SoapySDR.Stream(ComplexF32, [c_rx])
+
+
+# Then, do the actual writing and reading!
+function loopback_test(s_tx, s_rx, num_buffers)
+    # allocate some recieve buffers
+    data_rx_buffs = Vector{ComplexF32}[]
+    for _ in 1:num_buffers
+        push!(data_rx_buffs, Vector(undef, length(data_tx)))
+    end
+
+    SoapySDR.activate!.((s_tx, s_rx))
+    # Read/write `num_buffers`, writing zeros out except for one buffer.
+    for idx in 1:num_buffers
+        if idx == ceil(num_buffers/2)
+            Base.write(s_tx, (data_tx,))
+        else
+            Base.write(s_tx, (data_tx_zeros,))
+        end
+        Base.read!(s_rx, (data_rx_buffs[idx], ))
+    end
+    SoapySDR.deactivate!.((s_tx, s_rx))
+    return data_rx_buffs
 end
 
-# Spawn two tasks for full duplex operation
-# The tasks will run in parallel and for best resuslts run julia with --threads=auto
-read_task = Threads.@spawn read!(rx_stream, rx_buf)
-write_task = Threads.@spawn write(tx_stream, tx_buf)
+# This should take about 100ms, since we&#39;re rx/tx&#39;ing 10x buffers which should each be 10ms long.
+loopback_test(s_tx, s_rx, 2)
+data_rx_buffs = loopback_test(s_tx, s_rx, 10)
 
-# Wait for the tasks to complete
-wait(read_task)
-wait(write_task)
+# Join all buffers together
+data_rx = vcat(data_rx_buffs...)
 
-@show rx_buf[1][1:100] # show the first 100 samples of the first buffer</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="tutorial/">Tutorial »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Tuesday 19 October 2021 20:46">Tuesday 19 October 2021</span>. Using Julia version 1.6.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+# Should see a nice big spike of a sinusoid being transmitted halfway through
+# using Plots; plot(real.(data_rx))</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="tutorial/">Tutorial »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Friday 22 October 2021 13:59">Friday 22 October 2021</span>. Using Julia version 1.6.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
