@@ -566,6 +566,7 @@ Constructs a `Stream{T}` where `T` is the stream type of the device. If unspecif
 the native format will be used.
 
 Fields:
+- nchannels - The 
 - mtu - The stream Maximum Transmission Unit
 
 ## Example
@@ -633,7 +634,7 @@ function Stream(channels::AbstractVector{T}; kwargs...) where {T <: Channel}
 end
 
 """
-    read!(s::SoapySDR.Stream{T}, buffer::NTuple{N, Vector{T}}; [timeout]) where {N, T}
+    read!(s::SoapySDR.Stream{T}, buffer::NTuple{N, Vector{T}}; [timeout])
 
 Read data from the device into the given buffer.
 """
@@ -641,7 +642,7 @@ function Base.read!(s::Stream{T}, buffer::NTuple{N, Vector{T}}; timeout=nothing)
     timeout === nothing && (timeout = 0.1u"s") # Default from SoapySDR upstream
 
     total_nread = 0
-    to_read_ct = length(buffer[1]) # TODO assert all equal
+    to_read_ct = length(first(buffer)) # TODO assert all equal
     while total_nread < to_read_ct
         nread, flags, timens = SoapySDRDevice_readStream(s.d, s, Ref(map(b -> pointer(b, total_nread+1), buffer)), to_read_ct-total_nread, uconvert(u"μs", timeout).val)
         timens = timens * u"ns"
@@ -649,6 +650,17 @@ function Base.read!(s::Stream{T}, buffer::NTuple{N, Vector{T}}; timeout=nothing)
         #@assert flags & SOAPY_SDR_MORE_FRAGMENTS == 0
     end
     buffer
+end
+
+"""
+    read(s::SoapySDR.Stream{T}, nb::Integer; [timeout])
+
+Read at most `nb` samples from s
+"""
+function Base.read(s::Stream{T}, n::Integer; timeout=nothing) where {T}
+    bufs = ntuple(_->Vector{T}(undef, n), s.nchannels)
+    read!(s, bufs; timeout)
+    bufs
 end
 
 function activate!(s::Stream; flags = 0, timens = nothing, numElems=0)
