@@ -24,26 +24,20 @@ function rapid_read(freq=freq)
     println("Makie Setup...")
     fig = Figure(); display(fig)
     ax = Axis(fig[1,1])
+    xlims!(ax, 0, 100)
+    ylims!(ax, -500, 500)
     lines!(ax, norms)
+
     println("Starting fft loop..")
     Base.atexit(()->SoapySDR.deactivate!(rx_stream))
 
     SoapySDR.activate!(rx_stream)
     while true
         read!(rx_stream, (buf,))
-        println("read")
         FFTW.fft!(buf)
-        println("fft")
         norms[] = norm.(buf)
-        println("norm")
         norms[] = norms[]
-        # sanity checks?
-        #nequal = 0
-        #for i in eachindex(current_buff.bufs)
-        #    nequal += Int(current_buff.bufs[1][i] == prev_buff.bufs[1][i])
-        #end
-        #@show current_buff.timens
-        #@show nequal, current_buff.timens, delta_t
+        println("fft") # makie needs a slight delay here
     end
 
 end
