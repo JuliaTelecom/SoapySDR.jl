@@ -15,25 +15,28 @@ function rapid_read(freq=freq)
     @show rx_chan
     rx_chan.gain_mode = true
     rx_chan.frequency = freq
-    rx_stream = SoapySDR.Stream([rx_chan])
+    rx_stream = SoapySDR.Stream(ComplexF32, [rx_chan])
     @show rx_stream.mtu
-    buf = SoapySDR.SampleBuffer(rx_stream, 10^6)
-
-    fft = Vector{Complex{Float64}}(undef, length(buf[1]))
+    buf = Vector{ComplexF32}(undef, rx_stream.mtu)
     @show typeof(fft)
-    norms = Vector{Float64}(undef,length(fft))
-    while true
+    norms = Observable(Vector{Float32}(undef,length(buf)))
 
-        read!(rx_stream, buf, activate=false, deactivate=false)
-        for i in eachindex(buf[1])
-            fft[i] = convert(Complex{Float64}, buf[1][i])
-        end
-        FFTW.fft!(fft)
-        for i in eachindex(fft)
-            norms[i] = norm(fft[i])
-        end
-        fig, ax = lines(norms)
-        display(fig)
+    println("Makie Setup...")
+    fig = Figure(); display(fig)
+    ax = Axis(fig[1,1])
+    lines!(ax, norms)
+    println("Starting fft loop..")
+    Base.atexit(()->SoapySDR.deactivate!(rx_stream))
+
+    SoapySDR.activate!(rx_stream)
+    while true
+        read!(rx_stream, (buf,))
+        println("read")
+        FFTW.fft!(buf)
+        println("fft")
+        norms[] = norm.(buf)
+        println("norm")
+        norms[] = norms[]
         # sanity checks?
         #nequal = 0
         #for i in eachindex(current_buff.bufs)
