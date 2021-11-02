@@ -3,7 +3,7 @@ uuid = "4fa426e6-03fd-45b2-b2dd-25f726820c03"
 keywords = ["sdr", "software defined radio", "radio"]
 license = "Boost"
 desc = "Bindings to the SoapySDR library."
-version = "0.1.1"
+version = "0.1.2"
 
 [deps]
 Intervals = "d8418881-c3e1-53bb-8760-2df7ec849ed5"
