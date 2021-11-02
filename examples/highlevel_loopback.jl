@@ -5,6 +5,7 @@ using SoapySDR
 # using SoapyLMS7_jll
 # using SoapyRTLSDR_jll
 # using SoapyPlutoSDR_jll
+# using SoapyUHD_jll
 
 # Open first channels on first device
 c_tx = Devices()[1].tx[1]
@@ -59,6 +60,9 @@ end
 # This should take about 100ms, since we're rx/tx'ing 10x buffers which should each be 10ms long.
 loopback_test(s_tx, s_rx, 2)
 data_rx_buffs = loopback_test(s_tx, s_rx, 3)
+
+# Make sure we close the Streams where we are done with them
+close.((s_tx, s_rx))
 
 # Join all buffers together
 data_rx = vcat(data_rx_buffs...)

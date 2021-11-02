@@ -124,5 +124,9 @@ end
     @test typeof(rx_stream) == sd.Stream{sd.ComplexInt{12}}
     tx_stream = sd.Stream([tx_chan])
     @test typeof(tx_stream) == sd.Stream{sd.ComplexInt{12}}
+
+    # Stream Close
+    close(rx_stream)
+    close(tx_stream)
 end
 end

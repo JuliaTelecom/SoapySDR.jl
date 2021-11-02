@@ -587,6 +587,7 @@ end
 Base.cconvert(::Type{<:Ptr{SoapySDRStream}}, s::Stream) = s
 Base.unsafe_convert(::Type{<:Ptr{SoapySDRStream}}, s::Stream) = s.ptr
 SoapySDRDevice_closeStream(s::Stream) = SoapySDRDevice_closeStream(s.d, s)
+Base.close(s::Stream) = SoapySDRDevice_closeStream(s)
 
 streamtype(::Stream{T}) where T = T
 
