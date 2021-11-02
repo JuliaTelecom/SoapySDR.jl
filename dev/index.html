@@ -16,17 +16,17 @@ c_rx = Devices()[1].rx[1]
 # itself is well outside of the typical US equipment range, which only goes
 # up to channel 11, e.g. 2.473 GHz).
 c_tx.bandwidth = 2u&quot;MHz&quot;
-c_rx.bandwidth = 2u&quot;MHz&quot;
+c_rx.bandwidth = 200u&quot;kHz&quot;
 c_tx.frequency = 2.498u&quot;GHz&quot;
 c_rx.frequency = 2.498u&quot;GHz&quot;
 c_tx.gain = 52u&quot;dB&quot;
 c_rx.gain = -2u&quot;dB&quot;
-c_tx.sample_rate = 4u&quot;MHz&quot;
-c_rx.sample_rate = 4u&quot;MHz&quot;
+c_tx.sample_rate = 1u&quot;MHz&quot;
+c_rx.sample_rate = 1u&quot;MHz&quot;
 
 
 # Write out a sinusoid oscillating at 100KHz, lasting 10ms
-t = (1:round(Int, 0.01*4e6))./4e6
+t = (1:round(Int, 0.01*1e6))./1e6
 data_tx = ComplexF32.(sin.(2π.*t.*100e3), 0.0f0)
 data_tx_zeros = zeros(ComplexF32, length(data_tx))
 
@@ -59,10 +59,10 @@ end
 
 # This should take about 100ms, since we&#39;re rx/tx&#39;ing 10x buffers which should each be 10ms long.
 loopback_test(s_tx, s_rx, 2)
-data_rx_buffs = loopback_test(s_tx, s_rx, 10)
+data_rx_buffs = loopback_test(s_tx, s_rx, 3)
 
 # Join all buffers together
 data_rx = vcat(data_rx_buffs...)
 
 # Should see a nice big spike of a sinusoid being transmitted halfway through
-# using Plots; plot(real.(data_rx))</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="tutorial/">Tutorial »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Saturday 30 October 2021 16:03">Saturday 30 October 2021</span>. Using Julia version 1.6.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+using Plots; plotly(size=(750,750)); plot(real.(data_rx))</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="tutorial/">Tutorial »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Tuesday 2 November 2021 02:48">Tuesday 2 November 2021</span>. Using Julia version 1.6.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
