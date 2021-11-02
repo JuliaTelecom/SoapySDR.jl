@@ -15,17 +15,17 @@ c_rx = Devices()[1].rx[1]
 # itself is well outside of the typical US equipment range, which only goes
 # up to channel 11, e.g. 2.473 GHz).
 c_tx.bandwidth = 2u"MHz"
-c_rx.bandwidth = 2u"MHz"
+c_rx.bandwidth = 200u"kHz"
 c_tx.frequency = 2.498u"GHz"
 c_rx.frequency = 2.498u"GHz"
 c_tx.gain = 52u"dB"
 c_rx.gain = -2u"dB"
-c_tx.sample_rate = 4u"MHz"
-c_rx.sample_rate = 4u"MHz"
+c_tx.sample_rate = 1u"MHz"
+c_rx.sample_rate = 1u"MHz"
 
 
 # Write out a sinusoid oscillating at 100KHz, lasting 10ms
-t = (1:round(Int, 0.01*4e6))./4e6
+t = (1:round(Int, 0.01*1e6))./1e6
 data_tx = ComplexF32.(sin.(2π.*t.*100e3), 0.0f0)
 data_tx_zeros = zeros(ComplexF32, length(data_tx))
 
@@ -58,10 +58,10 @@ end
 
 # This should take about 100ms, since we're rx/tx'ing 10x buffers which should each be 10ms long.
 loopback_test(s_tx, s_rx, 2)
-data_rx_buffs = loopback_test(s_tx, s_rx, 10)
+data_rx_buffs = loopback_test(s_tx, s_rx, 3)
 
 # Join all buffers together
 data_rx = vcat(data_rx_buffs...)
 
 # Should see a nice big spike of a sinusoid being transmitted halfway through
-# using Plots; plot(real.(data_rx))
+using Plots; plotly(size=(750,750)); plot(real.(data_rx))
