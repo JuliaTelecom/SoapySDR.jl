@@ -25,6 +25,12 @@ function Base.show(io::IO, d::Devices)
     end
 end
 
+function Base.getindex(d::Devices, i::Integer)
+    Device(SoapySDRDevice_make(ptr(d.kwargslist[i])))
+end
+Base.iterate(d::Devices, state=1) = state > length(d) ? nothing : (d[state], state+1)
+
+
 ####################################################################################################
 #    Device
 ####################################################################################################
@@ -72,11 +78,6 @@ function Base.show(io::IO, d::Device)
     println(io, "  frontendmapping_tx: ", d.frontendmapping_tx)
 end
 
-function Base.getindex(d::Devices, i::Integer)
-    Device(SoapySDRDevice_make(ptr(d.kwargslist[i])))
-end
-Base.iterate(d::Devices, state=1) = state > length(d) ? nothing : (d[state], state+1)
-
 function Base.getproperty(d::Device, s::Symbol)
     if s === :info
         OwnedKWArgs(SoapySDRDevice_getHardwareInfo(d))
@@ -116,7 +117,7 @@ function Base.setproperty!(c::Device, s::Symbol, v)
 end
 
 
-function Base.propertynames(c::Device)
+function Base.propertynames(::Device)
     return (:ptr, :info, :driver, :hardware, :tx, :rx, :sensors, :time)
 end
 
