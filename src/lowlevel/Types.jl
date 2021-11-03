@@ -91,7 +91,7 @@ On error, the elements of args will not be modified,
 and args is guaranteed to be in a good state.
 return 0 for success, otherwise allocation error
 """
-function SoapySDRKwargs_set(args, key, val) # TODO: THIS IS BROKEN
+function SoapySDRKwargs_set(args, key, val)
     ccall((:SoapySDRKwargs_set, lib), Cint, (Ptr{SoapySDRKwargs}, Cstring, Cstring), args, key, val)
 end
 

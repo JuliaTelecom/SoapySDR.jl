@@ -46,6 +46,10 @@ function ptr(kwl::KWArgsListRef)
     kwl.list.ptr + (kwl.idx-1)*sizeof(SoapySDRKwargs)
 end
 
+function Base.setindex!(kwl::KWArgsListRef, val::String, key::String)
+    SoapySDRKwargs_set(ptr(kwl), key, val)
+end
+
 Base.unsafe_load(kw::KWArgs) = unsafe_load(ptr(kw))
 Base.length(kw::KWArgs) = unsafe_load(kw).size
 function _getindex(kw::KWArgs, i::Integer)
