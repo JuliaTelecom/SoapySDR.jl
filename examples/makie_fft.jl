@@ -10,7 +10,7 @@ using FFTW
 freq = 104.3e6u"Hz"
 
 function rapid_read(freq=freq)
-    dev = Devices()[1]
+    dev = open(Devices()[1])
     rx_chan = dev.rx[1]
     @show rx_chan
     rx_chan.gain_mode = true
