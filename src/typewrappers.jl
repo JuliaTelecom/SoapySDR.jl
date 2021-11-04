@@ -32,6 +32,13 @@ mutable struct KWArgsList <: AbstractVector{KWArgs}
 end
 Base.size(kwl::KWArgsList) = (kwl.length,)
 
+"""
+    KWArgsListRef
+
+This is returned by calls to e.g. `Devices` and is used to present
+arguments for device creation. The Julia API for this should be
+similar to a `Dict`.
+"""
 struct KWArgsListRef <: KWArgs
     list::KWArgsList
     idx::Int

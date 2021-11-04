@@ -7,9 +7,17 @@ using SoapySDR
 # using SoapyPlutoSDR_jll
 # using SoapyUHD_jll
 
-# Open first channels on first device
-c_tx = Devices()[1].tx[1]
-c_rx = Devices()[1].rx[1]
+# Get the Devices
+devs = Devices()
+
+# we can add arguments to the device constructor or filter multiple devices:
+# devs[1]["refclk"] = "26000000"
+# devs = filter(x -> haskey(x, "driver") && x["driver"] == "plutosdr", devs)
+
+# Now open the first device and get the first RX and TX channel streams
+dev = open(devs[1])
+c_tx = dev.tx[1]
+c_rx = dev.rx[1]
 
 # Configure channel with appropriate parameters.  We choose to sneak into
 # the very high end of the 2.4 GHz ISM band, above Wifi channel 14 (which
@@ -61,11 +69,12 @@ end
 loopback_test(s_tx, s_rx, 2)
 data_rx_buffs = loopback_test(s_tx, s_rx, 3)
 
-# Make sure we close the Streams where we are done with them
+# Make sure we close the Streams and Devices where we are done with them
 close.((s_tx, s_rx))
+close(dev)
 
 # Join all buffers together
 data_rx = vcat(data_rx_buffs...)
 
-# Should see a nice big spike of a sinusoid being transmitted halfway through
+# Should see a nice big spike of a sinusoid being transmitted in the middle
 using Plots; plotly(size=(750,750)); plot(real.(data_rx))
