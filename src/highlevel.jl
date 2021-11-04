@@ -6,7 +6,8 @@ export Devices, dB, gainrange
     Devices()
 
 Enumerates all detectable SDR devices on the system.
-Indexing into this list return a `Device` struct.
+Indexing into the returned `Devices` object returns a list of
+keywords used to create a `Device` struct.
 """
 struct Devices
     kwargslist::KWArgsList
@@ -24,6 +25,10 @@ function Base.show(io::IO, d::Devices)
         println(io)
     end
 end
+
+Base.getindex(d::Devices, i::Integer) = d.kwargslist[i]
+Base.iterate(d::Devices, state=1) = state > length(d) ? nothing : (d[state], state+1)
+Base.open(d::KWArgsListRef) = Device(SoapySDRDevice_make(ptr(d)))
 
 ####################################################################################################
 #    Device
@@ -48,17 +53,11 @@ Fields:
 """
 mutable struct Device
     ptr::Ptr{SoapySDRDevice}
-    function Device(ptr::Ptr{SoapySDRDevice})
-        this = new(ptr)
-        finalizer(this) do this
-            SoapySDRDevice_unmake(this.ptr)
-        end
-        return this
-    end
 end
 SoapySDRDevice_unmake(d::Device) = SoapySDRDevice_unmake(d.ptr)
 Base.cconvert(::Type{<:Ptr{SoapySDRDevice}}, d::Device) = d
 Base.unsafe_convert(::Type{<:Ptr{SoapySDRDevice}}, d::Device) = d.ptr
+Base.close(d::Device) = SoapySDRDevice_unmake(d)
 
 function Base.show(io::IO, d::Device)
     println(io, "SoapySDR ", d.hardware, " device")
@@ -71,11 +70,6 @@ function Base.show(io::IO, d::Device)
     println(io, "  frontendmapping_rx: ", d.frontendmapping_rx)
     println(io, "  frontendmapping_tx: ", d.frontendmapping_tx)
 end
-
-function Base.getindex(d::Devices, i::Integer)
-    Device(SoapySDRDevice_make(ptr(d.kwargslist[i])))
-end
-Base.iterate(d::Devices, state=1) = state > length(d) ? nothing : (d[state], state+1)
 
 function Base.getproperty(d::Device, s::Symbol)
     if s === :info
@@ -116,7 +110,7 @@ function Base.setproperty!(c::Device, s::Symbol, v)
 end
 
 
-function Base.propertynames(c::Device)
+function Base.propertynames(::Device)
     return (:ptr, :info, :driver, :hardware, :tx, :rx, :sensors, :time)
 end
 

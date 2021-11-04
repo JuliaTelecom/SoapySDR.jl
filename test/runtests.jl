@@ -52,7 +52,9 @@ end
     # Device constructor, show, iterator
     @test length(Devices()) == 1
     show(io, Devices())
-    dev = Devices()[1]
+    deva = Devices()[1]
+    deva["refclk"] = "internal"
+    dev = open(deva)
     show(io, dev)
     for dev in Devices()
         show(io, dev)
@@ -125,8 +127,14 @@ end
     tx_stream = sd.Stream([tx_chan])
     @test typeof(tx_stream) == sd.Stream{sd.ComplexInt{12}}
 
+    #sd.activate!(rx_stream)
+    #sd.activate!(tx_stream)
+    #sd.deactivate!(rx_stream)
+    #sd.deactivate!(tx_stream)
+    
     # Stream Close
     close(rx_stream)
     close(tx_stream)
+    #close(dev)
 end
 end

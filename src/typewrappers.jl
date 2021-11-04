@@ -32,6 +32,13 @@ mutable struct KWArgsList <: AbstractVector{KWArgs}
 end
 Base.size(kwl::KWArgsList) = (kwl.length,)
 
+"""
+    KWArgsListRef
+
+This is returned by calls to e.g. `Devices` and is used to present
+arguments for device creation. The Julia API for this should be
+similar to a `Dict`.
+"""
 struct KWArgsListRef <: KWArgs
     list::KWArgsList
     idx::Int
@@ -44,6 +51,15 @@ end
 function ptr(kwl::KWArgsListRef)
     @assert kwl.list.ptr !== C_NULL
     kwl.list.ptr + (kwl.idx-1)*sizeof(SoapySDRKwargs)
+end
+
+function Base.setindex!(kwl::KWArgsListRef, val, key)
+    SoapySDRKwargs_set(ptr(kwl), key, val)
+end
+
+function Base.get(kwl::KWArgsListRef, key, default)
+    res = SoapySDRKwargs_get(ptr(kwl), key)
+    res == C_NULL ? default : unsafe_string(res)
 end
 
 Base.unsafe_load(kw::KWArgs) = unsafe_load(ptr(kw))
