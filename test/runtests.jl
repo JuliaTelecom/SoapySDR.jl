@@ -127,14 +127,14 @@ end
     tx_stream = sd.Stream([tx_chan])
     @test typeof(tx_stream) == sd.Stream{sd.ComplexInt{12}}
 
-    sd.activate!(rx_stream)
-    sd.activate!(tx_stream)
-    sd.deactivate!(rx_stream)
-    sd.deactivate!(tx_stream)
+    #sd.activate!(rx_stream)
+    #sd.activate!(tx_stream)
+    #sd.deactivate!(rx_stream)
+    #sd.deactivate!(tx_stream)
     
     # Stream Close
     close(rx_stream)
     close(tx_stream)
-    close(dev)
+    #close(dev)
 end
 end
