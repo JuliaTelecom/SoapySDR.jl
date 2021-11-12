@@ -658,8 +658,8 @@ function Base.read(s::Stream{T}, n::Integer; timeout=nothing) where {T}
     bufs
 end
 
-function activate!(s::Stream; flags = 0, timens = nothing, numElems=0)
-    SoapySDRDevice_activateStream(s.d, s, flags, timens === nothing ? 0 : uconvert(u"ns", timens).val, numElems)
+function activate!(s::Stream; flags = SOAPY_SDR_HAS_TIME, timens = nothing, numElems = nothing)
+    SoapySDRDevice_activateStream(s.d, s, flags, timens === nothing ? 0 : uconvert(u"ns", timens).val, numElems === nothing ? s.mtu : numElems)
     nothing
 end
 
