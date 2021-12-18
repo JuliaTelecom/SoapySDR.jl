@@ -12,6 +12,7 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 soapysdr_jll = "343a40d9-ed99-5d34-8b56-649aaa4ecee6"
 
 [compat]
+DSP = "0.7"
 Intervals = "1"
 Unitful = "1"
 julia = "1.6"
