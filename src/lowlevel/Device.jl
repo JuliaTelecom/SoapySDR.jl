@@ -1498,7 +1498,13 @@ Get a list of available GPIO banks by name.
 param [out] length the number of GPIO banks
 param device a pointer to a device instance
 """
-#SOAPY_SDR_API char **SoapySDRDevice_listGPIOBanks(const SoapySDRDevice *device, size_t *length);
+function SoapySDRDevice_listGPIBanks(device)
+    #SOAPY_SDR_API char **SoapySDRDevice_listGPIOBanks(const SoapySDRDevice *device, size_t *length);
+    len = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_listGPIBanks, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Ref{Csize_t}), device, len)
+    (ptr, len[])
+end
+
 
 """
 Write the value of a GPIO bank.
@@ -1508,7 +1514,10 @@ param bank the name of an available bank
 param value an integer representing GPIO bits
 return 0 for success or error code on failure
 """
-#SOAPY_SDR_API int SoapySDRDevice_writeGPIO(SoapySDRDevice *device, const char *bank, const unsigned value);
+function SoapySDRDevice_writeGPIO(device, bank, value)
+    #SOAPY_SDR_API int SoapySDRDevice_writeGPIO(SoapySDRDevice *device, const char *bank, const unsigned value);
+    @check_error ccall((:SoapySDRDevice_writeGPIO, lib), Cint, (Ptr{SoapySDRDevice}, Cstring, Csize_t), device, bank, value)
+end
 
 """
 Write the value of a GPIO bank with modification mask.
@@ -1519,7 +1528,10 @@ param value an integer representing GPIO bits
 param mask a modification mask where 1 = modify
 return 0 for success or error code on failure
 """
-#SOAPY_SDR_API int SoapySDRDevice_writeGPIOMasked(SoapySDRDevice *device, const char *bank, const unsigned value, const unsigned mask);
+function SoapySDRDevice_writeGPIOMasked(device, bank, value, mask)
+    #SOAPY_SDR_API int SoapySDRDevice_writeGPIOMasked(SoapySDRDevice *device, const char *bank, const unsigned value, const unsigned mask);
+    @check_error ccall((:SoapySDRDevice_writeGPIOMasked, lib), Cint, (Ptr{SoapySDRDevice}, Cstring, Csize_t, Csize_t), device, bank, value, mask)
+end
 
 """
 Readback the value of a GPIO bank.
@@ -1528,7 +1540,10 @@ param device a pointer to a device instance
 param bank the name of an available bank
 return an integer representing GPIO bits
 """
-#SOAPY_SDR_API unsigned SoapySDRDevice_readGPIO(const SoapySDRDevice *device, const char *bank);
+function SoapySDRDevice_readGPIO(device, bank)
+    #SOAPY_SDR_API unsigned SoapySDRDevice_readGPIO(const SoapySDRDevice *device, const char *bank);
+    @check_error ccall((:SoapySDRDevice_readGPIO, lib), Csize_t, (Ptr{SoapySDRDevice}, Cstring), device, bank)
+end
 
 """
 Write the data direction of a GPIO bank.
@@ -1539,7 +1554,10 @@ param bank the name of an available bank
 param dir an integer representing data direction bits
 return 0 for success or error code on failure
 """
-#SOAPY_SDR_API int SoapySDRDevice_writeGPIODir(SoapySDRDevice *device, const char *bank, const unsigned dir);
+function SoapySDRDevice_writeGPIODir(device, bank, dir)
+    #SOAPY_SDR_API int SoapySDRDevice_writeGPIODir(SoapySDRDevice *device, const char *bank, const unsigned dir);
+    @check_error ccall((:SoapySDRDevice_writeGPIODir, lib), Cint, (Ptr{SoapySDRDevice}, Cstring, Csize_t), device, bank, dir)
+end
 
 """
 Write the data direction of a GPIO bank with modification mask.
@@ -1551,7 +1569,10 @@ param dir an integer representing data direction bits
 param mask a modification mask where 1 = modify
 return 0 for success or error code on failure
 """
-#SOAPY_SDR_API int SoapySDRDevice_writeGPIODirMasked(SoapySDRDevice *device, const char *bank, const unsigned dir, const unsigned mask);
+function SoapySDRDevice_writeGPIODirMasked(device, bank, dir, mask)
+    #SOAPY_SDR_API int SoapySDRDevice_writeGPIODirMasked(SoapySDRDevice *device, const char *bank, const unsigned dir, const unsigned mask);
+    @check_error ccall((:SoapySDRDevice_writeGPIODirMasked, lib), Cint, (Ptr{SoapySDRDevice}, Cstring, Csize_t, Csize_t), device, bank, dir, mask)
+end
 
 """
 Read the data direction of a GPIO bank.
@@ -1561,7 +1582,10 @@ param device a pointer to a device instance
 param bank the name of an available bank
 return an integer representing data direction bits
 """
-#SOAPY_SDR_API unsigned SoapySDRDevice_readGPIODir(const SoapySDRDevice *device, const char *bank);
+function SoapySDRDevice_readGPIODir(device, bank)
+    #SOAPY_SDR_API unsigned SoapySDRDevice_readGPIODir(const SoapySDRDevice *device, const char *bank);
+    @check_error ccall((:SoapySDRDevice_readGPIODir, lib), Csize_t, (Ptr{SoapySDRDevice}, Cstring), device, bank)
+end
 
 ##############
 # I2C API
@@ -1577,7 +1601,10 @@ param data an array of bytes write out
 param numBytes the number of bytes to write
 return 0 for success or error code on failure
 """
-#SOAPY_SDR_API int SoapySDRDevice_writeI2C(SoapySDRDevice *device, const int addr, const char *data, const size_t numBytes);
+function SoapySDRDevice_writeI2C(device, addr, data, numBytes)
+    #SOAPY_SDR_API int SoapySDRDevice_writeI2C(SoapySDRDevice *device, const int addr, const char *data, const size_t numBytes);
+    @check_error ccall((:SoapySDRDevice_writeI2C, lib), Cint, (Ptr{SoapySDRDevice}, Csize_t, Cstring, Csize_t), device, addr, data, numBytes)
+end
 
 """
 Read from an available I2C slave.
@@ -1591,7 +1618,11 @@ param addr the address of the slave
 param [in,out] numBytes the number of bytes to read
 return an array of bytes read from the slave
 """
-#SOAPY_SDR_API char *SoapySDRDevice_readI2C(SoapySDRDevice *device, const int addr, size_t *numBytes);
+function SoapySDRDevice_readI2C(device, addr, numBytes)
+    #SOAPY_SDR_API char *SoapySDRDevice_readI2C(SoapySDRDevice *device, const int addr, size_t *numBytes);
+    ptr = @check_error ccall((:SoapySDRDevice_readI2C, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Csize_t, Ref{Csize_t}), device, addr, numBytes)
+    (ptr, numBytes)
+end
 
 ##############
 # SPI API
@@ -1612,7 +1643,10 @@ param data the SPI data, numBits-1 is first out
 param numBits the number of bits to clock out
 return the readback data, numBits-1 is first in
 """ 
-#SOAPY_SDR_API unsigned SoapySDRDevice_transactSPI(SoapySDRDevice *device, const int addr, const unsigned data, const size_t numBits);
+function SoapySDRDevice_transactSPI(device, addr, data, numBits)
+    #SOAPY_SDR_API unsigned SoapySDRDevice_transactSPI(SoapySDRDevice *device, const int addr, const unsigned data, const size_t numBits);
+    @check_error ccall((:SoapySDRDevice_transactSPI, lib), Csize_t, (Ptr{SoapySDRDevice}, Csize_t, Csize_t, Csize_t), device, addr, data, numBits)
+end
 
 ##############
 # UART API
@@ -1625,7 +1659,12 @@ param device a pointer to a device instance
 param [out] length the number of UART names
 return a list of names of available UARTs
 """
-#SOAPY_SDR_API char **SoapySDRDevice_listUARTs(const SoapySDRDevice *device, size_t *length);
+function SoapySDRDevice_listUARTs(device)
+    #SOAPY_SDR_API char **SoapySDRDevice_listUARTs(const SoapySDRDevice *device, size_t *length);
+    length = Ref{Csize_t}()
+    ptr = @check_error ccall((:SoapySDRDevice_listUARTs, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Ref{Csize_t}), device, length)
+    (ptr, length[])
+end
 
 """
 Write data to a UART device.
@@ -1637,7 +1676,10 @@ param which the name of an available UART
 param data a null terminated array of bytes
 return 0 for success or error code on failure
 """
-#SOAPY_SDR_API int SoapySDRDevice_writeUART(SoapySDRDevice *device, const char *which, const char *data);
+function SoapySDRDevice_writeUART(device, which, data)
+    #SOAPY_SDR_API int SoapySDRDevice_writeUART(SoapySDRDevice *device, const char *which, const char *data);
+    @check_error ccall((:SoapySDRDevice_writeUART, lib), Cint, (Ptr{SoapySDRDevice}, Cstring, Cstring), device, which, data)
+end
 
 """
 Read bytes from a UART until timeout or newline.
@@ -1649,8 +1691,10 @@ param which the name of an available UART
 param timeoutUs a timeout in microseconds
 return a null terminated array of bytes
 """
-#SOAPY_SDR_API char *SoapySDRDevice_readUART(const SoapySDRDevice *device, const char *which, const long timeoutUs);
-
+function SoapySDRDevice_readUART(device, which, timeoutUs)
+    #SOAPY_SDR_API char *SoapySDRDevice_readUART(const SoapySDRDevice *device, const char *which, const long timeoutUs);
+    @check_error ccall((:SoapySDRDevice_readUART, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Cstring, Csize_t), device, which, timeoutUs)
+end
 
 #####################
 # Native Access API
