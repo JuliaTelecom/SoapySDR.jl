@@ -254,7 +254,7 @@ function Base.show(io::IO, ::MIME"text/plain", c::Channel)
                 print(io, "    ", element, " [ ")
                 join(io, map(x->sprint(print_hz_range, x), frequency_ranges(c, element)), ", ")
                 println(io, " ]: ", pick_freq_unit(c[element]))
-            end  
+            end
         println(io, "  gain_mode (AGC=true/false/missing): ", c.gain_mode)
         println(io, "  gain: ", c.gain)
         println(io, "  gain_elements: ", c.gain_elements)
@@ -409,7 +409,7 @@ end
 
 # Components is an internal mechaism to allow for dispatch and interface through the Julia API
 # For example there may be several GainElements we list in a Channel. A Julian idiom for this is
-# the set/getindex class of functions. 
+# the set/getindex class of functions.
 
 abstract type AbstractComponent; end
 Base.print(io::IO, c::AbstractComponent) = print(io, c.name)
@@ -565,7 +565,7 @@ Constructs a `Stream{T}` where `T` is the stream type of the device. If unspecif
 the native format will be used.
 
 Fields:
-- nchannels - The 
+- nchannels - The
 - mtu - The stream Maximum Transmission Unit
 
 ## Example
@@ -705,7 +705,7 @@ end
 """
     get_sensor_info(::Device, ::String)
 
-Read the sensor extracted from `list_sensors`. 
+Read the sensor extracted from `list_sensors`.
 Returns: the value as a string.
 Note: Appropriate conversions need to be done by the user.
 """

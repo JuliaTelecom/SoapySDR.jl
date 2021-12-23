@@ -1,17 +1,17 @@
 # Interface definition for Soapy SDR devices.
- 
+
 using Base.Meta
 
 # General design rules about the API:
 # The caller must free non-const array results.
 
-const LL_DISCLAIMER = 
+const LL_DISCLAIMER =
     """
     NOTE: This function is part of the lowlevel libsoapysdr interface.
     For end-users in Julia, the higher-level Julia APIs are preferred
     """
 
-const CHANNEL_ARGS = 
+const CHANNEL_ARGS =
     """
     `device` a pointer to a device instance
     `direction` the channel direction RX or TX
@@ -151,7 +151,7 @@ param argsList a list of device arguments per each device
 param length the length of the argsList array
 return a list of device pointers per each specified argument
 """
-function SoapySDRDevice_make_list(argsList, length::Cint) 
+function SoapySDRDevice_make_list(argsList, length::Cint)
     ccall((:SoapySDRDevice_make_list, lib), Ptr{Ptr{SoapySDRDevice}}, (Ptr{Cint}, Cint), argsList, length)
 end
 
@@ -679,7 +679,7 @@ function SoapySDRDevice_readStreamStatus(device, stream, channel_mask, flags, ti
     flags = Ref{Cint}(flags)
 
     # we really don't want to throw here since it is a check, so we return the "condition", really an "error code"
-    # This sometime varies between implementation and so both the flag and "condition" should be checked in the 
+    # This sometime varies between implementation and so both the flag and "condition" should be checked in the
     # high level API, though support for this call seems to vary between implementations
     condition = ccall((:SoapySDRDevice_readStreamStatus, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Csize_t, Cint, Clonglong, Clong),
                                                                        device, stream, channel_mask, flags, timeNs, timeoutUs)
@@ -1645,7 +1645,7 @@ param addr an address of an available SPI slave
 param data the SPI data, numBits-1 is first out
 param numBits the number of bits to clock out
 return the readback data, numBits-1 is first in
-""" 
+"""
 function SoapySDRDevice_transactSPI(device, addr, data, numBits)
     #SOAPY_SDR_API unsigned SoapySDRDevice_transactSPI(SoapySDRDevice *device, const int addr, const unsigned data, const size_t numBits);
     @check_error ccall((:SoapySDRDevice_transactSPI, lib), Csize_t, (Ptr{SoapySDRDevice}, Csize_t, Csize_t, Csize_t), device, addr, data, numBits)
