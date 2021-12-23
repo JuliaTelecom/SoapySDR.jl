@@ -1,17 +1,17 @@
 # Interface definition for Soapy SDR devices.
- 
+
 using Base.Meta
 
 # General design rules about the API:
 # The caller must free non-const array results.
 
-const LL_DISCLAIMER = 
+const LL_DISCLAIMER =
     """
     NOTE: This function is part of the lowlevel libsoapysdr interface.
     For end-users in Julia, the higher-level Julia APIs are preferred
     """
 
-const CHANNEL_ARGS = 
+const CHANNEL_ARGS =
     """
     `device` a pointer to a device instance
     `direction` the channel direction RX or TX
@@ -30,6 +30,17 @@ struct SoapyDeviceError
     msg::String
 end
 
+macro check_return(expr)
+    quote
+        val = $(esc(expr))
+        if val < 0
+            throw(SoapySDRAPIError(val))
+        end
+        val
+    end
+end
+
+# for API calls without integer status return codes
 macro check_error(expr)
     quote
         val = $(esc(expr))
@@ -140,7 +151,7 @@ param argsList a list of device arguments per each device
 param length the length of the argsList array
 return a list of device pointers per each specified argument
 """
-function SoapySDRDevice_make_list(argsList, length::Cint) 
+function SoapySDRDevice_make_list(argsList, length::Cint)
     ccall((:SoapySDRDevice_make_list, lib), Ptr{Ptr{SoapySDRDevice}}, (Ptr{Cint}, Cint), argsList, length)
 end
 
@@ -530,10 +541,7 @@ param numElems optional element count for burst control
 return 0 for success or error code on failure
 """
 function SoapySDRDevice_activateStream(device, stream, flags, timeNs, numElems)
-    err = @check_error ccall((:SoapySDRDevice_activateStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Cint, Clonglong, Csize_t), device, stream, flags, timeNs, numElems)
-    if err != 0
-        throw(SoapySDRAPIError(err))
-    end
+    @check_return ccall((:SoapySDRDevice_activateStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Cint, Clonglong, Csize_t), device, stream, flags, timeNs, numElems)
     return nothing
 end
 
@@ -577,11 +585,8 @@ return the number of elements read per buffer or error code
 function SoapySDRDevice_readStream(device, stream, buffs, numElems, timeoutUs)
     flags = Ref{Cint}()
     timeNs = Ref{Clonglong}()
-    nelems = @check_error ccall((:SoapySDRDevice_readStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Ptr{Cvoid}, Csize_t, Ptr{Cint}, Ptr{Clonglong}, Clong),
+    nelems = @check_return ccall((:SoapySDRDevice_readStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Ptr{Cvoid}, Csize_t, Ptr{Cint}, Ptr{Clonglong}, Clong),
         device, stream, buffs, numElems, flags, timeNs, timeoutUs)
-    if nelems < 0
-        throw(SoapySDRAPIError(nelems))
-    end
     nelems, flags[], timeNs[]
 end
 
@@ -608,11 +613,8 @@ Returns the number of elements written per buffer, output flags
 """
 function SoapySDRDevice_writeStream(device, stream, buffs, numElems, flags, timeNs, timeoutUs)
     flags = Ref{Cint}(flags)
-    nelems = @check_error ccall((:SoapySDRDevice_writeStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Ptr{Cvoid}, Csize_t, Ptr{Cint}, Clonglong, Clong),
+    nelems = @check_return ccall((:SoapySDRDevice_writeStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Ptr{Cvoid}, Csize_t, Ptr{Cint}, Clonglong, Clong),
         device, stream, buffs, numElems, flags, timeNs, timeoutUs)
-    if nelems < 0
-        throw(SoapySDRAPIError(nelems))
-    end
     nelems, flags[]
 end
 
@@ -632,7 +634,7 @@ param timeNs optional deactivation time in nanoseconds
 return 0 for success or error code on failure
 """
 function SoapySDRDevice_deactivateStream(device, stream, flags, timeNs)
-    ccall((:SoapySDRDevice_deactivateStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Cint, Clonglong), device, stream, flags, timeNs)
+    @check_return ccall((:SoapySDRDevice_deactivateStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Cint, Clonglong), device, stream, flags, timeNs)
 end
 
 """
@@ -642,7 +644,7 @@ param stream the opaque pointer to a stream handle
 return 0 for success or error code on failure
 """
 function SoapySDRDevice_closeStream(device, stream)
-    @check_error ccall((:SoapySDRDevice_closeStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}), device, stream)
+    @check_return ccall((:SoapySDRDevice_closeStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}), device, stream)
 end
 
 """
@@ -677,7 +679,7 @@ function SoapySDRDevice_readStreamStatus(device, stream, channel_mask, flags, ti
     flags = Ref{Cint}(flags)
 
     # we really don't want to throw here since it is a check, so we return the "condition", really an "error code"
-    # This sometime varies between implementation and so both the flag and "condition" should be checked in the 
+    # This sometime varies between implementation and so both the flag and "condition" should be checked in the
     # high level API, though support for this call seems to vary between implementations
     condition = ccall((:SoapySDRDevice_readStreamStatus, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Csize_t, Cint, Clonglong, Clong),
                                                                        device, stream, channel_mask, flags, timeNs, timeoutUs)
@@ -744,7 +746,7 @@ param timeNs the buffer's timestamp in nanoseconds
 param timeoutUs the timeout in microseconds
 return the number of elements read per buffer or error code
 """
-function SoapySDRDevice_acquireReadBuffer(device, stream, handle, buffs, flags, timeNs, timeoutUs)
+function SoapySDRDevice_acquireReadBuffer(device, stream, buffs, timeoutUs=100000)
     #SOAPY_SDR_API int SoapySDRDevice_acquireReadBuffer(SoapySDRDevice *device,
     #    SoapySDRStream *stream,
     #    size_t *handle,
@@ -752,11 +754,12 @@ function SoapySDRDevice_acquireReadBuffer(device, stream, handle, buffs, flags, 
     #    int *flags,
     #    long long *timeNs,
     #    const long timeoutUs);
-    handle = Ref{Csize_t}(handle)
-    flags = Ref{Cint}(flags)
-    ccall((:SoapySDRDevice_acquireReadBuffer, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Csize_t, Ptr{Cvoid}, Cint, Clonglong, Clong),
+    handle = Ref{Csize_t}()
+    flags = Ref{Cint}(0)
+    timeNs = Ref{Clonglong}(-1)
+    bytes = @check_return ccall((:SoapySDRDevice_acquireReadBuffer, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Ref{Csize_t}, Ref{Ptr{Cvoid}}, Ref{Cint}, Ref{Clonglong}, Clong),
                                                                 device, stream, handle, buffs, flags, timeNs, timeoutUs)
-    handle, flags[]
+    bytes, handle[], flags[], timeNs[]
 end
 
 """
@@ -1642,7 +1645,7 @@ param addr an address of an available SPI slave
 param data the SPI data, numBits-1 is first out
 param numBits the number of bits to clock out
 return the readback data, numBits-1 is first in
-""" 
+"""
 function SoapySDRDevice_transactSPI(device, addr, data, numBits)
     #SOAPY_SDR_API unsigned SoapySDRDevice_transactSPI(SoapySDRDevice *device, const int addr, const unsigned data, const size_t numBits);
     @check_error ccall((:SoapySDRDevice_transactSPI, lib), Csize_t, (Ptr{SoapySDRDevice}, Csize_t, Csize_t, Csize_t), device, addr, data, numBits)

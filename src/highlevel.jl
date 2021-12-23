@@ -57,7 +57,12 @@ end
 SoapySDRDevice_unmake(d::Device) = SoapySDRDevice_unmake(d.ptr)
 Base.cconvert(::Type{<:Ptr{SoapySDRDevice}}, d::Device) = d
 Base.unsafe_convert(::Type{<:Ptr{SoapySDRDevice}}, d::Device) = d.ptr
-Base.close(d::Device) = SoapySDRDevice_unmake(d)
+function Base.close(d::Device)
+    SoapySDRDevice_unmake(d)
+    d.ptr = convert(Ptr{SoapySDRDevice}, 0)
+    return
+end
+Base.isopen(d::Device) = d.ptr != C_NULL
 
 function Base.show(io::IO, d::Device)
     println(io, "SoapySDR ", d.hardware, " device")
@@ -249,7 +254,7 @@ function Base.show(io::IO, ::MIME"text/plain", c::Channel)
                 print(io, "    ", element, " [ ")
                 join(io, map(x->sprint(print_hz_range, x), frequency_ranges(c, element)), ", ")
                 println(io, " ]: ", pick_freq_unit(c[element]))
-            end  
+            end
         println(io, "  gain_mode (AGC=true/false/missing): ", c.gain_mode)
         println(io, "  gain: ", c.gain)
         println(io, "  gain_elements: ", c.gain_elements)
@@ -404,7 +409,7 @@ end
 
 # Components is an internal mechaism to allow for dispatch and interface through the Julia API
 # For example there may be several GainElements we list in a Channel. A Julian idiom for this is
-# the set/getindex class of functions. 
+# the set/getindex class of functions.
 
 abstract type AbstractComponent; end
 Base.print(io::IO, c::AbstractComponent) = print(io, c.name)
@@ -560,7 +565,7 @@ Constructs a `Stream{T}` where `T` is the stream type of the device. If unspecif
 the native format will be used.
 
 Fields:
-- nchannels - The 
+- nchannels - The
 - mtu - The stream Maximum Transmission Unit
 
 ## Example
@@ -574,14 +579,22 @@ mutable struct Stream{T}
     ptr::Ptr{SoapySDRStream}
     function Stream{T}(d::Device, nchannels, ptr::Ptr{SoapySDRStream}) where {T}
         this = new{T}(d, Int(nchannels), ptr)
-        finalizer(SoapySDRDevice_closeStream, this)
+        finalizer(this) do obj
+            isopen(d) || return
+            close(obj)
+        end
         return this
     end
 end
 Base.cconvert(::Type{<:Ptr{SoapySDRStream}}, s::Stream) = s
 Base.unsafe_convert(::Type{<:Ptr{SoapySDRStream}}, s::Stream) = s.ptr
 SoapySDRDevice_closeStream(s::Stream) = SoapySDRDevice_closeStream(s.d, s)
-Base.close(s::Stream) = SoapySDRDevice_closeStream(s)
+function Base.close(s::Stream)
+    SoapySDRDevice_closeStream(s)
+    s.ptr = convert(Ptr{SoapySDRStream}, C_NULL)
+    return
+end
+Base.isopen(d::Stream) = s.ptr != C_NULL
 
 streamtype(::Stream{T}) where T = T
 
@@ -692,7 +705,7 @@ end
 """
     get_sensor_info(::Device, ::String)
 
-Read the sensor extracted from `list_sensors`. 
+Read the sensor extracted from `list_sensors`.
 Returns: the value as a string.
 Note: Appropriate conversions need to be done by the user.
 """
