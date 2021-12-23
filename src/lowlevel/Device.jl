@@ -746,7 +746,7 @@ param timeNs the buffer's timestamp in nanoseconds
 param timeoutUs the timeout in microseconds
 return the number of elements read per buffer or error code
 """
-function SoapySDRDevice_acquireReadBuffer(device, stream, handle, buffs, flags, timeNs, timeoutUs)
+function SoapySDRDevice_acquireReadBuffer(device, stream, buffs, timeoutUs=100000)
     #SOAPY_SDR_API int SoapySDRDevice_acquireReadBuffer(SoapySDRDevice *device,
     #    SoapySDRStream *stream,
     #    size_t *handle,
@@ -754,11 +754,12 @@ function SoapySDRDevice_acquireReadBuffer(device, stream, handle, buffs, flags, 
     #    int *flags,
     #    long long *timeNs,
     #    const long timeoutUs);
-    handle = Ref{Csize_t}(handle)
-    flags = Ref{Cint}(flags)
-    ccall((:SoapySDRDevice_acquireReadBuffer, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Csize_t, Ptr{Cvoid}, Cint, Clonglong, Clong),
+    handle = Ref{Csize_t}()
+    flags = Ref{Cint}(0)
+    timeNs = Ref{Clonglong}(-1)
+    bytes = @check_return ccall((:SoapySDRDevice_acquireReadBuffer, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Ref{Csize_t}, Ref{Ptr{Cvoid}}, Ref{Cint}, Ref{Clonglong}, Clong),
                                                                 device, stream, handle, buffs, flags, timeNs, timeoutUs)
-    handle, flags[]
+    bytes, handle[], flags[], timeNs[]
 end
 
 """
