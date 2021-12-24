@@ -796,15 +796,16 @@ param buffs an array of void* buffers num chans in size
 param timeoutUs the timeout in microseconds
 return the number of available elements per buffer or error
 """
-function SoapySDRDevice_acquireWriteBuffer(device, stream, handle, buffs, timeoutUs)
+function SoapySDRDevice_acquireWriteBuffer(device, stream, buffs, timeoutUs=100000)
     #SOAPY_SDR_API int SoapySDRDevice_acquireWriteBuffer(SoapySDRDevice *device,
     #    SoapySDRStream *stream,
     #    size_t *handle,
     #    void **buffs,
     #    const long timeoutUs);
-    handle = Ref{Csize_t}(handle)
-    ccall((:SoapySDRDevice_acquireWriteBuffer, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Csize_t, Ptr{Cvoid}, Clong),
+    handle = Ref{Csize_t}()
+    bytes = @check_return ccall((:SoapySDRDevice_acquireWriteBuffer, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Ref{Csize_t}, Ref{Ptr{Cvoid}}, Clong),
                                                     device, stream, handle, buffs, timeoutUs)
+    return bytes, handle[]
 end
 
 """
@@ -823,15 +824,14 @@ param numElems the number of elements written to each buffer
 param flags optional input flags and output flags
 param timeNs the buffer's timestamp in nanoseconds
 """
-function SoapySDRDevice_releaseWriteBuffer(device, stream, handle, numElems, flags, timeNs)
+function SoapySDRDevice_releaseWriteBuffer(device, stream, handle, numElems, flags=0, timeNs=0)
     #SOAPY_SDR_API void SoapySDRDevice_releaseWriteBuffer(SoapySDRDevice *device,
     #    SoapySDRStream *stream,
     #    const size_t handle,
     #    const size_t numElems,
     #    int *flags,
     #    const long long timeNs);
-    flags = Ref{Cint}(flags)
-    ccall((:SoapySDRDevice_releaseWriteBuffer, lib), Cvoid, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Csize_t, Csize_t, Cint, Clonglong),
+    ccall((:SoapySDRDevice_releaseWriteBuffer, lib), Cvoid, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Csize_t, Csize_t, Ref{Cint}, Clonglong),
                                                 device, stream, handle, numElems, flags, timeNs)
     flags[]
 end
