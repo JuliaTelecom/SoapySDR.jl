@@ -1,0 +1,5 @@
+[general]
+library_name = "soapysdr"
+output_file_path = "../src/wrapper.jl"
+extract_c_comment_style = "raw"
+wrap_variadic_function = true
