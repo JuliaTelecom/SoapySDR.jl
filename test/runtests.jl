@@ -45,8 +45,24 @@ end
     sd.print_hz_range(io, steprangehz)
     @test String(take!(io)) == "00 Hz:0.0001 kHz:0.001 kHz"
 end
-@testset "High Level API" begin
+@testset "Keyword Arguments" begin
+    args = KWArgs()
+    @test length(args) == 0
 
+    args = parse(KWArgs, "foo=1,bar=2")
+    @test length(args) == 2
+    @test args["foo"] == "1"
+    @test args["bar"] == "2"
+    args["foo"] = "0"
+    @test args["foo"] == "0"
+    args["qux"] = "3"
+    @test length(args) == 3
+    @test args["qux"] == "3"
+
+    str = String(args)
+    @test contains(str, "foo=0")
+end
+@testset "High Level API" begin
     io = IOBuffer(read=true, write=true)
 
     # Device constructor, show, iterator
@@ -60,10 +76,10 @@ end
         show(io, dev)
     end
     @test typeof(dev) == sd.Device
-    @test typeof(dev.info) == sd.OwnedKWArgs
+    @test typeof(dev.info) == sd.KWArgs
     @test dev.driver == :LoopbackDriver
     @test dev.hardware == :LoopbackHardware
-    @test dev.time_sources == SoapySDR.TimeSource[:sw_ticks,:hw_ticks] 
+    @test dev.time_sources == SoapySDR.TimeSource[:sw_ticks,:hw_ticks]
     @test dev.time_source == SoapySDR.TimeSource(:sw_ticks)
     dev.time_source = "hw_ticks"
     @test dev.time_source == SoapySDR.TimeSource(:hw_ticks)
@@ -131,7 +147,7 @@ end
     #sd.activate!(tx_stream)
     #sd.deactivate!(rx_stream)
     #sd.deactivate!(tx_stream)
-    
+
     # Stream Close
     close(rx_stream)
     close(tx_stream)

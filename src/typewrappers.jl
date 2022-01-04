@@ -1,86 +1,94 @@
 
 ## KWArgs
 
-abstract type KWArgs <: AbstractDict{Symbol, String}; end
+export KWArgs
 
-mutable struct OwnedKWArgs <: KWArgs
-    ptr::SoapySDRKwargs
-    function OwnedKWArgs(kw::SoapySDRKwargs)
-        this = new(kw)
-        finalizer(SoapySDRKwargs_clear, this)
-        this
+mutable struct KWArgs <: AbstractDict{String, String}
+    box::Base.RefValue{SoapySDRKwargs}
+
+    function KWArgs(kw::SoapySDRKwargs; owned::Bool=true)
+        this = new(Ref(kw))
+        owned && finalizer(SoapySDRKwargs_clear, this)
+        return this
     end
 end
-Base.unsafe_load(o::OwnedKWArgs) = o.ptr
-function ptr(kw::OwnedKWArgs)
-    return pointer_from_objref(kw)
+
+KWArgs() = KWArgs(SoapySDRKwargs_fromString(""))
+
+function KWArgs(kwargs::Base.Iterators.Pairs)
+    args = KWArgs()
+    for kv in kwargs
+        args[String(kv.first)] = kv.second
+    end
+    return args
 end
-function SoapySDRKwargs_clear(kw::OwnedKWArgs)
-    SoapySDRKwargs_clear(ptr(kw))
+
+Base.unsafe_convert(T::Type{Ptr{SoapySDRKwargs}}, args::KWArgs) =
+    Base.unsafe_convert(T, args.box)
+
+Base.String(args::KWArgs) = unsafe_string(SoapySDRKwargs_toString(args))
+
+Base.parse(::Type{KWArgs}, str::String) = KWArgs(SoapySDRKwargs_fromString(str))
+
+function Base.show(io::IO, ::MIME{Symbol("text/plain")}, args::KWArgs)
+    print(io, "KWArgs(")
+    print(io, String(args))
+    print(io, ")")
 end
+
+function Base.getindex(args::KWArgs, key)
+    key = convert(String, key)
+    cstr = SoapySDRKwargs_get(args, key)
+    cstr == C_NULL && throw(KeyError(key))
+    unsafe_string(cstr)
+end
+
+function Base.setindex!(args::KWArgs, value, key)
+    key = convert(String, key)
+    value = convert(String, value)
+    SoapySDRKwargs_set(args, key, value)
+    args
+end
+
+Base.length(kw::KWArgs) = kw.box[].size
+
+function Base.iterate(kw::KWArgs, i=1)
+    i > length(kw) && return nothing
+    @GC.preserve kw begin
+        return (unsafe_string(unsafe_load(kw.box[].keys, i))=>
+                unsafe_string(unsafe_load(kw.box[].vals, i))), i+1
+    end
+end
+
+
+## KWArgsList
 
 mutable struct KWArgsList <: AbstractVector{KWArgs}
     ptr::Ptr{SoapySDRKwargs}
     length::Csize_t
+
     function KWArgsList(ptr::Ptr{SoapySDRKwargs}, length::Csize_t)
         this = new(ptr, length)
         finalizer(this) do this
-            SoapySDRKwargsList_clear(this.ptr, this.length)
+            SoapySDRKwargsList_clear(this, this.length)
         end
-        this
     end
 end
+
 Base.size(kwl::KWArgsList) = (kwl.length,)
 
-"""
-    KWArgsListRef
-
-This is returned by calls to e.g. `Devices` and is used to present
-arguments for device creation. The Julia API for this should be
-similar to a `Dict`.
-"""
-struct KWArgsListRef <: KWArgs
-    list::KWArgsList
-    idx::Int
-    function Base.getindex(kwl::KWArgsList, i::Integer)
-        checkbounds(kwl, i)
-        new(kwl, i)
-    end
+function Base.unsafe_convert(::Type{Ptr{SoapySDRKwargs}}, kwl::KWArgsList)
+    @assert kwl.ptr !== C_NULL
+    kwl.ptr
 end
 
-function ptr(kwl::KWArgsListRef)
-    @assert kwl.list.ptr !== C_NULL
-    kwl.list.ptr + (kwl.idx-1)*sizeof(SoapySDRKwargs)
+function Base.getindex(kwl::KWArgsList, i::Integer)
+    @boundscheck checkbounds(kwl, i)
+    KWArgs(unsafe_load(kwl.ptr, i); owned=false)
 end
 
-function Base.setindex!(kwl::KWArgsListRef, val, key)
-    SoapySDRKwargs_set(ptr(kwl), key, val)
-end
 
-function Base.get(kwl::KWArgsListRef, key, default)
-    res = SoapySDRKwargs_get(ptr(kwl), key)
-    res == C_NULL ? default : unsafe_string(res)
-end
-
-Base.unsafe_load(kw::KWArgs) = unsafe_load(ptr(kw))
-Base.length(kw::KWArgs) = unsafe_load(kw).size
-function _getindex(kw::KWArgs, i::Integer)
-    1 <= i <= length(kw) || throw(BoundsError(kw, i))
-    @GC.preserve kw begin
-        return Symbol(unsafe_string(unsafe_load(unsafe_load(kw).keys, i))) =>
-               unsafe_string(unsafe_load(unsafe_load(kw).vals, i))
-    end
-end
-
-Base.iterate(kw::KWArgs, i=1) = i > length(kw) ? nothing : (_getindex(kw, i), i+1)
-
-
-function SoapySDRKwargsList_clear(list::KWArgsList)
-    SoapySDRKwargsList_clear(list.ptr, list.length)
-    list.ptr = C_NULL
-end
-
-##
+## StringList
 
 mutable struct StringList <: AbstractVector{String}
     strs::Ptr{Cstring}
@@ -98,7 +106,6 @@ function Base.getindex(s::StringList, i::Integer)
 end
 
 SoapySDRStrings_clear(s::StringList) = @GC.preserve s SoapySDRStrings_clear(pointer_from_objref(s), s.length)
-
 
 function Base.show(io::IO, s::SoapySDRArgInfo)
     println(io, "name: ", unsafe_string(s.units))
