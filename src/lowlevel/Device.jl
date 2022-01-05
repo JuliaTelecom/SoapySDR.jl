@@ -116,7 +116,7 @@ return a pointer to a new Device object.
 $LL_DISCLAIMER
 """
 function SoapySDRDevice_make(args)
-    return @check_error ccall((:SoapySDRDevice_make, lib), Ptr{SoapySDRDevice}, (Ref{SoapySDRKwargs},), args)
+    return @check_error ccall((:SoapySDRDevice_make, lib), Ptr{SoapySDRDevice}, (Ptr{SoapySDRKwargs},), args)
 end
 
 """

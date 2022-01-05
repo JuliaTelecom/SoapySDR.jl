@@ -28,7 +28,7 @@ end
 
 Base.getindex(d::Devices, i::Integer) = d.kwargslist[i]
 Base.iterate(d::Devices, state=1) = state > length(d) ? nothing : (d[state], state+1)
-Base.open(d::KWArgsListRef) = Device(SoapySDRDevice_make(ptr(d)))
+Base.open(d::KWArgs) = Device(SoapySDRDevice_make(d))
 
 ####################################################################################################
 #    Device
@@ -78,7 +78,7 @@ end
 
 function Base.getproperty(d::Device, s::Symbol)
     if s === :info
-        OwnedKWArgs(SoapySDRDevice_getHardwareInfo(d))
+        KWArgs(SoapySDRDevice_getHardwareInfo(d))
     elseif s === :driver
         Symbol(unsafe_string(SoapySDRDevice_getDriverKey(d)))
     elseif s === :hardware
@@ -134,7 +134,7 @@ Has the following properties:
 - `device::Device` - `Device` to which the `Channel` belongs
 - `direction` - either `Tx` or `Rx`
 - `idx` - channel index used by Soapy
-- `info` - channel info consiting of `OwnedKWArgs`
+- `info` - channel info consiting of `KWArgs`
 - `antenna` - antenna name
 - `gain_mode` - Automatic Gain control, `true`, `false`, or `missing`
 - `gain_elements` - list of `GainElements` of the channel
@@ -294,7 +294,7 @@ end
 
 function Base.getproperty(c::Channel, s::Symbol)
     if s === :info
-        return OwnedKWArgs(SoapySDRDevice_getChannelInfo(c.device.ptr, c.direction, c.idx))
+        return KWArgs(SoapySDRDevice_getChannelInfo(c.device.ptr, c.direction, c.idx))
     elseif s === :antenna
         return Antenna(Symbol(unsafe_string(SoapySDRDevice_getAntenna(c.device.ptr, c.direction, c.idx))))
     elseif s === :antennas
@@ -615,13 +615,11 @@ function Base.show(io::IO, s::Stream)
 end
 
 function Stream(format::Type, device::Device, direction::Direction; kwargs...)
-    isempty(kwargs) || error("TODO")
-    Stream{T}(device, 1, SoapySDRDevice_setupStream(device, direction, string(format), C_NULL, 0, C_NULL))
+    Stream{T}(device, 1, SoapySDRDevice_setupStream(device, direction, string(format), C_NULL, 0, KWArgs(kwargs)))
 end
 
 function Stream(format::Type, channels::AbstractVector{T}; kwargs...) where {T <: Channel}
     soapy_format = _stream_map_jl2soapy(format)
-    isempty(kwargs) || error("TODO")
     isempty(channels) && error("Must specify at least one channel or use the device/direction constructor for automatic.")
     device = first(channels).device
     direction = first(channels).direction
@@ -630,7 +628,7 @@ function Stream(format::Type, channels::AbstractVector{T}; kwargs...) where {T <
             end
         throw(ArgumentError("Channels must agree on device and direction"))
     end
-    Stream{format}(device, length(channels), SoapySDRDevice_setupStream(device, direction, soapy_format, map(x->x.idx, channels), length(channels), C_NULL))
+    Stream{format}(device, length(channels), SoapySDRDevice_setupStream(device, direction, soapy_format, map(x->x.idx, channels), length(channels), KWArgs(kwargs)))
 end
 
 function Stream(channels::AbstractVector{T}; kwargs...) where {T <: Channel}
