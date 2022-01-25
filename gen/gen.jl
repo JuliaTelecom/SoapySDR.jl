@@ -18,13 +18,20 @@ args = get_default_args()
 push!(args, "-I$include_dir")
 
 headers = [joinpath(include_dir, "SoapySDR", header) for header in readdir(joinpath(include_dir, "SoapySDR")) if endswith(header, ".h")]
+@show headers
+@show basename.(headers)
 # there is also an experimental `detect_headers` function for auto-detecting top-level headers in the directory
 # headers = detect_headers(clang_dir, args)
 
 filter!(s -> basename(s) != "Logger.h", headers) # ignore Logger as it hangs the build
 
-# create context
-ctx = create_context(headers, args, options)
+for header in headers
 
-# run generator
-build!(ctx)
+    options["general"]["output_file_path"] = joinpath("../src/lowlevel", basename(header)*".jl")
+    # create context
+    @show options
+    ctx = create_context(String[header], args, options)
+
+    # run generator
+    build!(ctx)
+end
