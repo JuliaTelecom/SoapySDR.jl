@@ -12,6 +12,7 @@ const GC = Base.GC
 export @u_str
 
 include("lowlevel/Constants.jl") # Done
+include("lowlevel/Version.h.jl")
 include("lowlevel/Errors.jl")    # Done
 include("lowlevel/Formats.jl")   # Done
 include("lowlevel/Types.jl")     # Done
