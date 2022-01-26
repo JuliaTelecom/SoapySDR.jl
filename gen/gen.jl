@@ -15,7 +15,8 @@ options = load_options(joinpath(@__DIR__, "generator.toml"))
 
 # add compiler flags, e.g. "-DXXXXXXXXX"
 args = get_default_args()
-push!(args, "-I$include_dir")
+push!(args, "-isystem$include_dir")
+@show args
 
 headers = [joinpath(include_dir, "SoapySDR", header) for header in readdir(joinpath(include_dir, "SoapySDR")) if endswith(header, ".h")]
 @show headers
