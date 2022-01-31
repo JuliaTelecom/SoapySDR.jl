@@ -20,23 +20,6 @@ julia> Devices()
 Devices may be selected just by indexing:
 ```
 julia> device = Devices()[1]
-21:11:54.675118 DEBUG:  xtrxllpciev0_discovery:264 [PCIE] pcie: Found `pcie:///dev/xtrx0`
-21:11:54.688916 DEBUG:  xtrxllpciev0_discovery:264 [PCIE] pcie: Found `pcie:///dev/xtrx0`
-[INFO] Make connection: 'pcie:///dev/xtrx0'
-21:11:54.688990 INFO:   [XTRX] xtrx_open(): dev[0]='pcie:///dev/xtrx0'
-21:11:54.689031 INFO:   [CTRL] PCI:/dev/xtrx0: RFIC_GPIO 0x000300
-21:11:54.706207 INFO:   [CTRL] PCI:/dev/xtrx0: XTRX Rev4 (04000113)
-21:11:54.706246 INFO:   [BPCI] PCI:/dev/xtrx0: RX DMA STOP MIMO (BLK:0 TS:0); TX DMA STOP MIMO @0.0
-21:11:54.706251 INFO:   [PCIE] PCI:/dev/xtrx0: Device `pcie:///dev/xtrx0` has been opened successfully
-CPU Features: SSE2+ SSE4.1+ AVX+ FMA+
-21:11:54.820272 INFO:   [CTRL] PCI:/dev/xtrx0: RFIC_GPIO 0x000304
-21:11:54.920458 INFO:   [CTRL] PCI:/dev/xtrx0: FPGA V_GPIO set to 3280mV
-21:11:54.920509 INFO:   [CTRL] PCI:/dev/xtrx0: LMS PMIC DCDC out set to VA18=1880mV VA14=1480mV VA12=1340mV
-21:11:54.924038 INFO:   [CTRL] PCI:/dev/xtrx0: FPGA V_IO set to 1800mV
-21:11:54.934544 INFO:   [CTRL] PCI:/dev/xtrx0: RFIC_GPIO 0x000306
-21:11:54.945459 INFO:   [LSM7] PCI:/dev/xtrx0: LMS VER:7 REV:1 MASK:1 (3841)
-21:11:54.945515 INFO:   [CTRL] PCI:/dev/xtrx0: RFIC_GPIO 0x00031e
-[INFO] Created: `pcie:///dev/xtrx0`
 SoapySDR xtrxdev device (driver: xtrxsoapy) w/ 2 TX channels and 2 RX channels
 ```
 
@@ -69,31 +52,6 @@ TX Channel #1 on xtrxdev
 To send or receive data, start a stream on a particular channel:
 ```
 julia> stream = SDRStream(ComplexF32, [device.rx[1]])
-21:15:44.166249 INFO:   [BPCI] PCI:/dev/xtrx0: RX DMA STOP MIMO (BLK:0 TS:0); TX DMA SKIP MIMO @0.0
-21:15:44.166307 INFO:   [LSM7] PCI:/dev/xtrx0: 0x0124[00, 00]
-21:15:44.166759 INFO:   [BPCI] PCI:/dev/xtrx0: RX DMA STOP MIMO (BLK:0 TS:0); TX DMA SKIP MIMO @0.0
-21:15:44.166769 INFO:   [LMSF] PCI:/dev/xtrx0: Auto RX band selection: LNAL
-21:15:44.166772 INFO:   [LMSF] PCI:/dev/xtrx0: Set RX band to 2 (L)
-21:15:44.166971 INFO:   [CTRL] PCI:/dev/xtrx0: RX_ANT: 1 TX_ANT: 0
-21:15:44.166973 INFO:   [LMSF] PCI:/dev/xtrx0: DC START
-21:15:44.167022 INFO:   [LSM7] PCI:/dev/xtrx0:  5c1=0000
-21:15:44.167039 INFO:   [LSM7] PCI:/dev/xtrx0:  5c1=0000
-21:15:44.167056 INFO:   [LSM7] PCI:/dev/xtrx0:  5c1=0000
-21:15:44.167099 INFO:   [LSM7] PCI:/dev/xtrx0:  5c1=0000
-21:15:44.167116 INFO:   [LSM7] PCI:/dev/xtrx0:  5c1=0000
-21:15:44.167147 INFO:   [LSM7] PCI:/dev/xtrx0:  5c1=0000
-21:15:44.167187 INFO:   [LSM7] PCI:/dev/xtrx0:  5c1=0000
-21:15:44.167206 INFO:   [LSM7] PCI:/dev/xtrx0:  5c1=0000
-21:15:44.167236 INFO:   [LSM7] PCI:/dev/xtrx0:  5c1=0000
-21:15:44.167268 INFO:   [LSM7] PCI:/dev/xtrx0:  5c1=0000
-21:15:44.167335 INFO:   [LSM7] PCI:/dev/xtrx0:  TX[0]=0000
-21:15:44.167416 INFO:   [LSM7] PCI:/dev/xtrx0:  TX[1]=0000
-21:15:44.167506 INFO:   [LSM7] PCI:/dev/xtrx0:  TX[2]=0000
-21:15:44.167573 INFO:   [LSM7] PCI:/dev/xtrx0:  TX[3]=0000
-21:15:44.167621 INFO:   [LSM7] PCI:/dev/xtrx0:  RX[0]=0000
-21:15:44.167671 INFO:   [LSM7] PCI:/dev/xtrx0:  RX[1]=0000
-21:15:44.167719 INFO:   [LSM7] PCI:/dev/xtrx0:  RX[2]=0000
-21:15:44.167777 INFO:   [LSM7] PCI:/dev/xtrx0:  RX[3]=0000
 Stream on xtrxdev
 ```
 
