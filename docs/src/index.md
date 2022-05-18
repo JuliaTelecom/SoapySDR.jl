@@ -38,6 +38,11 @@ or:
 julia> using SoapySDR, SoapyRTLSDR_jll
 ```
 
+#### Loading a Self-Built Driver Module
+
+SoapySDR reads the `SOAPY_SDR_PLUGIN_PATH` environmental variable which may point to a local driver module.
+This is handy for experimental devices or bespoke devices that may not integrate well with distribution in Julia Pkg.
+
 ### Transmitting and Receiving (loopback)
 
 ````@eval
