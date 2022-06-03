@@ -1501,7 +1501,7 @@ Get a list of available GPIO banks by name.
 param [out] length the number of GPIO banks
 param device a pointer to a device instance
 """
-function SoapySDRDevice_listGPIBanks(device)
+function SoapySDRDevice_listGPIOBanks(device)
     #SOAPY_SDR_API char **SoapySDRDevice_listGPIOBanks(const SoapySDRDevice *device, size_t *length);
     len = Ref{Csize_t}()
     ptr = @check_error ccall((:SoapySDRDevice_listGPIBanks, lib), Ptr{Cstring}, (Ptr{SoapySDRDevice}, Ref{Csize_t}), device, len)
