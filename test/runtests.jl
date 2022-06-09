@@ -2,8 +2,14 @@ using SoapySDR
 using Test
 using Unitful
 using Unitful.DefaultSymbols
-const dB = u"dB"
 using Intervals
+using Aqua
+
+# Aqua tests up front
+# Intervals brings a bunch of ambiquities unfortunately
+Aqua.test_all(SoapySDR; ambiguities=false)
+
+const dB = u"dB"
 
 const sd = SoapySDR
 
