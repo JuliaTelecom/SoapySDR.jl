@@ -3,6 +3,10 @@
 """SOAPY_SDR_TX SOAPY_SDR_RX"""
 @enum Direction Tx=0 Rx=1
 
+const SOAPY_SDR_TX = 0
+
+const SOAPY_SDR_RX = 1
+
 """Indicate end of burst for transmit or receive.
 For write, end of burst if set by the caller.
 For read, end of burst is set by the driver."""
