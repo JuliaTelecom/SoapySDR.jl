@@ -3,6 +3,7 @@ module SoapySDR
 using soapysdr_jll
 const lib = soapysdr_jll.libsoapysdr
 const soapysdr = soapysdr_jll.libsoapysdr
+using CEnum
 
 using Intervals
 using Unitful
@@ -12,13 +13,15 @@ const GC = Base.GC
 
 export @u_str
 
-include("lowlevel/Constants.jl") # Done
+include("lowlevel/Constants.h.jl")
+include("lowlevel/Converters.h.jl")
 include("lowlevel/Version.h.jl")
-include("lowlevel/Errors.jl")    # Done
-include("lowlevel/Formats.jl")   # Done
-include("lowlevel/Types.jl")     # Done
+include("lowlevel/Errors.h.jl")
+include("lowlevel/Formats.h.jl")
+include("lowlevel/Time.h.jl")
+include("lowlevel/Types.h.jl")
 include("lowlevel/Device.jl")
-include("lowlevel/Modules.jl")
+include("lowlevel/Modules.h.jl")
 include("lowlevel/Logger.jl")
 include("typemap.jl")
 include("typewrappers.jl")

@@ -5,10 +5,6 @@ using Unitful.DefaultSymbols
 using Intervals
 using Aqua
 
-# Aqua tests up front
-# Intervals brings a bunch of ambiquities unfortunately
-Aqua.test_all(SoapySDR; ambiguities=false)
-
 const dB = u"dB"
 
 const sd = SoapySDR
@@ -42,7 +38,7 @@ end
     @test typeof(intervalrangedb) == Interval{Gain{Unitful.LogInfo{:Decibel, 10, 10}, :?, Float64}, Closed, Closed}
     @test typeof(steprangedb) == Interval{Gain{Unitful.LogInfo{:Decibel, 10, 10}, :?, Float64}, Closed, Closed}
     @test typeof(intervalrangehz) == Interval{hztype, Closed, Closed}
-    @test typeof(steprangehz) == StepRangeLen{hztype, Base.TwicePrecision{hztype}, Base.TwicePrecision{hztype}}
+    @test typeof(steprangehz) == StepRangeLen{hztype, Base.TwicePrecision{hztype}, Base.TwicePrecision{hztype}, Int64}
 
     io = IOBuffer(read=true, write=true)
 
@@ -159,4 +155,8 @@ end
     close(tx_stream)
     #close(dev)
 end
+# Aqua tests up front
+# Intervals brings a bunch of ambiquities unfortunately
+Aqua.test_all(SoapySDR; ambiguities=false)
+
 end

@@ -1,0 +1,16 @@
+const SOAPY_SDR_TX = 0
+
+const SOAPY_SDR_RX = 1
+
+const SOAPY_SDR_END_BURST = 1 << 1
+
+const SOAPY_SDR_HAS_TIME = 1 << 2
+
+const SOAPY_SDR_END_ABRUPT = 1 << 3
+
+const SOAPY_SDR_ONE_PACKET = 1 << 4
+
+const SOAPY_SDR_MORE_FRAGMENTS = 1 << 5
+
+const SOAPY_SDR_WAIT_TRIGGER = 1 << 6
+
