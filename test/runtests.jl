@@ -13,8 +13,7 @@ const hardware = "loopback"
 
 # Load dummy test harness or hardware
 if hardware == "loopback"
-    # build SoapyLoopback and dlopen it
-    include("setup_loopback.jl")
+    using SoapyLoopback_jll
 elseif hardware == "rtlsdr"
     using SoapyRTLSDR_jll
 else
