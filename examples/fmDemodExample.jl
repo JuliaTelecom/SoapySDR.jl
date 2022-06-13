@@ -1,8 +1,15 @@
-include("../src/SoapySDR.jl")
 using Printf
 using FFTW
 using PyPlot
 using DSP
+using SoapySDR
+
+# Don't forget to add/import a device-specific plugin package!
+# using xtrx_jll
+# using SoapyLMS7_jll
+using SoapyRTLSDR_jll
+# using SoapyPlutoSDR_jll
+# using SoapyUHD_jll
 
 include("fmDemod.jl")
 
@@ -68,18 +75,18 @@ end
 #f0 = 103.3e6
 f0 = 104.1e6
 #f0 = 938.2e6
-if (SoapySDR.SoapySDRDevice_setFrequency(sdr, SoapySDR.SOAPY_SDR_RX, 0, f0) != 0)
+if (SoapySDR.SoapySDRDevice_setFrequency(sdr, SoapySDR.SOAPY_SDR_RX, 0, f0, C_NULL) != 0)
     @printf "setFrequency fail: %s\n" unsafe_string(SoapySDR.SoapySDRDevice_lastError())
 end
 
 # set up a stream (complex floats)
 rxStream = SoapySDR.SoapySDRStream()
-if (SoapySDR.SoapySDRDevice_setupStream(sdr, rxStream, SoapySDR.SOAPY_SDR_RX, SoapySDR.SOAPY_SDR_CF32, C_NULL, 0) != 0)
+if (SoapySDR.SoapySDRDevice_setupStream(sdr, SoapySDR.SOAPY_SDR_RX, SoapySDR.SOAPY_SDR_CF32, C_NULL, 0, SoapySDR.KWArgs()) != 0)
     @printf "setupStream fail: %s\n" unsafe_string(SoapySDR.SoapySDRDevice_lastError())
 end
 
 # start streaming
-SoapySDR.SoapySDRDevice_activateStream(sdr, rxStream, 0, 0, 0)
+SoapySDR.SoapySDRDevice_activateStream(sdr, pointer_from_objref(rxStream), 0, 0, 0)
 
 # create a re-usable buffer for rx samples
 buffsz = 1024
@@ -97,7 +104,7 @@ buffs = [buff]
 #storeFft = zeros(timeSamp, buffsz)
 storeBuff = zeros(ComplexF32,timeSamp, buffsz)
 for i=1:timeSamp
-    SoapySDR.SoapySDRDevice_readStream(sdr, rxStream, buffs, buffsz, flags, timeNs, 100000)
+    nelem, flags, timeNs = SoapySDR.SoapySDRDevice_readStream(sdr, pointer_from_objref(rxStream), Ref(pointer(buff)), buffsz, 100000)
     local storeBuff[i,:] = buff
 end
 
@@ -111,8 +118,8 @@ end
 storeIq = Array(reshape(storeBuff', :, size(storeBuff)[1]*size(storeBuff)[2])')[:]
 
 # shutdown the stream
-SoapySDR.SoapySDRDevice_deactivateStream(sdr, rxStream, 0, 0)  # stop streaming
-SoapySDR.SoapySDRDevice_closeStream(sdr, rxStream)
+SoapySDR.SoapySDRDevice_deactivateStream(sdr, pointer_from_objref(rxStream), 0, 0)  # stop streaming
+SoapySDR.SoapySDRDevice_closeStream(sdr, pointer_from_objref(rxStream))
 SoapySDR.SoapySDRDevice_unmake(sdr)
 
 function plotTimeFreq(storeFft, fs, f0)

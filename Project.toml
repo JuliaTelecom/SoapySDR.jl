@@ -19,10 +19,9 @@ julia = "1.6"
 soapysdr_jll = "0.8"
 
 [extras]
-BinaryBuilder = "12aac903-9f7c-5d81-afc2-d9565ea332ae"
-Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
-Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+SoapyLoopback_jll = "8d250ce8-a086-56bd-8a36-e4e8f4202680"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "Pkg", "BinaryBuilder", "Libdl"]
+test = ["Test", "SoapyLoopback_jll", "Aqua"]

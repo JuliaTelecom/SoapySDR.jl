@@ -26,6 +26,11 @@ end
 mutable struct SoapySDRStream
 end
 
+struct SoapySDRAPIError
+    code::Cint
+end
+Base.show(io::IO, se::SoapySDRAPIError) = print(io, unsafe_string(SoapySDR_errToStr(se.code)))
+
 struct SoapyDeviceError
     msg::String
 end

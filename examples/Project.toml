@@ -1,0 +1,12 @@
+[deps]
+DSP = "717857b8-e6f2-59f4-9121-6e50c889abd2"
+FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+SoapyLMS7_jll = "e7ed14a0-13eb-5dc7-93e2-6133b2eb8bed"
+SoapyPlutoSDR_jll = "96b01697-91ed-557a-a63b-0996cb7d9743"
+SoapyRTLSDR_jll = "7bed6c1d-f2db-586c-9908-488058499e34"
+SoapySDR = "4fa426e6-03fd-45b2-b2dd-25f726820c03"
+SoapyUHD_jll = "5710b6fb-c5a3-5f8f-93a5-d73c28ee0e84"
+WAV = "8149f6b0-98f6-5db9-b78f-408fbbb8ef88"

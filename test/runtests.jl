@@ -2,8 +2,10 @@ using SoapySDR
 using Test
 using Unitful
 using Unitful.DefaultSymbols
-const dB = u"dB"
 using Intervals
+using Aqua
+
+const dB = u"dB"
 
 const sd = SoapySDR
 
@@ -11,8 +13,7 @@ const hardware = "loopback"
 
 # Load dummy test harness or hardware
 if hardware == "loopback"
-    # build SoapyLoopback and dlopen it
-    include("setup_loopback.jl")
+    using SoapyLoopback_jll
 elseif hardware == "rtlsdr"
     using SoapyRTLSDR_jll
 else
@@ -36,7 +37,11 @@ end
     @test typeof(intervalrangedb) == Interval{Gain{Unitful.LogInfo{:Decibel, 10, 10}, :?, Float64}, Closed, Closed}
     @test typeof(steprangedb) == Interval{Gain{Unitful.LogInfo{:Decibel, 10, 10}, :?, Float64}, Closed, Closed}
     @test typeof(intervalrangehz) == Interval{hztype, Closed, Closed}
-    @test typeof(steprangehz) == StepRangeLen{hztype, Base.TwicePrecision{hztype}, Base.TwicePrecision{hztype}}
+    if VERSION >= v"1.7"
+        @test typeof(steprangehz) == StepRangeLen{hztype, Base.TwicePrecision{hztype}, Base.TwicePrecision{hztype}, Int64}
+    else
+        @test typeof(steprangehz) == StepRangeLen{hztype, Base.TwicePrecision{hztype}, Base.TwicePrecision{hztype}}
+    end
 
     io = IOBuffer(read=true, write=true)
 
@@ -153,4 +158,13 @@ end
     close(tx_stream)
     #close(dev)
 end
+@testset "Examples" begin
+    include("../examples/highlevel_dump_devices.jl")
+end
+
+
+# Aqua tests
+# Intervals brings a bunch of ambiquities unfortunately
+Aqua.test_all(SoapySDR; ambiguities=false)
+
 end

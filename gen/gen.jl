@@ -1,7 +1,5 @@
 #! /usr/bin/env julia
 
-using Pkg
-
 using soapysdr_jll
 
 using Clang.Generators
