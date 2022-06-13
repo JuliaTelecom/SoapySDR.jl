@@ -5,23 +5,21 @@ using SoapySDR, SoapyRTLSDR_jll
 # handle partial reads, measure latnecy, etc
 
 function rapid_read()
-    dev = Devices()[1]
+    dev = open(Devices()[1])
     rx_chan = dev.rx
     rx_stream = SoapySDR.Stream(rx_chan)
-    @show SoapySDR.mtu(rx_stream)
+    @show rx_stream.mtu
     SoapySDR.activate!(rx_stream)
-    bufs = [SoapySDR.SampleBuffer(rx_stream, 10^6) for i = 1:2]
-    @show bufs[1].packet_count
-    @show bufs[2].packet_count
+    bufs = [Vector{SoapySDR.streamtype(rx_stream)}(undef, 1_000_000) for i = 1:2]
+
     flip = true
     while true
         # double buffer
         flip = !flip
         current_buff = bufs[Int(flip)+1]
         prev_buff = bufs[Int(!flip)+1]
-        @assert length(current_buff.bufs[1])%rx_stream.mtu == 0
 
-        read!(rx_stream, current_buff)
+        read!(rx_stream, (current_buff, ))
 
         # sanity checks?
         #nequal = 0

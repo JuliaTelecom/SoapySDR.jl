@@ -158,7 +158,12 @@ end
     close(tx_stream)
     #close(dev)
 end
-# Aqua tests up front
+@testset "Examples" begin
+    include("../examples/highlevel_dump_devices.jl")
+end
+
+
+# Aqua tests
 # Intervals brings a bunch of ambiquities unfortunately
 Aqua.test_all(SoapySDR; ambiguities=false)
 
