@@ -86,7 +86,7 @@ if (SoapySDR.SoapySDRDevice_setupStream(sdr, SoapySDR.SOAPY_SDR_RX, SoapySDR.SOA
 end
 
 # start streaming
-SoapySDR.SoapySDRDevice_activateStream(sdr, rxStream, 0, 0, 0)
+SoapySDR.SoapySDRDevice_activateStream(sdr, pointer_from_objref(rxStream), 0, 0, 0)
 
 # create a re-usable buffer for rx samples
 buffsz = 1024
@@ -104,7 +104,7 @@ buffs = [buff]
 #storeFft = zeros(timeSamp, buffsz)
 storeBuff = zeros(ComplexF32,timeSamp, buffsz)
 for i=1:timeSamp
-    SoapySDR.SoapySDRDevice_readStream(sdr, rxStream, buffs, buffsz, flags, timeNs, 100000)
+    nelem, flags, timeNs = SoapySDR.SoapySDRDevice_readStream(sdr, pointer_from_objref(rxStream), Ref(pointer(buff)), buffsz, 100000)
     local storeBuff[i,:] = buff
 end
 
@@ -118,8 +118,8 @@ end
 storeIq = Array(reshape(storeBuff', :, size(storeBuff)[1]*size(storeBuff)[2])')[:]
 
 # shutdown the stream
-SoapySDR.SoapySDRDevice_deactivateStream(sdr, rxStream, 0, 0)  # stop streaming
-SoapySDR.SoapySDRDevice_closeStream(sdr, rxStream)
+SoapySDR.SoapySDRDevice_deactivateStream(sdr, pointer_from_objref(rxStream), 0, 0)  # stop streaming
+SoapySDR.SoapySDRDevice_closeStream(sdr, pointer_from_objref(rxStream))
 SoapySDR.SoapySDRDevice_unmake(sdr)
 
 function plotTimeFreq(storeFft, fs, f0)
