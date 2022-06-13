@@ -7,7 +7,7 @@ using SoapySDR
 # Don't forget to add/import a device-specific plugin package!
 # using xtrx_jll
 # using SoapyLMS7_jll
-using SoapyRTLSDR_jll
+# using SoapyRTLSDR_jll
 # using SoapyPlutoSDR_jll
 # using SoapyUHD_jll
 

@@ -7,6 +7,10 @@ using SoapySDR
 # using SoapyPlutoSDR_jll
 # using SoapyUHD_jll
 
+# Or we can load OS provided modules or custom modules
+# with the SOAPY_SDR_PLUGIN_PATH environment variable:
+# ENV["SOAPY_SDR_PLUGIN_PATH"]="/usr/lib/x86_64-linux-gnu/SoapySDR/modules0.8/"
+
 # Get the Devices
 devs = Devices()
 
