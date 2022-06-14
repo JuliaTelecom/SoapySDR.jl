@@ -13,7 +13,7 @@ options = load_options(joinpath(@__DIR__, "generator.toml"))
 
 # add compiler flags, e.g. "-DXXXXXXXXX"
 args = get_default_args()
-push!(args, "-isystem$include_dir")
+push!(args, "-I$include_dir")
 @show args
 
 headers = [joinpath(include_dir, "SoapySDR", header) for header in readdir(joinpath(include_dir, "SoapySDR")) if endswith(header, ".h")]
@@ -22,18 +22,14 @@ headers = [joinpath(include_dir, "SoapySDR", header) for header in readdir(joinp
 # there is also an experimental `detect_headers` function for auto-detecting top-level headers in the directory
 # headers = detect_headers(clang_dir, args)
 
-filter!(s -> basename(s) ∉ ["Logger.h", "Config.h"], headers) # ignore Logger as it hangs the build
+filter!(s -> basename(s) ∉ ["Device.h", "Config.h"], headers) # Deivce is hand-wrapped and COnfig is not needed
 
 # A few macros that don't translate well, and not applicable
-#options["general"]["output_ignorelist"] = ["SOAPY_SDR_API", "SOAPY_SDR_LOCAL"]
+options["general"]["output_ignorelist"] = ["SOAPY_SDR_API", "SOAPY_SDR_LOCAL"]
 
-for header in headers
+# create context
+@show options
+ctx = create_context(headers, args, options)
 
-    options["general"]["output_file_path"] = joinpath("../src/lowlevel", basename(header)*".jl")
-    # create context
-    @show options
-    ctx = create_context(String[header], args, options)
-
-    # run generator
-    build!(ctx)
-end
+# run generator
+build!(ctx)
