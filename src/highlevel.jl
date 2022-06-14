@@ -644,7 +644,7 @@ end
 
 Read data from the device into the given buffer.
 """
-function Base.read!(s::Stream{T}, buffer::NTuple{N, Vector{T}}; timeout=nothing) where {N, T}
+function Base.read!(s::Stream{T}, buffer::NTuple{N, AbstractVector{T}}; timeout=nothing) where {N, T}
     timeout === nothing && (timeout = 0.1u"s") # Default from SoapySDR upstream
 
     total_nread = 0
