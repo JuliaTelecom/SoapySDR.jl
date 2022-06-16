@@ -11,7 +11,13 @@ keywords used to create a `Device` struct.
 """
 struct Devices
     kwargslist::KWArgsList
-    Devices() = new(KWArgsList(SoapySDRDevice_enumerate()...))
+    function Devices()
+        kwargs = KWArgsList(SoapySDRDevice_enumerate()...)
+        if isempty(kwargs)
+            @warn "No devices available! Make sure a supported SDR module is included."
+        end
+        new(kwargs)
+    end
 end
 Base.length(d::Devices) = length(d.kwargslist)
 
