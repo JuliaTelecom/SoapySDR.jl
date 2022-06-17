@@ -22,16 +22,19 @@ native_format = chan.native_stream_format
 stream = SoapySDR.Stream(native_format, [chan])
 
 function dma_test(stream)
-    SoapySDR.activate!(stream)
-    try
+    for rate in SoapySDR.list_sample_rates(chan)
+        println("Testing sample rate:", rate)
+        chan.sample_rate = rate
+        SoapySDR.activate!(stream)
+
         # acquire buffers using the low-level API
         buffs = Ptr{native_format}[C_NULL]
         bytes = 0
         total_bytes = 0
 
         println("Receiving data")
-        time = @elapsed for i in 1:100
-            bytes, handle, flags, timeNs = SoapySDR.SoapySDRDevice_acquireReadBuffer(dev, stream, buffs)
+        time = @elapsed for i in 1:30
+            bytes, handle, flags, timeNs = SoapySDR.SoapySDRDevice_acquireReadBuffer(dev, stream, buffs, 1000000)
             
             arr = unsafe_wrap(Array{native_format}, buffs[1], bytes ÷ sizeof(native_format))
 
@@ -45,8 +48,8 @@ function dma_test(stream)
         end
         println("Data rate: $(Base.format_bytes(total_bytes / time))/s")
 
-    finally
         SoapySDR.deactivate!(stream)
+
     end
 end
 dma_test(stream)
