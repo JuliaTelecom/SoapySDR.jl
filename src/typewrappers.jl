@@ -72,6 +72,7 @@ mutable struct KWArgsList <: AbstractVector{KWArgs}
         finalizer(this) do this
             SoapySDRKwargsList_clear(this, this.length)
         end
+        this
     end
 end
 
@@ -90,17 +91,19 @@ end
 
 ## ArgInfoList
 
-mutable struct ArgInfoList <: AbstractVector{KWArgs}
+mutable struct ArgInfoList <: AbstractVector{SoapySDRArgInfo}
     ptr::Ptr{SoapySDRArgInfo}
     length::Csize_t
 
     function ArgInfoList(ptr::Ptr{SoapySDRArgInfo}, length::Csize_t)
         this = new(ptr, length)
-        finalizer(this) do this
-            SoapySDRArgInfoList_clear(this, this.length)
-        end
+        # TODO: broken
+        #finalizer(SoapySDRArgInfoList_clear, this)
+        this
     end
 end
+
+SoapySDRArgInfoList_clear(s::ArgInfoList) = @GC.preserve s SoapySDRArgInfoList_clear(pointer_from_objref(s), s.length)
 
 Base.size(kwl::ArgInfoList) = (kwl.length,)
 

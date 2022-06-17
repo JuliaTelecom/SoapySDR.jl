@@ -158,6 +158,13 @@ end
     close(tx_stream)
     #close(dev)
 end
+@testset "Settings" begin
+    io = IOBuffer(read=true, write=true)
+    dev = open(Devices()[1])
+    arglist = SoapySDR.ArgInfoList(SoapySDR.SoapySDRDevice_getSettingInfo(dev)...)
+    println(arglist)
+    a1 = arglist[1]
+end
 @testset "Examples" begin
     include("../examples/highlevel_dump_devices.jl")
 end
