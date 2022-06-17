@@ -13,16 +13,8 @@ const GC = Base.GC
 
 export @u_str
 
-include("lowlevel/Constants.h.jl")
-include("lowlevel/Converters.h.jl")
-include("lowlevel/Version.h.jl")
-include("lowlevel/Errors.h.jl")
-include("lowlevel/Formats.h.jl")
-include("lowlevel/Time.h.jl")
-include("lowlevel/Types.h.jl")
+include("lowlevel/auto_wrap.jl")
 include("lowlevel/Device.jl")
-include("lowlevel/Modules.h.jl")
-include("lowlevel/Logger.jl")
 include("typemap.jl")
 include("typewrappers.jl")
 include("highlevel.jl")

@@ -72,6 +72,7 @@ mutable struct KWArgsList <: AbstractVector{KWArgs}
         finalizer(this) do this
             SoapySDRKwargsList_clear(this, this.length)
         end
+        this
     end
 end
 
@@ -88,6 +89,30 @@ function Base.getindex(kwl::KWArgsList, i::Integer)
 end
 
 
+## ArgInfoList
+
+mutable struct ArgInfoList <: AbstractVector{SoapySDRArgInfo}
+    ptr::Ptr{SoapySDRArgInfo}
+    length::Csize_t
+
+    function ArgInfoList(ptr::Ptr{SoapySDRArgInfo}, length::Csize_t)
+        this = new(ptr, length)
+        # TODO: broken
+        #finalizer(SoapySDRArgInfoList_clear, this)
+        this
+    end
+end
+
+SoapySDRArgInfoList_clear(s::ArgInfoList) = @GC.preserve s SoapySDRArgInfoList_clear(pointer_from_objref(s), s.length)
+
+Base.size(kwl::ArgInfoList) = (kwl.length,)
+
+function Base.getindex(kwl::ArgInfoList, i::Integer)
+    @boundscheck checkbounds(kwl, i)
+    unsafe_load(kwl.ptr, i)
+end
+
+
 ## StringList
 
 mutable struct StringList <: AbstractVector{String}
@@ -99,6 +124,10 @@ mutable struct StringList <: AbstractVector{String}
         this
     end
 end
+
+function StringList(strs::Ptr{Ptr{Cchar}}, length::Integer)
+    StringList(reinterpret(Ptr{Cstring}, strs), length)
+end
 Base.size(s::StringList) = (s.length,)
 function Base.getindex(s::StringList, i::Integer)
     checkbounds(s, i)
@@ -107,10 +136,13 @@ end
 
 SoapySDRStrings_clear(s::StringList) = @GC.preserve s SoapySDRStrings_clear(pointer_from_objref(s), s.length)
 
+
+## ArgInfo
+
 function Base.show(io::IO, s::SoapySDRArgInfo)
-    println(io, "name: ", unsafe_string(s.units))
+    println(io, "name: ", unsafe_string(s.name))
     println(io, "key: ", unsafe_string(s.key))
-    println(io, "value: ", unsafe_string(s.name))
+    #println(io, "value: ", unsafe_string(s.value))
     println(io, "description: ", unsafe_string(s.description))
     println(io, "units: ", unsafe_string(s.units))
     #type

@@ -11,7 +11,13 @@ keywords used to create a `Device` struct.
 """
 struct Devices
     kwargslist::KWArgsList
-    Devices() = new(KWArgsList(SoapySDRDevice_enumerate()...))
+    function Devices()
+        kwargs = KWArgsList(SoapySDRDevice_enumerate()...)
+        if isempty(kwargs)
+            @warn "No devices available! Make sure a supported SDR module is included."
+        end
+        new(kwargs)
+    end
 end
 Base.length(d::Devices) = length(d.kwargslist)
 
@@ -644,7 +650,7 @@ end
 
 Read data from the device into the given buffer.
 """
-function Base.read!(s::Stream{T}, buffer::NTuple{N, Vector{T}}; timeout=nothing) where {N, T}
+function Base.read!(s::Stream{T}, buffer::NTuple{N, AbstractVector{T}}; timeout=nothing) where {N, T}
     timeout === nothing && (timeout = 0.1u"s") # Default from SoapySDR upstream
 
     total_nread = 0
