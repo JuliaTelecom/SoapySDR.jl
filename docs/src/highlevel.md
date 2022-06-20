@@ -6,5 +6,6 @@ CurrentModule = SoapySDR
 
 ```@autodocs
 Modules = [SoapySDR]
-Pages = ["highlevel.jl"]
+Pages = ["highlevel.jl",
+         "loghandler.jl"]
 ```

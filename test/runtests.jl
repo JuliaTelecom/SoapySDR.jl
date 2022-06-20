@@ -20,6 +20,8 @@ else
     error("unknown test hardware")
 end
 
+# Test Log Handler registration
+SoapySDR.register_log_handler()
 
 @testset "SoapySDR.jl" begin
 @testset "Ranges/Display" begin
