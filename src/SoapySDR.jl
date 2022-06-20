@@ -23,12 +23,5 @@ include("loghandler.jl")
 const SDRStream = Stream
 export SDRStream
 
-#
-# FIXME: Log handler breaks USRP Support
-#
-#function __init__()
-#    julia_log_handler = @cfunction(logger_soapy2jl, Cvoid, (Cint, Cstring))
-#    SoapySDR_registerLogHandler(julia_log_handler)
-#end
 
 end

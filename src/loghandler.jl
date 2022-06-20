@@ -1,7 +1,6 @@
-#
-# Setup the a handler from SoapySDR log messages into Julia
-#
-
+"""
+Log handler to forward Soapy logs to Julia logs.
+"""
 function logger_soapy2jl(level, cmessage)
     #SOAPY_SDR_FATAL    = 1 #!< A fatal error. The application will most likely terminate. This is the highest priority.
     #SOAPY_SDR_CRITICAL = 2 #!< A critical error. The application might not be able to continue running successfully.
@@ -26,4 +25,14 @@ function logger_soapy2jl(level, cmessage)
     else
         println("SoapySDR_jll: ", message)
     end
+end
+
+"""
+Initialize the log handler to convert Soapy logs to Julia logs.
+
+This should be called once at the start of a script before doing work.
+"""
+function register_log_handler()
+    julia_log_handler = @cfunction(logger_soapy2jl, Cvoid, (Cint, Cstring))
+    SoapySDR_registerLogHandler(julia_log_handler)
 end
