@@ -11,8 +11,10 @@ keywords used to create a `Device` struct.
 """
 struct Devices
     kwargslist::KWArgsList
-    function Devices()
-        kwargs = KWArgsList(SoapySDRDevice_enumerate()...)
+    function Devices(args=nothing)
+        len = Ref{Csize_t}()
+        kwargs = SoapySDRDevice_enumerate(isnothing(args) ? C_NULL : args, len)
+        kwargs = KWArgsList(kwargs, len[])
         if isempty(kwargs)
             @warn "No devices available! Make sure a supported SDR module is included."
         end
@@ -463,23 +465,23 @@ end
 
 using Base: unsafe_convert
 function Base.getindex(c::Channel, ge::GainElement)
-    SoapySDRDevice_getGainElement(c.device, c.direction, c.idx, Cstring(unsafe_convert(Ptr{UInt8}, ge.name))) * dB
+    SoapySDRDevice_getGainElement(c.device, c.direction, c.idx, ge.name) * dB
 end
 
 function Base.getindex(c::Channel, fe::FrequencyComponent)
-    SoapySDRDevice_getFrequencyComponent(c.device, c.direction, c.idx, Cstring(unsafe_convert(Ptr{UInt8}, fe.name))) * Hz
+    SoapySDRDevice_getFrequencyComponent(c.device, c.direction, c.idx,fe.name) * Hz
 end
 
 function Base.getindex(c::Channel, se::SensorComponent)
-    unsafe_string(SoapySDRDevice_readChannelSensor(c.device, c.direction, c.idx, Cstring(unsafe_convert(Ptr{UInt8}, se.name))))
+    unsafe_string(SoapySDRDevice_readChannelSensor(c.device, c.direction, c.idx, se.name))
 end
 
 function Base.getindex(d::Device, se::SensorComponent)
-    unsafe_string(SoapySDRDevice_readSensor(d.ptr, Cstring(unsafe_convert(Ptr{UInt8}, se.name))))
+    unsafe_string(SoapySDRDevice_readSensor(d.ptr, se.name))
 end
 
 function Base.setindex!(c::Channel, gain::typeof(1.0dB), ge::GainElement)
-    SoapySDRDevice_setGainElement(c.device, c.direction, c.idx, Cstring(unsafe_convert(Ptr{UInt8}, ge.name)), gain.val)
+    SoapySDRDevice_setGainElement(c.device, c.direction, c.idx, ge.name, gain.val)
     return gain
 end
 
@@ -528,7 +530,7 @@ function frequency_ranges(c::Channel)
 end
 
 function frequency_ranges(c::Channel, fe::FrequencyComponent)
-    (ptr, len) = SoapySDRDevice_getFrequencyRangeComponent(c.device.ptr, c.direction, c.idx, Cstring(unsafe_convert(Ptr{UInt8}, fe.name)))
+    (ptr, len) = SoapySDRDevice_getFrequencyRangeComponent(c.device.ptr, c.direction, c.idx, fe.name)
     arr = map(_hzrange, unsafe_wrap(Array, Ptr{SoapySDRRange}(ptr), (len,)))
     SoapySDR_free(ptr)
     arr

@@ -22,7 +22,7 @@ headers = [joinpath(include_dir, "SoapySDR", header) for header in readdir(joinp
 # there is also an experimental `detect_headers` function for auto-detecting top-level headers in the directory
 # headers = detect_headers(clang_dir, args)
 
-filter!(s -> basename(s) ∉ ["Device.h", "Config.h"], headers) # Deivce is hand-wrapped and COnfig is not needed
+filter!(s -> basename(s) ∉ ["Config.h"], headers) # Deivce is hand-wrapped and COnfig is not needed
 
 # A few macros that don't translate well, and not applicable
 options["general"]["output_ignorelist"] = ["SOAPY_SDR_API", "SOAPY_SDR_LOCAL"]
