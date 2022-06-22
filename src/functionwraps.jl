@@ -47,3 +47,28 @@ function SoapySDRDevice_getFrequencyRangeComponent(device, direction, channel, n
     args = SoapySDRDevice_getFrequencyRangeComponent(device, direction, channel, name, len)
     (args, len[])
 end
+
+function SoapySDRDevice_listGains(device, direction, channel)
+    len = Ref{Csize_t}()
+    args = SoapySDRDevice_listGains(device, direction, channel, len)
+    (args, len[])
+end
+
+function SoapySDRDevice_getStreamFormats(device, direction, channel)
+    len = Ref{Csize_t}()
+    args = SoapySDRDevice_getStreamFormats(device, direction, channel, len)
+    (args, len[])
+end
+
+function SoapySDRDevice_getNativeStreamFormat(device, direction, channel)
+    fullscale = Ref{Cdouble}()
+    str = SoapySDRDevice_getNativeStreamFormat(device, direction, channel, fullscale)
+    (str, fullscale[])
+end
+
+function SoapySDRDevice_getSampleRateRange(device, direction, channel)
+    len = Ref{Csize_t}()
+    args = SoapySDRDevice_getSampleRateRange(device, direction, channel, len)
+    (args, len[])
+end
+

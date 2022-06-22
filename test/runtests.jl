@@ -125,7 +125,7 @@ end
     if1 = rx_chan.gain_elements[1]
     @show rx_chan[if1]
     rx_chan[if1] = 0.5u"dB"
-    @test_broken rx_chan[if1] == 0.5u"dB"
+    @test rx_chan[if1] == 0.5u"dB"
 
     #@show rx_chan.gain_profile
     @show rx_chan.frequency_correction

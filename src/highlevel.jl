@@ -116,7 +116,7 @@ function Base.setproperty!(c::Device, s::Symbol, v)
     elseif s === :frontendmapping_rx
         SoapySDRDevice_setFrontendMapping(c.ptr, Rx, v)
     elseif s === :time_source
-        SoapySDRDevice_setTimeSource(c.ptr, v)
+        SoapySDRDevice_setTimeSource(c.ptr, string(v))
     else
         return setfield!(c, s, v)
     end
