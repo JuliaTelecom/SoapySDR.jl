@@ -72,3 +72,40 @@ function SoapySDRDevice_getSampleRateRange(device, direction, channel)
     (args, len[])
 end
 
+function SoapySDRDevice_acquireReadBuffer(device, stream, buffs, timeoutUs=100000)
+    #SOAPY_SDR_API int SoapySDRDevice_acquireReadBuffer(SoapySDRDevice *device,
+    #    SoapySDRStream *stream,
+    #    size_t *handle,
+    #    const void **buffs,
+    #    int *flags,
+    #    long long *timeNs,
+    #    const long timeoutUs);
+    handle = Ref{Csize_t}()
+    flags = Ref{Cint}(0)
+    timeNs = Ref{Clonglong}(-1)
+    bytes = SoapySDRDevice_acquireReadBuffer(device, stream, handle, buffs, flags, timeNs, timeoutUs)
+    bytes, handle[], flags[], timeNs[]
+end
+
+function SoapySDRDevice_acquireWriteBuffer(device, stream, buffs, timeoutUs=100000)
+    #SOAPY_SDR_API int SoapySDRDevice_acquireWriteBuffer(SoapySDRDevice *device,
+    #    SoapySDRStream *stream,
+    #    size_t *handle,
+    #    void **buffs,
+    #    const long timeoutUs);
+    handle = Ref{Csize_t}()
+    bytes = SoapySDRDevice_acquireWriteBuffer(device, stream, handle, buffs, timeoutUs)
+    return bytes, handle[]
+end
+
+function SoapySDRDevice_releaseWriteBuffer(device, stream, handle, numElems, flags=0, timeNs=0)
+    #SOAPY_SDR_API void SoapySDRDevice_releaseWriteBuffer(SoapySDRDevice *device,
+    #    SoapySDRStream *stream,
+    #    const size_t handle,
+    #    const size_t numElems,
+    #    int *flags,
+    #    const long long timeNs);
+    ccall((:SoapySDRDevice_releaseWriteBuffer, lib), Cvoid, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Csize_t, Csize_t, Ref{Cint}, Clonglong),
+                                                device, stream, handle, numElems, flags, timeNs)
+    flags[]
+end
