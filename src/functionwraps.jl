@@ -108,4 +108,17 @@ function SoapySDRDevice_releaseWriteBuffer(device, stream, handle, numElems, fla
     ccall((:SoapySDRDevice_releaseWriteBuffer, lib), Cvoid, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Csize_t, Csize_t, Ref{Cint}, Clonglong),
                                                 device, stream, handle, numElems, flags, timeNs)
     flags[]
+function SoapySDRDevice_readStream(device, stream, buffs, numElems, timeoutUs)
+    flags = Ref{Cint}()
+    timeNs = Ref{Clonglong}()
+    nelems = ccall((:SoapySDRDevice_readStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Ptr{Cvoid}, Csize_t, Ptr{Cint}, Ptr{Clonglong}, Clong),
+        device, stream, buffs, numElems, flags, timeNs, timeoutUs)
+    nelems, flags[], timeNs[]
+end
+
+function SoapySDRDevice_writeStream(device, stream, buffs, numElems, flags, timeNs, timeoutUs)
+    flags = Ref{Cint}(flags)
+    nelems = ccall((:SoapySDRDevice_writeStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Ptr{Cvoid}, Csize_t, Ptr{Cint}, Clonglong, Clong),
+        device, stream, buffs, numElems, flags, timeNs, timeoutUs)
+    nelems, flags[]
 end

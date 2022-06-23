@@ -320,7 +320,10 @@ function Base.getproperty(c::Channel, s::Symbol)
         if !SoapySDRDevice_hasDCOffset(c.device.ptr, c.direction, c.idx)
             return missing
         end
-        return SoapySDRDevice_getDCOffset(c.device.ptr, c.direction, c.idx)
+        i = Ref{Cdouble}(0)
+        q = Ref{Cdouble}(0)
+        SoapySDRDevice_getDCOffset(c.device.ptr, c.direction, c.idx, i, q)
+        return i[], q[]
     elseif s === :iq_balance_mode
         if !SoapySDRDevice_hasIQBalanceMode(c.device.ptr, c.direction, c.idx)
             return missing
@@ -330,7 +333,10 @@ function Base.getproperty(c::Channel, s::Symbol)
         if !SoapySDRDevice_hasIQBalance(c.device.ptr, c.direction, c.idx)
             return missing
         end
-        return SoapySDRDevice_getIQBalance(c.device.ptr, c.direction, c.idx)
+        i = Ref{Cdouble}(0)
+        q = Ref{Cdouble}(0)
+        SoapySDRDevice_getIQBalance(c.device.ptr, c.direction, c.idx, i,q)
+        return i[], q[]
     elseif s === :gain_mode
         if !SoapySDRDevice_hasGainMode(c.device.ptr, c.direction, c.idx)
             return missing
@@ -504,7 +510,7 @@ function gainrange(c::Channel)
 end
 
 gainrange(c::Channel, ge::GainElement) =
-    return _gainrange(SoapySDRDevice_getGainElementRange(c.device, c.direction, c.idx, Cstring(unsafe_convert(Ptr{UInt8}, ge.name))))
+    return _gainrange(SoapySDRDevice_getGainElementRange(c.device, c.direction, c.idx, ge.name))
 
 
 function _hzrange(soapyr::SoapySDRRange)
@@ -549,8 +555,9 @@ end
 List the natively supported sample rates for a given channel.
 """
 function list_sample_rates(c::Channel)
-    (ptr, len) = SoapySDRDevice_listSampleRates(c.device.ptr, c.direction, c.idx)
-    arr = unsafe_wrap(Array, Ptr{Float64}(ptr), (len,)) * Hz
+    len = Ref{Csize_t}(0)
+    ptr = SoapySDRDevice_listSampleRates(c.device.ptr, c.direction, c.idx, len)
+    arr = unsafe_wrap(Array, Ptr{Float64}(ptr), (len[],)) * Hz
     SoapySDR_free(ptr)
     arr
 end
@@ -602,7 +609,7 @@ function Base.close(s::Stream)
     s.ptr = convert(Ptr{SoapySDRStream}, C_NULL)
     return
 end
-Base.isopen(d::Stream) = s.ptr != C_NULL
+Base.isopen(s::Stream) = s.ptr != C_NULL
 
 streamtype(::Stream{T}) where T = T
 

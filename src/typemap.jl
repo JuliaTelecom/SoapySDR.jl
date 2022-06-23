@@ -67,14 +67,14 @@ const _stream_type_jl2soapy = Dict{Type, String}(reverse.(_stream_type_pairs))
 
 function _stream_map_jl2soapy(stream_type)
     if !haskey(_stream_type_jl2soapy, stream_type)
-        error("Unsupported stream type: " + stream_type)
+        error("Unsupported stream type: ", stream_type)
     end
     return _stream_type_jl2soapy[stream_type]
 end
 
 function _stream_map_soapy2jl(stream_type)
     if !haskey(_stream_type_soapy2jl, stream_type)
-        error("Unsupported stream type: " + stream_type)
+        error("Unsupported stream type: ", stream_type)
     end
     return _stream_type_soapy2jl[stream_type]
 end
