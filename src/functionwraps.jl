@@ -98,7 +98,7 @@ function SoapySDRDevice_acquireWriteBuffer(device, stream, buffs, timeoutUs=1000
     return bytes, handle[]
 end
 
-function SoapySDRDevice_releaseWriteBuffer(device, stream, handle, numElems, flags=0, timeNs=0)
+function SoapySDRDevice_releaseWriteBuffer(device, stream, handle, numElems, flags=Ref{Cint}(0), timeNs=0)
     #SOAPY_SDR_API void SoapySDRDevice_releaseWriteBuffer(SoapySDRDevice *device,
     #    SoapySDRStream *stream,
     #    const size_t handle,
@@ -108,6 +108,8 @@ function SoapySDRDevice_releaseWriteBuffer(device, stream, handle, numElems, fla
     ccall((:SoapySDRDevice_releaseWriteBuffer, lib), Cvoid, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Csize_t, Csize_t, Ref{Cint}, Clonglong),
                                                 device, stream, handle, numElems, flags, timeNs)
     flags[]
+end
+
 function SoapySDRDevice_readStream(device, stream, buffs, numElems, timeoutUs)
     flags = Ref{Cint}()
     timeNs = Ref{Clonglong}()
