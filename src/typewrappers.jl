@@ -97,7 +97,7 @@ mutable struct ArgInfoList <: AbstractVector{SoapySDRArgInfo}
 
     function ArgInfoList(ptr::Ptr{SoapySDRArgInfo}, length::Csize_t)
         this = new(ptr, length)
-        # TODO: broken
+        # TODO: see: https://github.com/pothosware/SoapySDR/issues/361
         #finalizer(SoapySDRArgInfoList_clear, this)
         this
     end
