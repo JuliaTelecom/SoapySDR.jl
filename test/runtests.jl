@@ -3,7 +3,6 @@ using Test
 using Unitful
 using Unitful.DefaultSymbols
 using Intervals
-using Aqua
 
 const dB = u"dB"
 
@@ -125,7 +124,7 @@ end
     if1 = rx_chan.gain_elements[1]
     @show rx_chan[if1]
     rx_chan[if1] = 0.5u"dB"
-    @test_broken rx_chan[if1] == 0.5u"dB"
+    @test rx_chan[if1] == 0.5u"dB"
 
     #@show rx_chan.gain_profile
     @show rx_chan.frequency_correction
@@ -171,9 +170,14 @@ end
     include("../examples/highlevel_dump_devices.jl")
 end
 
-
+using Aqua
 # Aqua tests
 # Intervals brings a bunch of ambiquities unfortunately
 Aqua.test_all(SoapySDR; ambiguities=false)
 
 end
+
+@info "Running JET..."
+
+using JET
+display(JET.report_package(SoapySDR))

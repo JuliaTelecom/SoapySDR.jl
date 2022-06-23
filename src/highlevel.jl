@@ -11,8 +11,10 @@ keywords used to create a `Device` struct.
 """
 struct Devices
     kwargslist::KWArgsList
-    function Devices()
-        kwargs = KWArgsList(SoapySDRDevice_enumerate()...)
+    function Devices(args=nothing)
+        len = Ref{Csize_t}()
+        kwargs = SoapySDRDevice_enumerate(isnothing(args) ? C_NULL : args, len)
+        kwargs = KWArgsList(kwargs, len[])
         if isempty(kwargs)
             @warn "No devices available! Make sure a supported SDR module is included."
         end
@@ -114,7 +116,7 @@ function Base.setproperty!(c::Device, s::Symbol, v)
     elseif s === :frontendmapping_rx
         SoapySDRDevice_setFrontendMapping(c.ptr, Rx, v)
     elseif s === :time_source
-        SoapySDRDevice_setTimeSource(c.ptr, v)
+        SoapySDRDevice_setTimeSource(c.ptr, string(v))
     else
         return setfield!(c, s, v)
     end
@@ -318,7 +320,10 @@ function Base.getproperty(c::Channel, s::Symbol)
         if !SoapySDRDevice_hasDCOffset(c.device.ptr, c.direction, c.idx)
             return missing
         end
-        return SoapySDRDevice_getDCOffset(c.device.ptr, c.direction, c.idx)
+        i = Ref{Cdouble}(0)
+        q = Ref{Cdouble}(0)
+        SoapySDRDevice_getDCOffset(c.device.ptr, c.direction, c.idx, i, q)
+        return i[], q[]
     elseif s === :iq_balance_mode
         if !SoapySDRDevice_hasIQBalanceMode(c.device.ptr, c.direction, c.idx)
             return missing
@@ -328,7 +333,10 @@ function Base.getproperty(c::Channel, s::Symbol)
         if !SoapySDRDevice_hasIQBalance(c.device.ptr, c.direction, c.idx)
             return missing
         end
-        return SoapySDRDevice_getIQBalance(c.device.ptr, c.direction, c.idx)
+        i = Ref{Cdouble}(0)
+        q = Ref{Cdouble}(0)
+        SoapySDRDevice_getIQBalance(c.device.ptr, c.direction, c.idx, i,q)
+        return i[], q[]
     elseif s === :gain_mode
         if !SoapySDRDevice_hasGainMode(c.device.ptr, c.direction, c.idx)
             return missing
@@ -463,23 +471,23 @@ end
 
 using Base: unsafe_convert
 function Base.getindex(c::Channel, ge::GainElement)
-    SoapySDRDevice_getGainElement(c.device, c.direction, c.idx, Cstring(unsafe_convert(Ptr{UInt8}, ge.name))) * dB
+    SoapySDRDevice_getGainElement(c.device, c.direction, c.idx, ge.name) * dB
 end
 
 function Base.getindex(c::Channel, fe::FrequencyComponent)
-    SoapySDRDevice_getFrequencyComponent(c.device, c.direction, c.idx, Cstring(unsafe_convert(Ptr{UInt8}, fe.name))) * Hz
+    SoapySDRDevice_getFrequencyComponent(c.device, c.direction, c.idx,fe.name) * Hz
 end
 
 function Base.getindex(c::Channel, se::SensorComponent)
-    unsafe_string(SoapySDRDevice_readChannelSensor(c.device, c.direction, c.idx, Cstring(unsafe_convert(Ptr{UInt8}, se.name))))
+    unsafe_string(SoapySDRDevice_readChannelSensor(c.device, c.direction, c.idx, se.name))
 end
 
 function Base.getindex(d::Device, se::SensorComponent)
-    unsafe_string(SoapySDRDevice_readSensor(d.ptr, Cstring(unsafe_convert(Ptr{UInt8}, se.name))))
+    unsafe_string(SoapySDRDevice_readSensor(d.ptr, se.name))
 end
 
 function Base.setindex!(c::Channel, gain::typeof(1.0dB), ge::GainElement)
-    SoapySDRDevice_setGainElement(c.device, c.direction, c.idx, Cstring(unsafe_convert(Ptr{UInt8}, ge.name)), gain.val)
+    SoapySDRDevice_setGainElement(c.device, c.direction, c.idx, ge.name, gain.val)
     return gain
 end
 
@@ -502,7 +510,7 @@ function gainrange(c::Channel)
 end
 
 gainrange(c::Channel, ge::GainElement) =
-    return _gainrange(SoapySDRDevice_getGainElementRange(c.device, c.direction, c.idx, Cstring(unsafe_convert(Ptr{UInt8}, ge.name))))
+    return _gainrange(SoapySDRDevice_getGainElementRange(c.device, c.direction, c.idx, ge.name))
 
 
 function _hzrange(soapyr::SoapySDRRange)
@@ -528,7 +536,7 @@ function frequency_ranges(c::Channel)
 end
 
 function frequency_ranges(c::Channel, fe::FrequencyComponent)
-    (ptr, len) = SoapySDRDevice_getFrequencyRangeComponent(c.device.ptr, c.direction, c.idx, Cstring(unsafe_convert(Ptr{UInt8}, fe.name)))
+    (ptr, len) = SoapySDRDevice_getFrequencyRangeComponent(c.device.ptr, c.direction, c.idx, fe.name)
     arr = map(_hzrange, unsafe_wrap(Array, Ptr{SoapySDRRange}(ptr), (len,)))
     SoapySDR_free(ptr)
     arr
@@ -547,8 +555,9 @@ end
 List the natively supported sample rates for a given channel.
 """
 function list_sample_rates(c::Channel)
-    (ptr, len) = SoapySDRDevice_listSampleRates(c.device.ptr, c.direction, c.idx)
-    arr = unsafe_wrap(Array, Ptr{Float64}(ptr), (len,)) * Hz
+    len = Ref{Csize_t}(0)
+    ptr = SoapySDRDevice_listSampleRates(c.device.ptr, c.direction, c.idx, len)
+    arr = unsafe_wrap(Array, Ptr{Float64}(ptr), (len[],)) * Hz
     SoapySDR_free(ptr)
     arr
 end
@@ -600,7 +609,7 @@ function Base.close(s::Stream)
     s.ptr = convert(Ptr{SoapySDRStream}, C_NULL)
     return
 end
-Base.isopen(d::Stream) = s.ptr != C_NULL
+Base.isopen(s::Stream) = s.ptr != C_NULL
 
 streamtype(::Stream{T}) where T = T
 

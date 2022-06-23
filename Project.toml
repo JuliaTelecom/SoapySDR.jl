@@ -20,8 +20,9 @@ soapysdr_jll = "0.8"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 SoapyLoopback_jll = "8d250ce8-a086-56bd-8a36-e4e8f4202680"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "SoapyLoopback_jll", "Aqua"]
+test = ["Test", "JET", "SoapyLoopback_jll", "Aqua"]
