@@ -397,7 +397,9 @@ function Base.propertynames(::SoapySDR.Channel)
 end
 
 function Base.setproperty!(c::Channel, s::Symbol, v)
-    if s === :frequency
+    if s === :antenna
+        SoapySDRDevice_setAntenna(c.device.ptr, c.direction, c.idx, v.name)
+    elseif s === :frequency
         if isa(v, Quantity)
             SoapySDRDevice_setFrequency(c.device.ptr, c.direction, c.idx, uconvert(u"Hz", v).val, C_NULL)
         elseif isa(v, FreqSpec)
