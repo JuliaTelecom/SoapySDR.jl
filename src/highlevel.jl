@@ -277,7 +277,8 @@ function Base.show(io::IO, ::MIME"text/plain", c::Channel)
         println(io, "  dc_offset (if has dc_offset_mode): ", c.dc_offset)
         println(io, "  iq_balance_mode (true/false/missing): ", c.iq_balance_mode)
         println(io, "  iq_balance: ", c.iq_balance)
-        println(io, "  frequency_correction: ", c.frequency_correction, " ppm")
+        fc = c.frequency_correction
+        println(io, "  frequency_correction: ", fc, ismissing(fc) ? "" : " ppm")
     end
 end
 
