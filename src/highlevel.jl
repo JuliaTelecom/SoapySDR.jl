@@ -217,7 +217,6 @@ function Base.show(io::IO, ::MIME"text/plain", c::Channel)
         println(io, "  native_stream_format: ", c.native_stream_format)
         println(io, "  fullscale: ", c.fullscale)
         println(io, "  sensors: ", c.sensors)
-        println(io, "  time_sources: ", c.time_sources)
         print(io, "  sample_rate [ ", )
             join(io, map(x->sprint(print_hz_range, x), sample_rate_ranges(c)), ", ")
             println(io, " ]: ", pick_freq_unit(c.sample_rate))
@@ -302,8 +301,6 @@ function Base.getproperty(c::Channel, s::Symbol)
         return SoapySDRDevice_getSampleRate(c.device.ptr, c.direction, c.idx) * Hz
     elseif s === :sensors
         ComponentList(SensorComponent, c.device, c)
-    elseif s === :time_sources
-        ComponentList(TimeSource, c.device, c)
     elseif s === :bandwidth
         return SoapySDRDevice_getBandwidth(c.device.ptr, c.direction, c.idx) * Hz
     elseif s === :frequency
@@ -346,8 +343,7 @@ function Base.propertynames(::SoapySDR.Channel)
             :native_stream_format,
             :stream_formats,
             :fullscale,
-            :sensors,
-            :time_sources)
+            :sensors)
 end
 
 function Base.setproperty!(c::Channel, s::Symbol, v)
@@ -431,9 +427,6 @@ function ComponentList(::Type{T}, d::Device, c::Channel) where {T <: AbstractCom
     if T <: SensorComponent
         s = SoapySDRDevice_listChannelSensors(d.ptr, c.direction, c.idx, len)
         ComponentList{SensorComponent}(StringList(s, len[]))
-    elseif T <: TimeSource
-        s = SoapySDRDevice_listChannelTimeSources(d.ptr, len)
-        ComponentList{TimeSource}(StringList(s, len[]))
     end
 end
 
