@@ -82,6 +82,7 @@ function Base.show(io::IO, d::Device)
     println(io, "  time_sources:", d.time_sources)
     println(io, "  frontendmapping_rx: ", d.frontendmapping_rx)
     println(io, "  frontendmapping_tx: ", d.frontendmapping_tx)
+    print(io, "  master_clock_rate: ");  print_unit(io, d.master_clock_rate)
 end
 
 function Base.getproperty(d::Device, s::Symbol)
@@ -105,6 +106,8 @@ function Base.getproperty(d::Device, s::Symbol)
         unsafe_string(SoapySDRDevice_getFrontendMapping(d, Tx))
     elseif s === :frontendmapping_rx
         unsafe_string(SoapySDRDevice_getFrontendMapping(d, Rx))
+    elseif s === :master_clock_rate
+        SoapySDRDevice_getMasterClockRate(d.ptr)*u"Hz"
     else
         getfield(d, s)
     end
@@ -117,6 +120,8 @@ function Base.setproperty!(c::Device, s::Symbol, v)
         SoapySDRDevice_setFrontendMapping(c.ptr, Rx, v)
     elseif s === :time_source
         SoapySDRDevice_setTimeSource(c.ptr, string(v))
+    elseif s === :master_clock_rate
+        SoapySDRDevice_setMasterClockRate(c.ptr, v)
     else
         return setfield!(c, s, v)
     end
@@ -124,7 +129,7 @@ end
 
 
 function Base.propertynames(::Device)
-    return (:ptr, :info, :driver, :hardware, :tx, :rx, :sensors, :time)
+    return (:ptr, :info, :driver, :hardware, :tx, :rx, :sensors, :time, :master_clock_rate)
 end
 
 ####################################################################################################
@@ -187,65 +192,6 @@ end
 Base.show(io::IO, c::Channel) =
     print(io, "Channel(", c.device.hardware, ", ", c.direction, ", ", c.idx, ")")
 
-####################################################################################################
-#    Unit Printing
-####################################################################################################
-
-
-# Express everything in (kHz, MHz, GHz)
-function pick_freq_unit(val::Quantity)
-    iszero(val.val) && return val
-    abs(val) >= 1.0u"GHz" ? uconvert(u"GHz", val) :
-    abs(val) >= 1.0u"MHz" ? uconvert(u"MHz", val) :
-                            uconvert(u"kHz", val)
-end
-
-# Print to 3 digits of precision, no decimal point
-print_3_digit(io::IO, val::Quantity) =  print(io, Base.Ryu.writeshortest(round(val.val, sigdigits=3),
-    #= plus =# false,
-    #= space =# false,
-    #= hash =# false,
-    ))
-
-function print_unit(io::IO, val::Quantity)
-    print_3_digit(io, val)
-    print(io, " ", unit(val))
-end
-
-function print_unit_interval(io::IO, min, max)
-    if unit(min) == unit(max) || iszero(min.val)
-        print_3_digit(io, min)
-        print(io, "..")
-        print_3_digit(io, max)
-        print(io, " ", unit(max))
-    else
-        print_unit(io, min)
-        print(io, " .. ")
-        print_unit(io, max)
-    end
-end
-
-function print_unit_steprange(io::IO, min, max, step)
-    print_unit(io, min)
-    print(io, ":")
-    print_unit(io, step)
-    print(io, ":")
-    print_unit(io, max)
-end
-
-print_unit_interval(io::IO, x::Interval{<:Any, Closed, Closed}) =
-    print_unit_interval(io, minimum(x), maximum(x))
-
-using Intervals: Closed
-function print_hz_range(io::IO, x::Interval{<:Any, Closed, Closed})
-    min, max = pick_freq_unit(minimum(x)), pick_freq_unit(maximum(x))
-    print_unit_interval(io, min, max)
-end
-
-function print_hz_range(io::IO, x::AbstractRange)
-    min, step, max = pick_freq_unit(first(x)), pick_freq_unit(Base.step(x)), pick_freq_unit(last(x))
-    print_unit_steprange(io, min, max, step)
-end
 
 function Base.show(io::IO, ::MIME"text/plain", c::Channel)
     println(io, c.direction == Tx ? "TX" : "RX", " Channel #", c.idx + 1, " on ", c.device.hardware)
@@ -269,6 +215,8 @@ function Base.show(io::IO, ::MIME"text/plain", c::Channel)
         println(io, "  fullduplex: ", c.fullduplex)
         println(io, "  stream_formats: ", c.stream_formats)
         println(io, "  native_stream_format: ", c.native_stream_format)
+        println(io, "  fullscale: ", c.fullscale)
+        println(io, "  sensors: ", c.sensors)
         print(io, "  sample_rate [ ", )
             join(io, map(x->sprint(print_hz_range, x), sample_rate_ranges(c)), ", ")
             println(io, " ]: ", pick_freq_unit(c.sample_rate))
@@ -276,7 +224,8 @@ function Base.show(io::IO, ::MIME"text/plain", c::Channel)
         println(io, "  dc_offset (if has dc_offset_mode): ", c.dc_offset)
         println(io, "  iq_balance_mode (true/false/missing): ", c.iq_balance_mode)
         println(io, "  iq_balance: ", c.iq_balance)
-        println(io, "  frequency_correction: ", c.frequency_correction, " ppm")
+        fc = c.frequency_correction
+        println(io, "  frequency_correction: ", fc, ismissing(fc) ? "" : " ppm")
     end
 end
 
@@ -350,6 +299,8 @@ function Base.getproperty(c::Channel, s::Symbol)
         return SoapySDRDevice_getFrequencyCorrection(c.device.ptr, c.direction, c.idx)
     elseif s === :sample_rate
         return SoapySDRDevice_getSampleRate(c.device.ptr, c.direction, c.idx) * Hz
+    elseif s === :sensors
+        ComponentList(SensorComponent, c.device, c)
     elseif s === :bandwidth
         return SoapySDRDevice_getBandwidth(c.device.ptr, c.direction, c.idx) * Hz
     elseif s === :frequency
@@ -396,7 +347,9 @@ function Base.propertynames(::SoapySDR.Channel)
 end
 
 function Base.setproperty!(c::Channel, s::Symbol, v)
-    if s === :frequency
+    if s === :antenna
+        SoapySDRDevice_setAntenna(c.device.ptr, c.direction, c.idx, v.name)
+    elseif s === :frequency
         if isa(v, Quantity)
             SoapySDRDevice_setFrequency(c.device.ptr, c.direction, c.idx, uconvert(u"Hz", v).val, C_NULL)
         elseif isa(v, FreqSpec)
@@ -466,6 +419,14 @@ function ComponentList(::Type{T}, d::Device) where {T <: AbstractComponent}
         ComponentList{SensorComponent}(StringList(SoapySDRDevice_listSensors(d.ptr)...))
     elseif T <: TimeSource
         ComponentList{TimeSource}(StringList(SoapySDRDevice_listTimeSources(d.ptr)...))
+    end
+end
+
+function ComponentList(::Type{T}, d::Device, c::Channel) where {T <: AbstractComponent}
+    len = Ref{Csize_t}()
+    if T <: SensorComponent
+        s = SoapySDRDevice_listChannelSensors(d.ptr, c.direction, c.idx, len)
+        ComponentList{SensorComponent}(StringList(s, len[]))
     end
 end
 

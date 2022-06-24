@@ -11,6 +11,5 @@ CurrentModule = SoapySDR
 
 ```@autodocs
 Modules = [SoapySDR]
-Pages = ["lowlevel/auto_wrap.jl",
-         "lowlevel/Device.jl"]
+Pages = ["lowlevel/auto_wrap.jl"]
 ```

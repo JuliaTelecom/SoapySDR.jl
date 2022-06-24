@@ -14,6 +14,7 @@ const GC = Base.GC
 export @u_str
 
 include("lowlevel/auto_wrap.jl")
+include("unithelpers.jl")
 include("functionwraps.jl")
 include("typemap.jl")
 include("typewrappers.jl")
