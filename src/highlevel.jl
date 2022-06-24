@@ -82,6 +82,7 @@ function Base.show(io::IO, d::Device)
     println(io, "  time_sources:", d.time_sources)
     println(io, "  frontendmapping_rx: ", d.frontendmapping_rx)
     println(io, "  frontendmapping_tx: ", d.frontendmapping_tx)
+    print(io, "  master_clock_rate: ");  print_unit(io, d.master_clock_rate)
 end
 
 function Base.getproperty(d::Device, s::Symbol)
@@ -105,6 +106,8 @@ function Base.getproperty(d::Device, s::Symbol)
         unsafe_string(SoapySDRDevice_getFrontendMapping(d, Tx))
     elseif s === :frontendmapping_rx
         unsafe_string(SoapySDRDevice_getFrontendMapping(d, Rx))
+    elseif s === :master_clock_rate
+        SoapySDRDevice_getMasterClockRate(d.ptr)*u"Hz"
     else
         getfield(d, s)
     end
@@ -117,6 +120,8 @@ function Base.setproperty!(c::Device, s::Symbol, v)
         SoapySDRDevice_setFrontendMapping(c.ptr, Rx, v)
     elseif s === :time_source
         SoapySDRDevice_setTimeSource(c.ptr, string(v))
+    elseif s === :master_clock_rate
+        SoapySDRDevice_setMasterClockRate(c.ptr, v)
     else
         return setfield!(c, s, v)
     end
@@ -124,7 +129,7 @@ end
 
 
 function Base.propertynames(::Device)
-    return (:ptr, :info, :driver, :hardware, :tx, :rx, :sensors, :time)
+    return (:ptr, :info, :driver, :hardware, :tx, :rx, :sensors, :time, :master_clock_rate)
 end
 
 ####################################################################################################
