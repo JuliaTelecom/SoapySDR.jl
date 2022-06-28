@@ -98,13 +98,11 @@ mutable struct ArgInfoList <: AbstractVector{SoapySDRArgInfo}
     function ArgInfoList(ptr::Ptr{SoapySDRArgInfo}, length::Csize_t)
         this = new(ptr, length)
         finalizer(this) do this
-            SoapySDRArgInfoList_clear(this)
+            SoapySDRArgInfoList_clear(this.ptr, this.length)
         end
         return this
     end
 end
-
-SoapySDRArgInfoList_clear(s::ArgInfoList) = @GC.preserve s SoapySDRArgInfoList_clear(s.ptr, s.length)
 
 Base.size(kwl::ArgInfoList) = (kwl.length,)
 
