@@ -221,7 +221,7 @@ function Base.show(io::IO, ::MIME"text/plain", c::Channel)
             join(io, map(x->sprint(print_hz_range, x), sample_rate_ranges(c)), ", ")
             println(io, " ]: ", pick_freq_unit(c.sample_rate))
         println(io, "  dc_offset_mode (true/false/missing): ", c.dc_offset_mode)
-        println(io, "  dc_offset (if has dc_offset_mode): ", c.dc_offset)
+        println(io, "  dc_offset: ", c.dc_offset)
         println(io, "  iq_balance_mode (true/false/missing): ", c.iq_balance_mode)
         println(io, "  iq_balance: ", c.iq_balance)
         fc = c.frequency_correction
