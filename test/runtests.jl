@@ -165,7 +165,10 @@ end
     arglist = SoapySDR.ArgInfoList(SoapySDR.SoapySDRDevice_getSettingInfo(dev)...)
     println(arglist)
     a1 = arglist[1]
+    println(a1)
 end
+
+
 @testset "Examples" begin
     include("../examples/highlevel_dump_devices.jl")
 end

@@ -97,13 +97,14 @@ mutable struct ArgInfoList <: AbstractVector{SoapySDRArgInfo}
 
     function ArgInfoList(ptr::Ptr{SoapySDRArgInfo}, length::Csize_t)
         this = new(ptr, length)
-        # TODO: see: https://github.com/pothosware/SoapySDR/issues/361
-        #finalizer(SoapySDRArgInfoList_clear, this)
-        this
+        finalizer(this) do this
+            SoapySDRArgInfoList_clear(this)
+        end
+        return this
     end
 end
 
-SoapySDRArgInfoList_clear(s::ArgInfoList) = @GC.preserve s SoapySDRArgInfoList_clear(pointer_from_objref(s), s.length)
+SoapySDRArgInfoList_clear(s::ArgInfoList) = @GC.preserve s SoapySDRArgInfoList_clear(s.ptr, s.length)
 
 Base.size(kwl::ArgInfoList) = (kwl.length,)
 
@@ -118,15 +119,17 @@ end
 mutable struct StringList <: AbstractVector{String}
     strs::Ptr{Cstring}
     length::Csize_t
-    function StringList(strs::Ptr{Cstring}, length::Integer)
+    function StringList(strs::Ptr{Cstring}, length::Integer; owned::Bool = true)
         this = new(strs, Csize_t(length))
-        finalizer(SoapySDRStrings_clear, this)
+        if owned
+            finalizer(SoapySDRStrings_clear, this)
+        end
         this
     end
 end
 
-function StringList(strs::Ptr{Ptr{Cchar}}, length::Integer)
-    StringList(reinterpret(Ptr{Cstring}, strs), length)
+function StringList(strs::Ptr{Ptr{Cchar}}, length::Integer; kwargs...)
+    StringList(reinterpret(Ptr{Cstring}, strs), length; kwargs...)
 end
 Base.size(s::StringList) = (s.length,)
 function Base.getindex(s::StringList, i::Integer)
@@ -147,6 +150,6 @@ function Base.show(io::IO, s::SoapySDRArgInfo)
     println(io, "units: ", unsafe_string(s.units))
     #type
     #range
-    println(io, "options: ", StringList(s.options, s.numOptions))
-    println(io, "optionNames: ", StringList(s.optionNames, s.numOptions))
+    println(io, "options: ", StringList(s.options, s.numOptions; owned=false))
+    println(io, "optionNames: ", StringList(s.optionNames, s.numOptions; owned=false))
 end
