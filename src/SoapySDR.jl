@@ -22,6 +22,7 @@ include("functionwraps.jl")
 include("logger.jl")
 include("version.jl")
 include("error.jl")
+include("Modules.jl")
 
 const SDRStream = Stream
 export SDRStream

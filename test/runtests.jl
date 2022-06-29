@@ -187,12 +187,18 @@ end
     include("../examples/highlevel_dump_devices.jl")
 end
 
+@testset "Modules" begin
+    @test SoapySDR.Modules.get_root_path() == "/workspace/destdir"
+    @test all(SoapySDR.Modules.list_search_paths() .== ["/workspace/destdir/lib/SoapySDR/modules0.8"])
+    @test SoapySDR.Modules.list() == String[]
+end
+
 using Aqua
 # Aqua tests
 # Intervals brings a bunch of ambiquities unfortunately
 Aqua.test_all(SoapySDR; ambiguities=false)
 
-end
+end #SoapySDR testset
 
 @info "Running JET..."
 
