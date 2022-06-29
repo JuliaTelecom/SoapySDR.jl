@@ -79,7 +79,7 @@ end
 Base.size(kwl::KWArgsList) = (kwl.length,)
 
 function Base.unsafe_convert(::Type{Ptr{SoapySDRKwargs}}, kwl::KWArgsList)
-    @assert kwl.ptr !== C_NULL
+    @assert kwl.ptr != C_NULL
     kwl.ptr
 end
 
