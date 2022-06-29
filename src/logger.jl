@@ -36,3 +36,14 @@ function register_log_handler()
     julia_log_handler = @cfunction(logger_soapy2jl, Cvoid, (Cint, Cstring))
     SoapySDR_registerLogHandler(julia_log_handler)
 end
+
+
+"""
+Set the log level threshold.
+Log messages with lower priority are dropped.
+
+NOTE: This uses SoapySDR log level number, which is different from Julia log level number.
+"""
+function set_log_level(level)
+    SoapySDR_setLogLevel(SoapySDRLogLevel(level))
+end

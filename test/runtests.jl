@@ -23,6 +23,17 @@ end
 SoapySDR.register_log_handler()
 
 @testset "SoapySDR.jl" begin
+@testset "Version" begin
+    SoapySDR.versioninfo()
+end
+@testset "Logging" begin
+    SoapySDR.register_log_handler()
+    SoapySDR.set_log_level(0)
+end
+@testset "Error" begin
+    SoapySDR.error_to_string(-1) == "TIMEOUT"
+    SoapySDR.error_to_string(10) == "UNKNOWN"
+end
 @testset "Ranges/Display" begin
     intervalrange = sd.SoapySDRRange(0, 1, 0)
     steprange = sd.SoapySDRRange(0, 1, 0.1)
