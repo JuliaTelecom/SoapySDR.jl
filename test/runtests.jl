@@ -71,6 +71,9 @@ end
 @testset "High Level API" begin
     io = IOBuffer(read=true, write=true)
 
+    # Test failing to open a device due to an invalid specification
+    @test_throws ArgumentError open(parse(KWArgs, "driver=foo"))
+
     # Device constructor, show, iterator
     @test length(Devices()) == 1
     show(io, Devices())
