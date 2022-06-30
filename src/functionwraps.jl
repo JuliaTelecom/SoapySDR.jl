@@ -72,7 +72,7 @@ function SoapySDRDevice_getSampleRateRange(device, direction, channel)
     (args, len[])
 end
 
-function SoapySDRDevice_acquireReadBuffer(device, stream, buffs, timeoutUs=100000)
+function SoapySDRDevice_acquireReadBuffer(device::Device, stream, buffs, timeoutUs=100000)
     #SOAPY_SDR_API int SoapySDRDevice_acquireReadBuffer(SoapySDRDevice *device,
     #    SoapySDRStream *stream,
     #    size_t *handle,
@@ -87,7 +87,7 @@ function SoapySDRDevice_acquireReadBuffer(device, stream, buffs, timeoutUs=10000
     bytes, handle[], flags[], timeNs[]
 end
 
-function SoapySDRDevice_acquireWriteBuffer(device, stream, buffs, timeoutUs=100000)
+function SoapySDRDevice_acquireWriteBuffer(device::Device, stream, buffs, timeoutUs=100000)
     #SOAPY_SDR_API int SoapySDRDevice_acquireWriteBuffer(SoapySDRDevice *device,
     #    SoapySDRStream *stream,
     #    size_t *handle,
@@ -98,7 +98,7 @@ function SoapySDRDevice_acquireWriteBuffer(device, stream, buffs, timeoutUs=1000
     return bytes, handle[]
 end
 
-function SoapySDRDevice_releaseWriteBuffer(device, stream, handle, numElems, flags=Ref{Cint}(0), timeNs=0)
+function SoapySDRDevice_releaseWriteBuffer(device::Device, stream, handle, numElems, flags=Ref{Cint}(0), timeNs=0)
     #SOAPY_SDR_API void SoapySDRDevice_releaseWriteBuffer(SoapySDRDevice *device,
     #    SoapySDRStream *stream,
     #    const size_t handle,
@@ -110,7 +110,7 @@ function SoapySDRDevice_releaseWriteBuffer(device, stream, handle, numElems, fla
     flags[]
 end
 
-function SoapySDRDevice_readStream(device, stream, buffs, numElems, timeoutUs)
+function SoapySDRDevice_readStream(device::Device, stream, buffs, numElems, timeoutUs)
     flags = Ref{Cint}()
     timeNs = Ref{Clonglong}()
     nelems = ccall((:SoapySDRDevice_readStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Ptr{Cvoid}, Csize_t, Ptr{Cint}, Ptr{Clonglong}, Clong),
@@ -118,7 +118,7 @@ function SoapySDRDevice_readStream(device, stream, buffs, numElems, timeoutUs)
     nelems, flags[], timeNs[]
 end
 
-function SoapySDRDevice_writeStream(device, stream, buffs, numElems, flags, timeNs, timeoutUs)
+function SoapySDRDevice_writeStream(device::Device, stream, buffs, numElems, flags, timeNs, timeoutUs)
     flags = Ref{Cint}(flags)
     nelems = ccall((:SoapySDRDevice_writeStream, lib), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Ptr{Cvoid}, Csize_t, Ptr{Cint}, Clonglong, Clong),
         device, stream, buffs, numElems, flags, timeNs, timeoutUs)
