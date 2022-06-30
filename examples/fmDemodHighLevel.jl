@@ -18,9 +18,12 @@ include("highlevel_dump_devices.jl")
 
 devs = Devices()
 
-sdr = open(devs[1])
+sdr = SoapySDR.Device(devs[1])
 
 rx1 = sdr.rx[1]
+
+# setup AGC if available
+#rx1.gain_mode = true
 
 sampRate = 2.048e6
 
@@ -64,10 +67,6 @@ end
 
 # get IQ array
 storeIq = Array(reshape(storeBuff', :, size(storeBuff)[1]*size(storeBuff)[2])')[:]
-
-# shutdown the stream
-close(rxStream)
-close(sdr)
 
 function plotTimeFreq(storeFft, fs, f0)
     w, h = figaspect(0.5)
