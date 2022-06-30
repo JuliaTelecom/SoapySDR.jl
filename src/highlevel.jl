@@ -36,7 +36,6 @@ end
 
 Base.getindex(d::Devices, i::Integer) = d.kwargslist[i]
 Base.iterate(d::Devices, state=1) = state > length(d) ? nothing : (d[state], state+1)
-Base.open(d::KWArgs) = Device(SoapySDRDevice_make(d))
 
 ####################################################################################################
 #    Device
@@ -61,21 +60,20 @@ Fields:
 """
 mutable struct Device
     ptr::Ptr{SoapySDRDevice}
-    function Device(dev_ptr)
+    function Device(args)
+        dev_ptr = SoapySDRDevice_make(args)
         if dev_ptr == C_NULL
             throw(ArgumentError("Unable to open device!"))
         end
-        return new(dev_ptr)
+        this = new(dev_ptr)
+        finalizer(this) do this
+            SoapySDRDevice_unmake(this.ptr)
+        end
+        return this
     end
 end
-SoapySDRDevice_unmake(d::Device) = SoapySDRDevice_unmake(d.ptr)
 Base.cconvert(::Type{<:Ptr{SoapySDRDevice}}, d::Device) = d
 Base.unsafe_convert(::Type{<:Ptr{SoapySDRDevice}}, d::Device) = d.ptr
-function Base.close(d::Device)
-    SoapySDRDevice_unmake(d)
-    d.ptr = convert(Ptr{SoapySDRDevice}, 0)
-    return
-end
 Base.isopen(d::Device) = d.ptr != C_NULL
 
 function Base.show(io::IO, d::Device)
@@ -563,19 +561,13 @@ mutable struct Stream{T}
         this = new{T}(d, Int(nchannels), ptr)
         finalizer(this) do obj
             isopen(d) || return
-            close(obj)
+            SoapySDRDevice_closeStream(d, obj.ptr)
         end
         return this
     end
 end
 Base.cconvert(::Type{<:Ptr{SoapySDRStream}}, s::Stream) = s
 Base.unsafe_convert(::Type{<:Ptr{SoapySDRStream}}, s::Stream) = s.ptr
-SoapySDRDevice_closeStream(s::Stream) = SoapySDRDevice_closeStream(s.d, s)
-function Base.close(s::Stream)
-    SoapySDRDevice_closeStream(s)
-    s.ptr = convert(Ptr{SoapySDRStream}, C_NULL)
-    return
-end
 Base.isopen(s::Stream) = s.ptr != C_NULL
 
 streamtype(::Stream{T}) where T = T
