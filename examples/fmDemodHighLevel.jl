@@ -18,7 +18,7 @@ include("highlevel_dump_devices.jl")
 
 devs = Devices()
 
-sdr = SoapySDR.Device(devs[1])
+sdr = Device(devs[1])
 
 rx1 = sdr.rx[1]
 

@@ -1,6 +1,6 @@
 # High level API exports
 
-export Devices, dB, gainrange
+export Devices, Device, dB, gainrange
 
 """
     Devices()
