@@ -9,7 +9,7 @@ using SoapySDR
 for (didx, dev) in enumerate(Devices())
     @info("device", dev, idx=didx)
 
-    dev = SoapySDR.Device(dev)
+    dev = Device(dev)
 
     @info("TX channels:")
     for (idx, tx_channel) in enumerate(dev.tx)
