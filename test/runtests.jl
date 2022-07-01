@@ -172,6 +172,10 @@ end
     Device(Devices()[1]) do dev
         println(dev.info)
     end
+    # and again to ensure correct GC
+    Device(Devices()[1]) do dev
+        println(dev.info)
+    end
 end
 @testset "Settings" begin
     io = IOBuffer(read=true, write=true)

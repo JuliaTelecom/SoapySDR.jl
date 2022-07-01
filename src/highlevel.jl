@@ -75,7 +75,11 @@ end
 
 function Device(f::Function, args::KWArgs)
     dev = Device(args)
-    f(dev)
+    try
+        f(dev)
+    finally
+        finalize(dev)
+    end
 end
 
 Base.cconvert(::Type{<:Ptr{SoapySDRDevice}}, d::Device) = d
