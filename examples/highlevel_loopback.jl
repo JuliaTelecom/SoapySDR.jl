@@ -19,7 +19,7 @@ devs = Devices()
 # devs = filter(x -> haskey(x, "driver") && x["driver"] == "plutosdr", devs)
 
 # Now open the first device and get the first RX and TX channel streams
-dev = open(devs[1])
+dev = Device(devs[1])
 c_tx = dev.tx[1]
 c_rx = dev.rx[1]
 
@@ -46,7 +46,6 @@ data_tx_zeros = zeros(ComplexF32, length(data_tx))
 s_tx = SoapySDR.Stream(ComplexF32, [c_tx])
 s_rx = SoapySDR.Stream(ComplexF32, [c_rx])
 
-
 # Then, do the actual writing and reading!
 function loopback_test(s_tx, s_rx, num_buffers)
     # allocate some recieve buffers
@@ -72,10 +71,6 @@ end
 # This should take about 100ms, since we're rx/tx'ing 10x buffers which should each be 10ms long.
 loopback_test(s_tx, s_rx, 2)
 data_rx_buffs = loopback_test(s_tx, s_rx, 3)
-
-# Make sure we close the Streams and Devices where we are done with them
-close.((s_tx, s_rx))
-close(dev)
 
 # Join all buffers together
 data_rx = vcat(data_rx_buffs...)

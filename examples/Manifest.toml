@@ -986,6 +986,12 @@ git-tree-sha1 = "5d9d88fafa5729d17dac079b7204bf23327eeb7a"
 uuid = "e7ed14a0-13eb-5dc7-93e2-6133b2eb8bed"
 version = "20.10.0+1"
 
+[[deps.SoapyLoopback_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "soapysdr_jll"]
+git-tree-sha1 = "8e1933f62ded13777f97e0b70eea33f451f51103"
+uuid = "8d250ce8-a086-56bd-8a36-e4e8f4202680"
+version = "0.1.0+0"
+
 [[deps.SoapyPlutoSDR_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "libad9361_iio_jll", "libiio_jll", "soapysdr_jll"]
 git-tree-sha1 = "4e5ad6c4080347ba7f6151da998d2c682737af20"
@@ -1264,10 +1270,10 @@ deps = ["Libdl"]
 uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
 
 [[deps.boost_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "ee3aa789316eb452bf6c52ca73b4fbc6806390b3"
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "Zlib_jll"]
+git-tree-sha1 = "7a89efe0137720ca82f99e8daa526d23120d0d37"
 uuid = "28df3c45-c428-5900-9ff8-a3135698ca75"
-version = "1.76.0+0"
+version = "1.76.0+1"
 
 [[deps.isoband_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]

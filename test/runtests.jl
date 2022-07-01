@@ -83,14 +83,14 @@ end
     io = IOBuffer(read=true, write=true)
 
     # Test failing to open a device due to an invalid specification
-    @test_throws ArgumentError open(parse(KWArgs, "driver=foo"))
+    @test_throws ArgumentError Device(parse(KWArgs, "driver=foo"))
 
     # Device constructor, show, iterator
     @test length(Devices()) == 1
     show(io, Devices())
     deva = Devices()[1]
     deva["refclk"] = "internal"
-    dev = open(deva)
+    dev = Device(deva)
     show(io, dev)
     for dev in Devices()
         show(io, dev)
@@ -168,14 +168,18 @@ end
     #sd.deactivate!(rx_stream)
     #sd.deactivate!(tx_stream)
 
-    # Stream Close
-    close(rx_stream)
-    close(tx_stream)
-    #close(dev)
+    # do block syntax
+    Device(Devices()[1]) do dev
+        println(dev.info)
+    end
+    # and again to ensure correct GC
+    Device(Devices()[1]) do dev
+        println(dev.info)
+    end
 end
 @testset "Settings" begin
     io = IOBuffer(read=true, write=true)
-    dev = open(Devices()[1])
+    dev = Device(Devices()[1])
     arglist = SoapySDR.ArgInfoList(SoapySDR.SoapySDRDevice_getSettingInfo(dev)...)
     println(arglist)
     a1 = arglist[1]
