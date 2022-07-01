@@ -630,6 +630,14 @@ function Stream(channels::AbstractVector{T}; kwargs...) where {T <: Channel}
     Stream(native_format, channels; kwargs...)
 end
 
+function Stream(format::Type, channel::Channel; kwargs...)
+    Stream(format, [channel], kwargs...)
+end
+
+function Stream(channel::Channel; kwargs...)
+    Stream([channel], kwargs...)
+end
+
 """
     read!(s::SoapySDR.Stream{T}, buffer::NTuple{N, Vector{T}}; [timeout])
 
