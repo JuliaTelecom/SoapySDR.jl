@@ -60,18 +60,24 @@ Fields:
 """
 mutable struct Device
     ptr::Ptr{SoapySDRDevice}
-    function Device(args)
+    function Device(args::KWArgs)
         dev_ptr = SoapySDRDevice_make(args)
         if dev_ptr == C_NULL
             throw(ArgumentError("Unable to open device!"))
         end
         this = new(dev_ptr)
         finalizer(this) do this
-            SoapySDRDevice_unmake(this.ptr)
+            this.ptr != C_NULL && SoapySDRDevice_unmake(this.ptr)
         end
         return this
     end
 end
+
+function Device(f::Function, args::KWArgs)
+    dev = Device(args)
+    f(dev)
+end
+
 Base.cconvert(::Type{<:Ptr{SoapySDRDevice}}, d::Device) = d
 Base.unsafe_convert(::Type{<:Ptr{SoapySDRDevice}}, d::Device) = d.ptr
 Base.isopen(d::Device) = d.ptr != C_NULL

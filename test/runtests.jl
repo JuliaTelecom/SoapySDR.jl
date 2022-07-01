@@ -168,6 +168,10 @@ end
     #sd.deactivate!(rx_stream)
     #sd.deactivate!(tx_stream)
 
+    # do block syntax
+    Device(Devices()[1]) do dev
+        println(dev.info)
+    end
 end
 @testset "Settings" begin
     io = IOBuffer(read=true, write=true)
