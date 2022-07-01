@@ -555,8 +555,9 @@ Constructs a `Stream{T}` where `T` is the stream type of the device. If unspecif
 the native format will be used.
 
 Fields:
-- nchannels - The
+- nchannels - The number of channels in the stream
 - mtu - The stream Maximum Transmission Unit
+- num_direct_access_buffers - The numer of direct access buffers available in the stream
 
 ## Example
 ```
@@ -586,9 +587,15 @@ function Base.setproperty!(c::Stream, s::Symbol, v)
     return setfield!(c, s, v)
 end
 
+function Base.propertynames(::Device)
+    return (:d, :nchannels, :mtu, :num_direct_access_buffers)
+end
+
 function Base.getproperty(stream::Stream, s::Symbol)
     if s === :mtu
         SoapySDRDevice_getStreamMTU(stream.d.ptr, stream.ptr)
+    elseif s === :num_direct_access_buffers
+        SoapySDRDevice_getNumDirectAccessBuffers(stream.d.ptr, stream.ptr)
     else
         return getfield(stream, s)
     end

@@ -163,10 +163,17 @@ end
     tx_stream = sd.Stream([tx_chan])
     @test typeof(tx_stream) == sd.Stream{sd.ComplexInt{12}}
 
-    #sd.activate!(rx_stream)
-    #sd.activate!(tx_stream)
-    #sd.deactivate!(rx_stream)
-    #sd.deactivate!(tx_stream)
+    @test tx_stream.nchannels == 1
+    @test rx_stream.nchannels == 1
+    @test tx_stream.num_direct_access_buffers == 0x000000000000000f
+    @test tx_stream.mtu == 0x0000000000020000
+    @test rx_stream.num_direct_access_buffers == 0x000000000000000f
+    @test rx_stream.mtu == 0x0000000000020000
+
+    sd.activate!(rx_stream)
+    sd.activate!(tx_stream)
+    sd.deactivate!(rx_stream)
+    sd.deactivate!(tx_stream)
 
     # do block syntax
     Device(Devices()[1]) do dev
