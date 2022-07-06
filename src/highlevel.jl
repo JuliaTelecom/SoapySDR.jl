@@ -587,7 +587,7 @@ function Base.setproperty!(c::Stream, s::Symbol, v)
     return setfield!(c, s, v)
 end
 
-function Base.propertynames(::Device)
+function Base.propertynames(::Stream)
     return (:d, :nchannels, :mtu, :num_direct_access_buffers)
 end
 
