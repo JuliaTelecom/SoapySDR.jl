@@ -1,58 +1,92 @@
-using Revise
-using SoapySDR
-using GLMakie
-using LinearAlgebra
+using Printf
 using FFTW
+using GLMakie
 using DSP
+using SoapySDR
+using Unitful
+using TimerOutputs
+using Observables
 
 # Don't forget to add/import a device-specific plugin package!
 # using xtrx_jll
 # using SoapyLMS7_jll
-using SoapyRTLSDR_jll
+# using SoapyRTLSDR_jll
 # using SoapyPlutoSDR_jll
 # using SoapyUHD_jll
 
-# Here we want to test the behavior in a loop, to ensure
-# that we can block on buffer overflow conditions, and
-# handle partial reads, measure latnecy, etc
+include("highlevel_dump_devices.jl")
 
-freq = 104.3e6u"Hz"
+get_time_ms() = trunc(Int, time() * 1000)
 
-function makie_viz(freq=freq)
-    dev = open(Devices()[1])
-    rx_chan = dev.rx[1]
-    @show rx_chan
-    rx_chan.gain_mode = true
-    rx_chan.frequency = freq
-    rx_stream = SoapySDR.Stream(ComplexF32, [rx_chan])
-    @show rx_stream.mtu
-    buf = Vector{ComplexF32}(undef, rx_stream.mtu)
-    @show typeof(fft)
-    sum = zeros(Float32, length(buf))
-    norms = Observable(Vector{Float32}(undef,length(buf)))
+function makie_fft()
+    devs = Devices()
 
-    println("Makie Setup...")
-    fig = Figure(); display(fig)
-    ax = Axis(fig[1,1])
-    xlims!(ax, 0, 100)
-    ylims!(ax, -500, 500)
-    lines!(ax, norms)
+    sdr = Device(devs[1])
 
-    h = Float32.(DSP.hamming(length(buf)))
+    rx1 = sdr.rx[1]
 
-    println("Starting fft loop..")
-    Base.atexit(()->SoapySDR.deactivate!(rx_stream))
+    sampRate = 2.048e6
 
-    SoapySDR.activate!(rx_stream)
-    k = 1
+    rx1.sample_rate = sampRate*u"Hz"
+
+    # Enable automatic Gain Control
+    rx1.gain_mode = true
+
+    to = TimerOutput()
+
+    f0 = 104.1e6
+
+    rx1.frequency = f0*u"Hz"
+
+    # set up a stream (complex floats)
+    format = rx1.native_stream_format
+    rxStream = SoapySDR.Stream(format, [rx1])
+
+    # create a re-usable buffer for rx samples
+    buffsz = rxStream.mtu
+    buff = Array{format}(undef, buffsz)
+
+    # receive some samples
+    timeS = 10
+    timeSamp = Int(floor(timeS * sampRate / buffsz))
+    decimator_factor = 16
+
+    storeFft = Observable(zeros(timeSamp, div(buffsz, decimator_factor)))
+
+    @info "initializing plot..."
+    fig = heatmap(storeFft)
+
+    display(fig)
+
+    @info "planning fft..."
+    fft_plan_a = plan_fft(buff)
+    last_plot = get_time_ms()
+    last_timeoutput = get_time_ms()
+
+    # Enable ther stream
+    @info "streaming..."
+    SoapySDR.activate!(rxStream)
     while true
-        read!(rx_stream, (buf,))
-        buf = fftshift(FFTW.fft!(buf.*h))
-        norms[] .= (norm.(buf))
-        #norms[] .= sum ./ k
-        norms[] = norms[]
-        println("fft") # makie needs a slight delay here
-        k += 1
+        @timeit to "Reading stream" read!(rxStream, (buff, ))
+        @timeit to "Copying FFT data" storeFft[][2:end, :] .= storeFft[][1:end-1, :]
+        @timeit to "FFT" storeFft[][1,:] = 20 .*log10.(abs.(fftshift(fft_plan_a*buff)))[1:decimator_factor:end]
+        @timeit to "Plotting" begin 
+            if get_time_ms() - last_plot > 100 # 10 fps
+                storeFft[] = storeFft[]
+                last_plot = get_time_ms()
+            end
+        end
+        @timeit to "Timer Display" begin
+            if get_time_ms() - last_timeoutput > 3000
+                show(to)
+                last_timeoutput = get_time_ms()
+            end
+        end
+        @timeit to "GC" begin
+            GC.gc(false)
+        end
+        sleep(0.01) # give some time for Makie event handlers
     end
-
 end
+
+makie_fft()
