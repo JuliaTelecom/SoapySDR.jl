@@ -197,6 +197,12 @@ cr[s1]
 g1 = cr.gain_elements[1]
 cr[g1]
 cr[g1] = 4*u"dB"
+
+# read and set the frequency component
+f1 = cr.frequency_components[1]
+cr[f1]
+cr[f1] = 2.498*u"GHz"
+
 """
 struct Channel
     device::Device
