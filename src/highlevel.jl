@@ -273,7 +273,8 @@ function Base.getproperty(c::Channel, s::Symbol)
     if s === :info
         return KWArgs(SoapySDRDevice_getChannelInfo(c.device.ptr, c.direction, c.idx))
     elseif s === :antenna
-        return Antenna(Symbol(unsafe_string(SoapySDRDevice_getAntenna(c.device.ptr, c.direction, c.idx))))
+        ant = SoapySDRDevice_getAntenna(c.device.ptr, c.direction, c.idx)
+        return Antenna(Symbol(ant == C_NULL ? "" : unsafe_string(ant)))
     elseif s === :antennas
         return AntennaList(c)
     elseif s === :gain
@@ -332,7 +333,7 @@ function Base.getproperty(c::Channel, s::Symbol)
         return map(_stream_map_soapy2jl, slist)
     elseif s === :native_stream_format
         fmt, _ = SoapySDRDevice_getNativeStreamFormat(c.device.ptr, c.direction, c.idx)
-        return _stream_map_soapy2jl(unsafe_string(fmt))
+        return _stream_map_soapy2jl(fmt == C_NULL ? "" : unsafe_string(fmt))
     elseif s === :fullscale
         _, fullscale = SoapySDRDevice_getNativeStreamFormat(c.device.ptr, c.direction, c.idx)
         return fullscale
