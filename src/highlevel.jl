@@ -330,6 +330,8 @@ function Base.getproperty(c::Channel, s::Symbol)
     elseif s === :fullscale
         _, fullscale = SoapySDRDevice_getNativeStreamFormat(c.device.ptr, c.direction, c.idx)
         return fullscale
+    elseif s === :frequency_components
+        return FrequencyComponentList(c)
     else
         return getfield(c, s)
     end
@@ -350,6 +352,7 @@ function Base.propertynames(::SoapySDR.Channel)
             :iq_balance,
             :gain_mode,
             :frequency_correction,
+            :frequency_components,
             :sample_rate,
             :bandwidth,
             :frequency,
