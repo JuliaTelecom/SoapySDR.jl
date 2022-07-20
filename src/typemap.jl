@@ -49,7 +49,8 @@ const _stream_type_pairs = [
     (SOAPY_SDR_S16, Int16),
     (SOAPY_SDR_U16, UInt16),
     (SOAPY_SDR_S8, Int8),
-    (SOAPY_SDR_U8, UInt8) ]
+    (SOAPY_SDR_U8, UInt8),
+    ("", Nothing) ]
 
 """
 Type map from SoapySDR Stream formats to Julia types.
