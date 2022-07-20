@@ -469,6 +469,11 @@ function Base.setindex!(c::Channel, gain::typeof(1.0dB), ge::GainElement)
     return gain
 end
 
+function Base.setindex!(c::Channel, frequency, ge::FrequencyComponent)
+    SoapySDRDevice_setFrequencyComponent(c.device, c.direction, c.idx, ge.name, uconvert(u"Hz", frequency).val, C_NULL)
+    return frequency
+end
+
 
 ## GainElement
 
