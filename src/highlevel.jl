@@ -209,44 +209,38 @@ struct Channel
     direction::Direction
     idx::Int
 end
-Base.show(io::IO, c::Channel) =
-    print(io, "Channel(", c.device.hardware, ", ", c.direction, ", ", c.idx, ")")
 
-
-function Base.show(io::IO, ::MIME"text/plain", c::Channel)
-    println(io, c.direction == Tx ? "TX" : "RX", " Channel #", c.idx + 1, " on ", c.device.hardware)
-    if !get(io, :compact, false)
-        println(io, "  antenna: ", c.antenna)
-        println(io, "  antennas: ", c.antennas)
-        print(io, "  bandwidth [ ")
-            join(io, map(x->sprint(print_hz_range, x), bandwidth_ranges(c)), ", ")
-            println(io, " ]: ", pick_freq_unit(c.bandwidth))
-        print(io, "  frequency [ ")
-                join(io, map(x->sprint(print_hz_range, x), frequency_ranges(c)), ", ")
-                println(io, " ]: ", pick_freq_unit(c.frequency))
-            for element in FrequencyComponentList(c)
-                print(io, "    ", element, " [ ")
-                join(io, map(x->sprint(print_hz_range, x), frequency_ranges(c, element)), ", ")
-                println(io, " ]: ", pick_freq_unit(c[element]))
-            end
-        println(io, "  gain_mode (AGC=true/false/missing): ", c.gain_mode)
-        println(io, "  gain: ", c.gain)
-        println(io, "  gain_elements: ", c.gain_elements)
-        println(io, "  fullduplex: ", c.fullduplex)
-        println(io, "  stream_formats: ", c.stream_formats)
-        println(io, "  native_stream_format: ", c.native_stream_format)
-        println(io, "  fullscale: ", c.fullscale)
-        println(io, "  sensors: ", c.sensors)
-        print(io, "  sample_rate [ ", )
-            join(io, map(x->sprint(print_hz_range, x), sample_rate_ranges(c)), ", ")
-            println(io, " ]: ", pick_freq_unit(c.sample_rate))
-        println(io, "  dc_offset_mode (true/false/missing): ", c.dc_offset_mode)
-        println(io, "  dc_offset: ", c.dc_offset)
-        println(io, "  iq_balance_mode (true/false/missing): ", c.iq_balance_mode)
-        println(io, "  iq_balance: ", c.iq_balance)
-        fc = c.frequency_correction
-        println(io, "  frequency_correction: ", fc, ismissing(fc) ? "" : " ppm")
-    end
+function Base.show(io::IO, c::Channel)
+    println(io, "  antenna: ", c.antenna)
+    println(io, "  antennas: ", c.antennas)
+    print(io, "  bandwidth [ ")
+        join(io, map(x->sprint(print_hz_range, x), bandwidth_ranges(c)), ", ")
+        println(io, " ]: ", pick_freq_unit(c.bandwidth))
+    print(io, "  frequency [ ")
+            join(io, map(x->sprint(print_hz_range, x), frequency_ranges(c)), ", ")
+            println(io, " ]: ", pick_freq_unit(c.frequency))
+        for element in FrequencyComponentList(c)
+            print(io, "    ", element, " [ ")
+            join(io, map(x->sprint(print_hz_range, x), frequency_ranges(c, element)), ", ")
+            println(io, " ]: ", pick_freq_unit(c[element]))
+        end
+    println(io, "  gain_mode (AGC=true/false/missing): ", c.gain_mode)
+    println(io, "  gain: ", c.gain)
+    println(io, "  gain_elements: ", c.gain_elements)
+    println(io, "  fullduplex: ", c.fullduplex)
+    println(io, "  stream_formats: ", c.stream_formats)
+    println(io, "  native_stream_format: ", c.native_stream_format)
+    println(io, "  fullscale: ", c.fullscale)
+    println(io, "  sensors: ", c.sensors)
+    print(io, "  sample_rate [ ", )
+        join(io, map(x->sprint(print_hz_range, x), sample_rate_ranges(c)), ", ")
+        println(io, " ]: ", pick_freq_unit(c.sample_rate))
+    println(io, "  dc_offset_mode (true/false/missing): ", c.dc_offset_mode)
+    println(io, "  dc_offset: ", c.dc_offset)
+    println(io, "  iq_balance_mode (true/false/missing): ", c.iq_balance_mode)
+    println(io, "  iq_balance: ", c.iq_balance)
+    fc = c.frequency_correction
+    println(io, "  frequency_correction: ", fc, ismissing(fc) ? "" : " ppm")
 end
 
 """
