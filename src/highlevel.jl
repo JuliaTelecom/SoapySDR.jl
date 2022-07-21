@@ -226,7 +226,10 @@ function Base.show(io::IO, c::Channel)
         end
     println(io, "  gain_mode (AGC=true/false/missing): ", c.gain_mode)
     println(io, "  gain: ", c.gain)
-    println(io, "  gain_elements: ", c.gain_elements)
+    println(io, "  gain_elements:")
+        for element in c.gain_elements
+            println(io, "    ", element, ": ", c[element])
+        end
     println(io, "  fullduplex: ", c.fullduplex)
     println(io, "  stream_formats: ", c.stream_formats)
     println(io, "  native_stream_format: ", c.native_stream_format)
