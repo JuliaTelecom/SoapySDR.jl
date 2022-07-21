@@ -228,7 +228,7 @@ function Base.show(io::IO, c::Channel)
     println(io, "  gain: ", c.gain)
     println(io, "  gain_elements:")
         for element in c.gain_elements
-            println(io, "    ", element, ": ", c[element])
+            println(io, "    ", element, " [", gain_range(c, element),"]: ", c[element])
         end
     println(io, "  fullduplex: ", c.fullduplex)
     println(io, "  stream_formats: ", c.stream_formats)
@@ -468,7 +468,7 @@ function Base.getindex(d::Device, se::SensorComponent)
     unsafe_string(SoapySDRDevice_readSensor(d.ptr, se.name))
 end
 
-function Base.setindex!(c::Channel, gain::typeof(1.0dB), ge::GainElement)
+function Base.setindex!(c::Channel, gain, ge::GainElement)
     SoapySDRDevice_setGainElement(c.device, c.direction, c.idx, ge.name, gain.val)
     return gain
 end
@@ -527,6 +527,11 @@ function frequency_ranges(c::Channel, fe::FrequencyComponent)
     arr = map(_hzrange, unsafe_wrap(Array, Ptr{SoapySDRRange}(ptr), (len,)))
     SoapySDR_free(ptr)
     arr
+end
+
+function gain_range(c::Channel, ge::GainElement)
+    ptr = SoapySDRDevice_getGainElementRange(c.device.ptr, c.direction, c.idx, ge.name)
+    ptr
 end
 
 function sample_rate_ranges(c::Channel)

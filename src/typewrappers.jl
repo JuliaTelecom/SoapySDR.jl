@@ -151,3 +151,8 @@ function Base.show(io::IO, s::SoapySDRArgInfo)
     println(io, "options: ", StringList(s.options, s.numOptions; owned=false))
     println(io, "optionNames: ", StringList(s.optionNames, s.numOptions; owned=false))
 end
+
+
+function Base.show(io::IO, s::SoapySDRRange)
+    print(io, s.minimum, ":", s.step, ":", s.maximum)
+end
