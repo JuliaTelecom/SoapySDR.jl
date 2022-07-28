@@ -656,22 +656,39 @@ function Stream(channel::Channel; kwargs...)
 end
 
 """
-    read!(s::SoapySDR.Stream{T}, buffer::NTuple{N, Vector{T}}; [timeout])
+    read!(s::SoapySDR.Stream{T}, buffers::NTuple{N, Vector{T}}; [timeout])
 
-Read data from the device into the given buffer.
+Read data from the device into the given buffers.
 """
-function Base.read!(s::Stream{T}, buffer::NTuple{N, AbstractVector{T}}; timeout=nothing) where {N, T}
+function Base.read!(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout=nothing) where {N, T}
+    t_start = time()
     timeout === nothing && (timeout = 0.1u"s") # Default from SoapySDR upstream
+    timeout_s = uconvert(u"s", timeout).val
+    timeout_us = uconvert(u"μs", timeout).val
 
     total_nread = 0
-    to_read_ct = length(first(buffer)) # TODO assert all equal
-    while total_nread < to_read_ct
-        nread, flags, timens = SoapySDRDevice_readStream(s.d, s, Ref(map(b -> pointer(b, total_nread+1), buffer)), to_read_ct-total_nread, uconvert(u"μs", timeout).val)
-        timens = timens * u"ns"
-        total_nread += nread
-        #@assert flags & SOAPY_SDR_MORE_FRAGMENTS == 0
+    samples_to_read = length(first(buffers))
+    if !all(length(b) == samples_to_read for b in buffers)
+        throw(ArgumentError("Buffers must all be same length!"))
     end
-    buffer
+    while total_nread < samples_to_read
+        # collect list of pointers to pass to SoapySDR
+        buff_ptrs = Ref(map(b -> pointer(b, total_nread+1), buffers))
+        nread, flags, timens = SoapySDRDevice_readStream(s.d, s, buff_ptrs, samples_to_read - total_nread, timeout_us)
+        total_nread += nread
+
+        if time() > t_start + timeout_s
+            # We've timed out, return early and warn.  Something is probably wrong.
+            @warn("readStream timeout!",
+                timeout=timeout_s,
+                total_nread,
+                samples_to_read,
+                flags=join(flags_to_set(flags), ","),
+            )
+            return buffers
+        end
+    end
+    return buffers
 end
 
 """
@@ -707,20 +724,37 @@ end
 """
     write(s::SoapySDR.Stream{T}, buffer::NTuple{N, Vector{T}}; [timeout]) where {N, T}
 
-Write data from the device into the given buffer.
+Write data from the given buffers into the device.  The buffers must all be the same length.
 """
-function Base.write(s::Stream{T}, buffer::NTuple{N, Vector{T}}; timeout = nothing) where {N, T}
+function Base.write(s::Stream{T}, buffers::NTuple{N, Vector{T}}; timeout = nothing) where {N, T}
+    t_start = time()
     timeout === nothing && (timeout = 0.1u"s") # Default from SoapySDR upstream
+    timeout_s = uconvert(u"s", timeout).val
+    timeout_us = uconvert(u"μs", timeout).val
 
     total_nwritten = 0
-    to_write_ct = length(buffer[1])
-
-    while total_nwritten < to_write_ct
-        nelem, flags = SoapySDRDevice_writeStream(s.d, s, Ref(map(b -> pointer(b,total_nwritten+1), buffer)), to_write_ct-total_nwritten, 0, 0, uconvert(u"μs", timeout).val)
-        total_nwritten += nelem
+    samples_to_write = length(first(buffers))
+    if !all(length(b) == samples_to_write for b in buffers)
+        throw(ArgumentError("Buffers must all be same length!"))
     end
 
-    buffer
+    while total_nwritten < samples_to_write
+        buff_ptrs = Ref(map(b -> pointer(b, total_nwritten+1), buffers))
+        nwritten, flags = SoapySDRDevice_writeStream(s.d, s, buff_ptrs, samples_to_write - total_nwritten, 0, 0, timeout_us)
+        total_nwritten += nwritten
+
+        if time() > t_start + timeout_s
+            # We've timed out, return early and warn.  Something is probably wrong.
+            @warn("writeStream timeout!",
+                timeout=timeout_s,
+                total_nwritten,
+                samples_to_write,
+                flags=join(flags_to_set(flags), ","),
+            )
+            return buffers
+        end
+    end
+    return buffers
 end
 
 
