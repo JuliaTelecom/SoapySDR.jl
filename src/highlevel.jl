@@ -686,8 +686,17 @@ function Base.read(s::Stream{T}, n::Integer; timeout=nothing) where {T}
 end
 
 function activate!(s::Stream; flags = 0, timens = nothing, numElems = nothing)
-    SoapySDRDevice_activateStream(s.d, s, flags, timens === nothing ? 0 : uconvert(u"ns", timens).val, numElems === nothing ? s.mtu : numElems)
-    nothing
+    if timens === nothing
+        timens = 0
+    else
+        timens = uconvert(u"ns", timens).val
+    end
+    if numElems === nothing
+        numElems = 0
+    end
+
+    SoapySDRDevice_activateStream(s.d, s, flags, timens, numElems)
+    return nothing
 end
 
 function deactivate!(s::Stream; flags = 0, timens = nothing)
