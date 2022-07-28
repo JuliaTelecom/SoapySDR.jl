@@ -152,26 +152,50 @@ end
     rx_chan.sample_rate = 1e5u"Hz"
     #@test rx_chan.sample_rate == 1e5u"Hz"
 
+    @test_logs (:warn, r"poorly supported") match_mode=:any begin
+        rx_stream = sd.Stream([rx_chan])
+        @test typeof(rx_stream) == sd.Stream{sd.ComplexInt{12}}
+        tx_stream = sd.Stream([tx_chan])
+        @test typeof(tx_stream) == sd.Stream{sd.ComplexInt{12}}
+
+        @test tx_stream.nchannels == 1
+        @test rx_stream.nchannels == 1
+        @test tx_stream.num_direct_access_buffers == 0x000000000000000f
+        @test tx_stream.mtu == 0x0000000000020000
+        @test rx_stream.num_direct_access_buffers == 0x000000000000000f
+        @test rx_stream.mtu == 0x0000000000020000
+    end
 
     rx_stream = sd.Stream(ComplexF32, [rx_chan])
     @test typeof(rx_stream) == sd.Stream{ComplexF32}
     tx_stream = sd.Stream(ComplexF32, [tx_chan])
     @test typeof(tx_stream) == sd.Stream{ComplexF32}
 
-    rx_stream = sd.Stream([rx_chan])
-    @test typeof(rx_stream) == sd.Stream{sd.ComplexInt{12}}
-    tx_stream = sd.Stream([tx_chan])
-    @test typeof(tx_stream) == sd.Stream{sd.ComplexInt{12}}
-
-    @test tx_stream.nchannels == 1
-    @test rx_stream.nchannels == 1
-    @test tx_stream.num_direct_access_buffers == 0x000000000000000f
-    @test tx_stream.mtu == 0x0000000000020000
-    @test rx_stream.num_direct_access_buffers == 0x000000000000000f
-    @test rx_stream.mtu == 0x0000000000020000
-
     sd.activate!(rx_stream)
     sd.activate!(tx_stream)
+
+    # First, try to write an invalid buffer type, ensure that that errors
+    buffers = (zeros(ComplexF32, 10), zeros(ComplexF32, 11))
+    @test_throws ArgumentError write(tx_stream, buffers)
+
+    # We (unfortunately) cannot do a write/read test, as that's not supported
+    # by SoapyLoopback yet, despite the name.  ;)
+    #=
+    tx_buff = randn(ComplexF32, tx_stream.mtu)
+    write(tx_stream, (tx_buff,))
+    rx_buff = vcat(
+        only(read(rx_stream, div(rx_stream.mtu,2))),
+        only(read(rx_stream, div(rx_stream.mtu,2))),
+    )
+    @test length(rx_buff) == length(tx_buff)
+    @test all(rx_buff .== tx_buff)
+    =#
+
+    # Test that reading once more causes a warning to be printed, as there's nothing to be read:
+    @test_logs (:warn, r"readStream timeout!") match_mode=:any begin
+        read(rx_stream, 1)
+    end
+
     sd.deactivate!(rx_stream)
     sd.deactivate!(tx_stream)
 
