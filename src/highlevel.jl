@@ -510,6 +510,7 @@ end
 
 function bandwidth_ranges(c::Channel)
     (ptr, len) = SoapySDRDevice_getBandwidthRange(c.device.ptr, c.direction, c.idx)
+    ptr == C_NULL && return SoapySDRRange[]
     arr = map(_hzrange, unsafe_wrap(Array, Ptr{SoapySDRRange}(ptr), (len,)))
     SoapySDR_free(ptr)
     arr
@@ -517,6 +518,7 @@ end
 
 function frequency_ranges(c::Channel)
     (ptr, len) = SoapySDRDevice_getFrequencyRange(c.device.ptr, c.direction, c.idx)
+    ptr == C_NULL && return SoapySDRRange[]
     arr = map(_hzrange, unsafe_wrap(Array, Ptr{SoapySDRRange}(ptr), (len,)))
     SoapySDR_free(ptr)
     arr
@@ -524,6 +526,7 @@ end
 
 function frequency_ranges(c::Channel, fe::FrequencyComponent)
     (ptr, len) = SoapySDRDevice_getFrequencyRangeComponent(c.device.ptr, c.direction, c.idx, fe.name)
+    ptr == C_NULL && return SoapySDRRange[]
     arr = map(_hzrange, unsafe_wrap(Array, Ptr{SoapySDRRange}(ptr), (len,)))
     SoapySDR_free(ptr)
     arr
@@ -536,6 +539,7 @@ end
 
 function sample_rate_ranges(c::Channel)
     (ptr, len) = SoapySDRDevice_getSampleRateRange(c.device.ptr, c.direction, c.idx)
+    ptr == C_NULL && return SoapySDRRange[]
     arr = map(_hzrange, unsafe_wrap(Array, Ptr{SoapySDRRange}(ptr), (len,)))
     SoapySDR_free(ptr)
     arr
