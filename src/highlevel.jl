@@ -68,6 +68,7 @@ mutable struct Device
         this = new(dev_ptr)
         finalizer(this) do this
             this.ptr != C_NULL && SoapySDRDevice_unmake(this.ptr)
+            this.ptr = Ptr{SoapySDRDevice}(C_NULL)
         end
         return this
     end
@@ -590,10 +591,12 @@ mutable struct Stream{T}
         finalizer(this) do obj
             isopen(d) || return
             SoapySDRDevice_closeStream(d, obj.ptr)
+            obj.ptr = Ptr{SoapySDRStream}(C_NULL)
         end
         return this
     end
 end
+
 Base.cconvert(::Type{<:Ptr{SoapySDRStream}}, s::Stream) = s
 Base.unsafe_convert(::Type{<:Ptr{SoapySDRStream}}, s::Stream) = s.ptr
 Base.isopen(s::Stream) = s.ptr != C_NULL
