@@ -658,6 +658,15 @@ function Stream(channel::Channel; kwargs...)
     Stream([channel], kwargs...)
 end
 
+function Stream(f::Function, args...; kwargs...)
+    stream = Stream(args...; kwargs...)
+    try
+        f(stream)
+    finally
+        finalize(stream)
+    end
+end
+
 """
     read!(s::SoapySDR.Stream{T}, buffer::NTuple{N, Vector{T}}; [timeout])
 

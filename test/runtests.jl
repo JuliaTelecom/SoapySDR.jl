@@ -181,7 +181,10 @@ end
     end
     # and again to ensure correct GC
     Device(Devices()[1]) do dev
-        println(dev.info)
+        sd.Stream(ComplexF32, [dev.rx[1]]) do s_rx
+            println(dev.info)
+            println(s_rx)
+        end
     end
 end
 @testset "Settings" begin
