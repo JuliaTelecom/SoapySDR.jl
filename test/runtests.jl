@@ -208,6 +208,10 @@ end
         sd.Stream(ComplexF32, [dev.rx[1]]) do s_rx
             println(dev.info)
             println(s_rx)
+
+            # Activate/deactivate
+            sd.activate!(s_rx) do
+            end
         end
     end
 end

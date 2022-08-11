@@ -741,9 +741,19 @@ function activate!(s::Stream; flags = 0, timens = nothing, numElems = nothing)
     return nothing
 end
 
+function activate!(f::Function, s::Stream; kwargs...)
+    try
+        activate!(s; kwargs...)
+        f()
+    finally
+        deactivate!(s; kwargs...)
+    end
+    return nothing
+end
+
 function deactivate!(s::Stream; flags = 0, timens = nothing)
     SoapySDRDevice_deactivateStream(s.d, s, flags, timens === nothing ? 0 : uconvert(u"ns", timens).val)
-    nothing
+    return nothing
 end
 
 """
