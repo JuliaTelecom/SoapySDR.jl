@@ -761,7 +761,7 @@ end
 
 Write data from the given buffers into the device.  The buffers must all be the same length.
 """
-function Base.write(s::Stream{T}, buffers::NTuple{N, Vector{T}}; timeout = nothing) where {N, T}
+function Base.write(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout = nothing) where {N, T}
     t_start = time()
     timeout === nothing && (timeout = 0.1u"s") # Default from SoapySDR upstream
     timeout_s = uconvert(u"s", timeout).val
@@ -771,6 +771,9 @@ function Base.write(s::Stream{T}, buffers::NTuple{N, Vector{T}}; timeout = nothi
     samples_to_write = length(first(buffers))
     if !all(length(b) == samples_to_write for b in buffers)
         throw(ArgumentError("Buffers must all be same length!"))
+    end
+    if length(buffers) != s.nchannels
+        throw(ArgumentError("Must provide buffers for every channel in stream!"))
     end
 
     while total_nwritten < samples_to_write
