@@ -266,6 +266,9 @@ to optimize for the underlying hardware.
 \\param device a pointer to a device instance
 """
 function SoapySDRDevice_getHardwareKey(device)
+    if !isopen(device)
+        throw(InvalidStateException("Device is closed!", :closed))
+    end
     ccall((:SoapySDRDevice_getHardwareKey, soapysdr), Ptr{Cchar}, (Ptr{SoapySDRDevice},), device)
 end
 
@@ -562,6 +565,9 @@ In this case, the implementation returns SOAPY_SDR_NOT_SUPPORTED.
 \\return 0 for success or error code on failure
 """
 function SoapySDRDevice_deactivateStream(device, stream, flags, timeNs)
+    if !isopen(stream)
+        throw(InvalidStateException("Stream is closed!", :closed))
+    end
     ccall((:SoapySDRDevice_deactivateStream, soapysdr), Cint, (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Cint, Clonglong), device, stream, flags, timeNs)
 end
 

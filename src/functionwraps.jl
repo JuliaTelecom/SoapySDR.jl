@@ -111,9 +111,6 @@ function SoapySDRDevice_releaseWriteBuffer(device::Device, stream, handle, numEl
 end
 
 function SoapySDRDevice_readStream(device::Device, stream, buffs, numElems, timeoutUs)
-    if !isopen(device)
-        throw(InvalidStateException("device is closed!", :closed))
-    end
     if !isopen(stream)
         throw(InvalidStateException("stream is closed!", :closed))
     end
@@ -125,9 +122,6 @@ function SoapySDRDevice_readStream(device::Device, stream, buffs, numElems, time
 end
 
 function SoapySDRDevice_writeStream(device::Device, stream, buffs, numElems, flags, timeNs, timeoutUs)
-    if !isopen(device)
-        throw(InvalidStateException("device is closed!", :closed))
-    end
     if !isopen(stream)
         throw(InvalidStateException("stream is closed!", :closed))
     end

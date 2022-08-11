@@ -603,7 +603,7 @@ end
 
 Base.cconvert(::Type{<:Ptr{SoapySDRStream}}, s::Stream) = s
 Base.unsafe_convert(::Type{<:Ptr{SoapySDRStream}}, s::Stream) = s.ptr
-Base.isopen(s::Stream) = s.ptr != C_NULL
+Base.isopen(s::Stream) = s.ptr != C_NULL && isopen(s.d)
 
 streamtype(::Stream{T}) where T = T
 
@@ -617,8 +617,14 @@ end
 
 function Base.getproperty(stream::Stream, s::Symbol)
     if s === :mtu
+        if !isopen(stream)
+            throw(InvalidStateException("Stream is closed!", :closed))
+        end
         SoapySDRDevice_getStreamMTU(stream.d.ptr, stream.ptr)
     elseif s === :num_direct_access_buffers
+        if !isopen(stream)
+            throw(InvalidStateException("Stream is closed!", :closed))
+        end
         SoapySDRDevice_getNumDirectAccessBuffers(stream.d.ptr, stream.ptr)
     else
         return getfield(stream, s)
@@ -719,6 +725,9 @@ function Base.read(s::Stream{T}, n::Integer; timeout=nothing) where {T}
 end
 
 function activate!(s::Stream; flags = 0, timens = nothing, numElems = nothing)
+    if !isopen(s)
+        throw(InvalidStateException("stream is closed!", :closed))
+    end
     if timens === nothing
         timens = 0
     else
