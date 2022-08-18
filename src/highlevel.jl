@@ -370,14 +370,20 @@ end
 
 function Base.setproperty!(c::Channel, s::Symbol, v)
     if s === :antenna
-        SoapySDRDevice_setAntenna(c.device.ptr, c.direction, c.idx, v.name)
+        if v isa Antenna
+            SoapySDRDevice_setAntenna(c.device.ptr, c.direction, c.idx, v.name)
+        elseif v isa Symbol || v isa String
+            SoapySDRDevice_setAntenna(c.device.ptr, c.direction, c.idx, v)
+        else
+            throw(ArgumentError("antenna must be an Antenna or a Symbol"))
+        end
     elseif s === :frequency
         if isa(v, Quantity)
             SoapySDRDevice_setFrequency(c.device.ptr, c.direction, c.idx, uconvert(u"Hz", v).val, C_NULL)
         elseif isa(v, FreqSpec)
-            error("TODO")
+            throw(ArgumentError("FreqSpec unsupported"))
         else
-            error("Frequency must be specified as either a Quantity or a FreqSpec!")
+            throw(ArgumentError("Frequency must be specified as either a Quantity or a FreqSpec!"))
         end
     elseif s === :bandwidth
         SoapySDRDevice_setBandwidth(c.device.ptr, c.direction, c.idx, uconvert(u"Hz", v).val)
