@@ -87,6 +87,7 @@ end
 
     # Device constructor, show, iterator
     @test length(Devices()) == 1
+    @test length(Devices(driver="loopback")) == 1
     show(io, Devices())
     deva = Devices()[1]
     deva["refclk"] = "internal"
