@@ -128,7 +128,17 @@ end
     @test rx_chan.stream_formats == [Complex{Int8}, SoapySDR.ComplexInt{12}, Complex{Int16}, ComplexF32]
     @test tx_chan.native_stream_format == SoapySDR.ComplexInt{12} #, fullscale
     @test tx_chan.stream_formats == [Complex{Int8}, SoapySDR.ComplexInt{12}, Complex{Int16}, ComplexF32]
-
+    @test rx_chan.antennas == SoapySDR.Antenna[:RX, :TX]
+    @test tx_chan.antennas == SoapySDR.Antenna[:RX, :TX]
+    @test rx_chan.antenna == SoapySDR.Antenna(:RX)
+    @test tx_chan.antenna == SoapySDR.Antenna(:TX)
+    rx_chan.antenna = :TX
+    # TODO: Add some more antennas to the loopback driver
+    #@test rx_chan.antenna == SoapySDR.Antenna(:TX)
+    rx_chan.antenna = :RX
+    rx_chan.antenna = "RX"
+    @test_throws ArgumentError rx_chan.antenna = 100
+    @test rx_chan.antenna == SoapySDR.Antenna(:RX)
     # channel gain tests
     @test rx_chan.gain_mode == false
     rx_chan.gain_mode = true
