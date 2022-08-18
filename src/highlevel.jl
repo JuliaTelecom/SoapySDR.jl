@@ -4,10 +4,18 @@ export Devices, Device, dB, gainrange
 
 """
     Devices()
+    Device(args...)
 
 Enumerates all detectable SDR devices on the system.
 Indexing into the returned `Devices` object returns a list of
 keywords used to create a `Device` struct.
+
+Optionally pass in a list of keywords to filter the returned list.
+Example:
+
+```
+Devices(driver="rtlsdr")
+```
 """
 struct Devices
     kwargslist::KWArgsList
@@ -22,6 +30,10 @@ struct Devices
     end
 end
 Base.length(d::Devices) = length(d.kwargslist)
+
+function Devices(;kwargs...)
+    Devices(KWArgs(kwargs))
+end
 
 function Base.show(io::IO, d::Devices)
     if length(d) == 0

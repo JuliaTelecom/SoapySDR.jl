@@ -18,7 +18,7 @@ KWArgs() = KWArgs(SoapySDRKwargs_fromString(""))
 function KWArgs(kwargs::Base.Iterators.Pairs)
     args = KWArgs()
     for kv in kwargs
-        args[String(kv.first)] = kv.second
+        args[string(kv.first)] = kv.second
     end
     return args
 end
