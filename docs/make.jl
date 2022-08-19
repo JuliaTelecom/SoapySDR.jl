@@ -16,6 +16,7 @@ makedocs(;
     pages=[
         "Home" => "index.md",
         "Tutorial" => "tutorial.md",
+        "Loading Drivers" => "drivers.md",
         "High Level API" => "highlevel.md",
         "Low Level API" => "lowlevel.md",
         "Troubleshooting" => "troubleshooting.md",
