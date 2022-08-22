@@ -711,7 +711,7 @@ function Base.read!(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout
     if !all(length(b) == samples_to_read for b in buffers)
         throw(ArgumentError("Buffers must all be same length!"))
     end
-    while total_nread < samples_to_read
+    GC.@preserve buffers while total_nread < samples_to_read
         # collect list of pointers to pass to SoapySDR
         buff_ptrs = Ref(map(b -> pointer(b, total_nread+1), buffers))
         nread, flags, timens = SoapySDRDevice_readStream(s.d, s, buff_ptrs, samples_to_read - total_nread, timeout_us)
@@ -794,7 +794,7 @@ function Base.write(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout
         throw(ArgumentError("Must provide buffers for every channel in stream!"))
     end
 
-    while total_nwritten < samples_to_write
+    GC.@preserve buffers while total_nwritten < samples_to_write
         buff_ptrs = Ref(map(b -> pointer(b, total_nwritten+1), buffers))
         nwritten, flags = SoapySDRDevice_writeStream(s.d, s, buff_ptrs, samples_to_write - total_nwritten, 0, 0, timeout_us)
         total_nwritten += nwritten
