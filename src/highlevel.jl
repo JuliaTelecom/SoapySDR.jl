@@ -19,7 +19,7 @@ Devices(driver="rtlsdr")
 """
 struct Devices
     kwargslist::KWArgsList
-    function Devices(args=nothing)
+    function Devices(args)
         len = Ref{Csize_t}()
         kwargs = SoapySDRDevice_enumerate(isnothing(args) ? C_NULL : args, len)
         kwargs = KWArgsList(kwargs, len[])
