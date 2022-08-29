@@ -13,6 +13,7 @@ const GC = Base.GC
 
 export @u_str
 
+include("error.jl")
 include("lowlevel/auto_wrap.jl")
 include("unithelpers.jl")
 include("typemap.jl")
@@ -21,7 +22,6 @@ include("highlevel.jl")
 include("functionwraps.jl")
 include("logger.jl")
 include("version.jl")
-include("error.jl")
 include("Modules.jl")
 
 const SDRStream = Stream
