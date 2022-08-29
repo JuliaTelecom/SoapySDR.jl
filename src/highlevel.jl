@@ -695,6 +695,25 @@ function Stream(f::Function, args...; kwargs...)
     end
 end
 
+const SoapyStreamFlags = Dict(
+    "END_BURST" => SOAPY_SDR_END_BURST,
+    "HAS_TIME" => SOAPY_SDR_HAS_TIME,
+    "END_ABRUPT" => SOAPY_SDR_END_ABRUPT,
+    "ONE_PACKET" => SOAPY_SDR_ONE_PACKET,
+    "MORE_FRAGMENTS" => SOAPY_SDR_MORE_FRAGMENTS,
+    "WAIT_TRIGGER" => SOAPY_SDR_WAIT_TRIGGER,
+)
+
+function flags_to_set(flags)
+    s = Set{String}()
+    for (name, val) in SoapyStreamFlags
+        if val & flags != 0
+            push!(s, name)
+        end
+    end
+    return s
+end
+
 """
     read!(s::SoapySDR.Stream{T}, buffers::NTuple{N, Vector{T}}; [timeout])
 

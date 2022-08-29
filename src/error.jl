@@ -9,21 +9,30 @@ function error_to_string(error)
     ptr === C_NULL ? "" : unsafe_string(ptr) 
 end
 
-const SoapyStreamFlags = Dict(
-    "END_BURST" => SOAPY_SDR_END_BURST,
-    "HAS_TIME" => SOAPY_SDR_HAS_TIME,
-    "END_ABRUPT" => SOAPY_SDR_END_ABRUPT,
-    "ONE_PACKET" => SOAPY_SDR_ONE_PACKET,
-    "MORE_FRAGMENTS" => SOAPY_SDR_MORE_FRAGMENTS,
-    "WAIT_TRIGGER" => SOAPY_SDR_WAIT_TRIGGER,
-)
+struct SoapySDRDeviceError <: Exception
+    status::Int
+    msg::String
+end
 
-function flags_to_set(flags)
-    s = Set{String}()
-    for (name, val) in SoapyStreamFlags
-        if val & flags != 0
-            push!(s, name)
+function get_SoapySDRDeviceError()
+    return SoapySDRDeviceError(
+        SoapySDRDevice_lastStatus(),
+        unsafe_string(SoapySDRDevice_lastError()),
+    )
+end
+
+function with_error_check(f::Function)
+    val = f()
+    if SoapySDRDevice_lastStatus() != 0
+        throw(get_SoapySDRDeviceError())
+    end
+    return val
+end
+
+macro soapy_checked(ex)
+    return quote
+        with_error_check() do
+            $(esc(ex))
         end
     end
-    return s
 end
