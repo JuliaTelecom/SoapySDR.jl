@@ -223,6 +223,12 @@ end
             # Activate/deactivate
             sd.activate!(s_rx) do
             end
+
+            # Group activate/deactivate
+            sd.Stream(ComplexF32, [dev.tx[1]]) do s_tx
+                sd.activate!([s_rx, s_tx]) do
+                end
+            end
         end
     end
 end

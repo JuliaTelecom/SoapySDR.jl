@@ -759,15 +759,21 @@ function activate!(s::Stream; flags = 0, timens = nothing, numElems = nothing)
     return nothing
 end
 
-function activate!(f::Function, s::Stream; kwargs...)
+function activate!(f::Function, streams::AbstractVector{<:Stream}; kwargs...)
+    activated_streams = SoapySDR.Stream[]
     try
-        activate!(s; kwargs...)
+        for s in streams
+            activate!(s; kwargs...)
+            push!(activated_streams, s)
+        end
         f()
     finally
-        deactivate!(s; kwargs...)
+        for s in activated_streams
+            deactivate!(s; kwargs...)
+        end
     end
-    return nothing
 end
+activate!(f::Function, s::Stream; kwargs...) = activate!(f, [s]; kwargs...)
 
 function deactivate!(s::Stream; flags = 0, timens = nothing)
     SoapySDRDevice_deactivateStream(s.d, s, flags, timens === nothing ? 0 : uconvert(u"ns", timens).val)
