@@ -83,6 +83,9 @@ function SoapySDRDevice_acquireReadBuffer(device::Device, stream, buffs, timeout
     handle = Ref{Csize_t}()
     flags = Ref{Cint}(0)
     timeNs = Ref{Clonglong}(-1)
+    if !isopen(stream)
+        throw(InvalidStateException("stream is closed!", :closed))
+    end
     bytes = SoapySDRDevice_acquireReadBuffer(device, stream, handle, buffs, flags, timeNs, timeoutUs)
     bytes, handle[], flags[], timeNs[]
 end
@@ -94,6 +97,9 @@ function SoapySDRDevice_acquireWriteBuffer(device::Device, stream, buffs, timeou
     #    void **buffs,
     #    const long timeoutUs);
     handle = Ref{Csize_t}()
+    if !isopen(stream)
+        throw(InvalidStateException("stream is closed!", :closed))
+    end
     bytes = SoapySDRDevice_acquireWriteBuffer(device, stream, handle, buffs, timeoutUs)
     return bytes, handle[]
 end
