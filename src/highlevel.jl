@@ -737,11 +737,11 @@ function Base.read!(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout
 
         if nread == SOAPY_SDR_OVERFLOW
             continue
-        elseif nread < 0
+        elseif nread < 0 && nread != SOAPY_SDR_TIMEOUT
             throw(SoapySDRDeviceError(nread, error_to_string(nread)))
         end
 
-        total_nread += nread
+        nread >= 0 && (total_nread += nread)
 
         if time() > t_start + timeout_s
             # We've timed out, return early and warn.  Something is probably wrong.
@@ -826,11 +826,11 @@ function Base.write(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout
 
         if nwritten == SOAPY_SDR_UNDERFLOW
             continue
-        elseif nwritten < 0
+        elseif nwritten < 0 && nwritten != SOAPY_SDR_TIMEOUT
             throw(SoapySDRDeviceError(nwritten, error_to_string(nwritten)))
         end
 
-        total_nwritten += nwritten
+        nwritten > 0 && (total_nwritten += nwritten)
 
         if time() > t_start + timeout_s
             # We've timed out, return early and warn.  Something is probably wrong.
