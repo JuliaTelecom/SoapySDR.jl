@@ -776,6 +776,13 @@ function Base.read!(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout
         # collect list of pointers to pass to SoapySDR
         buff_ptrs = Ref(map(b -> pointer(b, total_nread+1), buffers))
         nread, flags, timens = SoapySDRDevice_readStream(s.d, s, buff_ptrs, samples_to_read - total_nread, timeout_us)
+
+        if nread == SOAPY_SDR_OVERFLOW
+            continue
+        elseif nread < 0
+            throw(SoapySDRDeviceError(nread, error_to_string(nread)))
+        end
+
         total_nread += nread
 
         if time() > t_start + timeout_s
@@ -864,6 +871,13 @@ function Base.write(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout
     GC.@preserve buffers while total_nwritten < samples_to_write
         buff_ptrs = Ref(map(b -> pointer(b, total_nwritten+1), buffers))
         nwritten, flags = SoapySDRDevice_writeStream(s.d, s, buff_ptrs, samples_to_write - total_nwritten, 0, 0, timeout_us)
+
+        if nwritten == SOAPY_SDR_UNDERFLOW
+            continue
+        elseif nwritten < 0
+            throw(SoapySDRDeviceError(nwritten, error_to_string(nwritten)))
+        end
+
         total_nwritten += nwritten
 
         if time() > t_start + timeout_s
