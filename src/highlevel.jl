@@ -778,6 +778,7 @@ function Base.read!(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout
         nread, flags, timens = SoapySDRDevice_readStream(s.d, s, buff_ptrs, samples_to_read - total_nread, timeout_us)
 
         if nread == SOAPY_SDR_OVERFLOW
+            total_nread += s.mtu
             continue
         elseif nread < 0
             throw(SoapySDRDeviceError(nread, error_to_string(nread)))
@@ -873,6 +874,7 @@ function Base.write(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout
         nwritten, flags = SoapySDRDevice_writeStream(s.d, s, buff_ptrs, samples_to_write - total_nwritten, 0, 0, timeout_us)
 
         if nwritten == SOAPY_SDR_UNDERFLOW
+            total_nwritten += s.mtu
             continue
         elseif nwritten < 0
             throw(SoapySDRDeviceError(nwritten, error_to_string(nwritten)))
