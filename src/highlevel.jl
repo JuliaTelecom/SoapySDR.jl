@@ -67,6 +67,8 @@ Fields:
 - `sensors`
 - `time_source`
 - `time_sources`
+- `clock_source`
+- `clock_sources`
 - `frontendmapping_rx`
 - `frontendmapping_tx`
 """
@@ -107,6 +109,8 @@ function Base.show(io::IO, d::Device)
     println(io, "  sensors: ", d.sensors)
     println(io, "  time_source: ", d.time_source)
     println(io, "  time_sources:", d.time_sources)
+    println(io, "  clock_source: ", d.clock_source)
+    println(io, "  clock_sources:", d.clock_sources)
     println(io, "  frontendmapping_rx: ", d.frontendmapping_rx)
     println(io, "  frontendmapping_tx: ", d.frontendmapping_tx)
     print(io, "  master_clock_rate: ");  print_unit(io, d.master_clock_rate)
@@ -129,6 +133,10 @@ function Base.getproperty(d::Device, s::Symbol)
         ComponentList(TimeSource, d)
     elseif s === :time_source
         TimeSource(Symbol(unsafe_string(SoapySDRDevice_getTimeSource(d.ptr))))
+    elseif s === :clock_sources
+        ComponentList(ClockSource, d)
+    elseif s === :clock_source
+        ClockSource(Symbol(unsafe_string(SoapySDRDevice_getClockSource(d.ptr))))
     elseif s === :frontendmapping_tx
         unsafe_string(SoapySDRDevice_getFrontendMapping(d, Tx))
     elseif s === :frontendmapping_rx
@@ -147,6 +155,8 @@ function Base.setproperty!(c::Device, s::Symbol, v)
         SoapySDRDevice_setFrontendMapping(c.ptr, Rx, v)
     elseif s === :time_source
         SoapySDRDevice_setTimeSource(c.ptr, string(v))
+    elseif s === :clock_source
+        SoapySDRDevice_setClockSource(c.ptr, string(v))
     elseif s === :master_clock_rate
         SoapySDRDevice_setMasterClockRate(c.ptr, v)
     else
@@ -424,7 +434,7 @@ Base.convert(::Type{T}, s::Symbol) where {T <: AbstractComponent} = T(s)
 Base.convert(::Type{T}, s::String) where {T <: AbstractComponent} = T(Symbol(s))
 Base.convert(::Type{Cstring}, s::AbstractComponent) =  Cstring(unsafe_convert(Ptr{UInt8}, s.name))
 
-for e in (:TimeSource, :GainElement, :Antenna, :FrequencyComponent, :SensorComponent)
+for e in (:TimeSource, :ClockSource, :GainElement, :Antenna, :FrequencyComponent, :SensorComponent)
     @eval begin
         struct $e <: AbstractComponent;
             name::Symbol
@@ -459,6 +469,8 @@ function ComponentList(::Type{T}, d::Device) where {T <: AbstractComponent}
         ComponentList{SensorComponent}(StringList(SoapySDRDevice_listSensors(d.ptr)...))
     elseif T <: TimeSource
         ComponentList{TimeSource}(StringList(SoapySDRDevice_listTimeSources(d.ptr)...))
+    elseif T <: ClockSource
+        ComponentList{ClockSource}(StringList(SoapySDRDevice_listClockSources(d.ptr)...))
     end
 end
 

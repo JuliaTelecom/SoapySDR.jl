@@ -18,6 +18,12 @@ function SoapySDRDevice_listTimeSources(device)
     (args, len[])
 end
 
+function SoapySDRDevice_listClockSources(device)
+    len = Ref{Csize_t}()
+    args = SoapySDRDevice_listClockSources(device, len)
+    (args, len[])
+end
+
 function SoapySDRDevice_listAntennas(device, direction, channel)
     len = Ref{Csize_t}()
     args = SoapySDRDevice_listAntennas(device, direction, channel, len)
