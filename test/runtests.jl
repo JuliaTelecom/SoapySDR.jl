@@ -259,7 +259,9 @@ Aqua.test_all(SoapySDR; ambiguities=false)
 
 end #SoapySDR testset
 
-@info "Running JET..."
+if VERSION >= v"1.8"
+    @info "Running JET..."
 
-using JET
-display(JET.report_package(SoapySDR))
+    using JET
+    display(JET.report_package(SoapySDR))
+end
