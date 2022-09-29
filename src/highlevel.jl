@@ -439,6 +439,9 @@ for e in (:TimeSource, :ClockSource, :GainElement, :Antenna, :FrequencyComponent
         struct $e <: AbstractComponent;
             name::Symbol
         end
+        function $e(s::AbstractString)
+            $e(Symbol(s))
+        end
     end
 end
 
