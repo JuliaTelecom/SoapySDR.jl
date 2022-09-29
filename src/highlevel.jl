@@ -434,7 +434,7 @@ Base.convert(::Type{T}, s::Symbol) where {T <: AbstractComponent} = T(s)
 Base.convert(::Type{T}, s::String) where {T <: AbstractComponent} = T(Symbol(s))
 Base.convert(::Type{Cstring}, s::AbstractComponent) =  Cstring(unsafe_convert(Ptr{UInt8}, s.name))
 
-for e in (:TimeSource, :ClockSource, :GainElement, :Antenna, :FrequencyComponent, :SensorComponent)
+for e in (:TimeSource, :ClockSource, :GainElement, :Antenna, :FrequencyComponent, :SensorComponent, :Setting)
     @eval begin
         struct $e <: AbstractComponent;
             name::Symbol
@@ -499,6 +499,10 @@ function Base.getindex(d::Device, se::SensorComponent)
     unsafe_string(SoapySDRDevice_readSensor(d.ptr, se.name))
 end
 
+function Base.getindex(d::Device, se::Setting)
+    unsafe_string(SoapySDRDevice_readSetting(d.ptr, se.name))
+end
+
 function Base.setindex!(c::Channel, gain, ge::GainElement)
     SoapySDRDevice_setGainElement(c.device, c.direction, c.idx, ge.name, gain.val)
     return gain
@@ -509,6 +513,10 @@ function Base.setindex!(c::Channel, frequency, ge::FrequencyComponent)
     return frequency
 end
 
+function Base.setindex!(d::Device, v, ge::Setting)
+    SoapySDRDevice_writeSetting(d, ge.name, v)
+    return v
+end
 
 ## GainElement
 
