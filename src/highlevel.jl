@@ -113,6 +113,9 @@ function Base.show(io::IO, d::Device)
     println(io, "  clock_sources:", d.clock_sources)
     println(io, "  frontendmapping_rx: ", d.frontendmapping_rx)
     println(io, "  frontendmapping_tx: ", d.frontendmapping_tx)
+    println(io, "  uarts: ", d.uarts)
+    println(io, "  gpios: ", d.gpios)
+    println(io, "  registers: ", d.registers)
     print(io, "  master_clock_rate: ");  print_unit(io, d.master_clock_rate)
 end
 
@@ -131,6 +134,12 @@ function Base.getproperty(d::Device, s::Symbol)
         ComponentList(SensorComponent, d)
     elseif s === :time_sources
         ComponentList(TimeSource, d)
+    elseif s === :uarts
+        ComponentList(UART, d)
+    elseif s === :registers
+        ComponentList(Register, d)
+    elseif s === :gpios
+        ComponentList(GPIO, d)
     elseif s === :time_source
         TimeSource(Symbol(unsafe_string(SoapySDRDevice_getTimeSource(d.ptr))))
     elseif s === :clock_sources
@@ -166,7 +175,7 @@ end
 
 
 function Base.propertynames(::Device)
-    return (:ptr, :info, :driver, :hardware, :tx, :rx, :sensors, :time, :master_clock_rate)
+    return (:ptr, :info, :driver, :hardware, :tx, :rx, :sensors, :time_source, :timesources, :clock_source, :clock_source, :frontendmapping_rx, :frontendmapping_tx, :uarts, :registers, :gpios, :master_clock_rate)
 end
 
 ####################################################################################################
@@ -434,7 +443,7 @@ Base.convert(::Type{T}, s::Symbol) where {T <: AbstractComponent} = T(s)
 Base.convert(::Type{T}, s::String) where {T <: AbstractComponent} = T(Symbol(s))
 Base.convert(::Type{Cstring}, s::AbstractComponent) =  Cstring(unsafe_convert(Ptr{UInt8}, s.name))
 
-for e in (:TimeSource, :ClockSource, :GainElement, :Antenna, :FrequencyComponent, :SensorComponent, :Setting)
+for e in (:TimeSource, :ClockSource, :GainElement, :Antenna, :FrequencyComponent, :SensorComponent, :Setting, :Register, :UART, :GPIO)
     @eval begin
         struct $e <: AbstractComponent;
             name::Symbol
@@ -474,6 +483,12 @@ function ComponentList(::Type{T}, d::Device) where {T <: AbstractComponent}
         ComponentList{TimeSource}(StringList(SoapySDRDevice_listTimeSources(d.ptr)...))
     elseif T <: ClockSource
         ComponentList{ClockSource}(StringList(SoapySDRDevice_listClockSources(d.ptr)...))
+    elseif T <: UART
+        ComponentList{UART}(StringList(SoapySDRDevice_listUARTs(d.ptr)...))
+    elseif T <: GPIO
+        ComponentList{GPIO}(StringList(SoapySDRDevice_listGPIOBanks(d.ptr)...))
+    elseif T <: Register
+        ComponentList{Register}(StringList(SoapySDRDevice_listRegisterInterfaces(d.ptr)...))
     end
 end
 
@@ -504,6 +519,10 @@ end
 
 function Base.getindex(d::Device, se::Setting)
     unsafe_string(SoapySDRDevice_readSetting(d.ptr, se.name))
+end
+
+function Base.getindex(d::Device, se::Tuple{Register, Int})
+    SoapySDRDevice_readRegister(d.ptr, se[1].name, se[2])
 end
 
 function Base.setindex!(c::Channel, gain, ge::GainElement)
