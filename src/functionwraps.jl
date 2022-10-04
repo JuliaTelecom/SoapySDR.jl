@@ -24,6 +24,24 @@ function SoapySDRDevice_listClockSources(device)
     (args, len[])
 end
 
+function SoapySDRDevice_listRegisterInterfaces(device)
+    len = Ref{Csize_t}()
+    args = SoapySDRDevice_listRegisterInterfaces(device, len)
+    (args, len[])
+end
+
+function SoapySDRDevice_listGPIOBanks(device)
+    len = Ref{Csize_t}()
+    args = SoapySDRDevice_listGPIOBanks(device, len)
+    (args, len[])
+end
+
+function SoapySDRDevice_listUARTs(device)
+    len = Ref{Csize_t}()
+    args = SoapySDRDevice_listUARTs(device, len)
+    (args, len[])
+end
+
 function SoapySDRDevice_listAntennas(device, direction, channel)
     len = Ref{Csize_t}()
     args = SoapySDRDevice_listAntennas(device, direction, channel, len)
