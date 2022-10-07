@@ -890,7 +890,7 @@ function Base.write(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout
                 timeout=timeout_s,
                 total_nwritten,
                 samples_to_write,
-                flags=join(flags_to_set(flags), ","),
+                flags=join(flags_to_set(out_flags), ","),
             )
             return buffers
         end
