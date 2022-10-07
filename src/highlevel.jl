@@ -872,7 +872,7 @@ function Base.write(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout
 
     GC.@preserve buffers while total_nwritten < samples_to_write
         buff_ptrs = Ref(map(b -> pointer(b, total_nwritten+1), buffers))
-        nwritten, flags = SoapySDRDevice_writeStream(s.d, s, buff_ptrs, samples_to_write - total_nwritten, 0, 0, timeout_us)
+        nwritten, out_flags = SoapySDRDevice_writeStream(s.d, s, buff_ptrs, samples_to_write - total_nwritten, 0, 0, timeout_us)
 
         if typeof(flags) <: Ref
             flags[] |= out_flags
