@@ -855,7 +855,7 @@ end
 
 Write data from the given buffers into the device.  The buffers must all be the same length.
 """
-function Base.write(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout = nothing, flags=nothing, throw_error=false) where {N, T}
+function Base.write(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout = nothing, flags::Union{Ref{Int},Nothing}=nothing, throw_error::Bool=false) where {N, T}
     t_start = time()
     timeout === nothing && (timeout = 0.1u"s") # Default from SoapySDR upstream
     timeout_s = uconvert(u"s", timeout).val
