@@ -540,6 +540,17 @@ function Base.setindex!(d::Device, v, ge::Setting)
     return v
 end
 
+"""
+Set a register value on a device
+
+```
+dev[SoapySDR.Register("LMS7002M")] = (0x1234, 0x5678) # tuple of: (addr, value)
+```
+"""
+function Base.setindex!(d::Device, val::Tuple{Integer, Integer}, se::Register)
+    SoapySDRDevice_writeRegister(d.ptr, se.name, val[1], val[2])
+end
+
 ## GainElement
 
 function _gainrange(soapyr::SoapySDRRange)
