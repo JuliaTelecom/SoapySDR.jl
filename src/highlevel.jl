@@ -521,7 +521,7 @@ function Base.getindex(d::Device, se::Setting)
     unsafe_string(SoapySDRDevice_readSetting(d.ptr, se.name))
 end
 
-function Base.getindex(d::Device, se::Tuple{Register, Int})
+function Base.getindex(d::Device, se::Tuple{Register, Integer})
     SoapySDRDevice_readRegister(d.ptr, se[1].name, se[2])
 end
 
