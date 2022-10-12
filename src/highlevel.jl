@@ -781,11 +781,13 @@ function Base.read!(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout
             flags[] |= out_flags
         end
 
-        if throw_error && nread < 0
-            throw(SoapySDRDeviceError(nread, error_to_string(nread)))
+        if nread < 0
+            if throw_error
+                throw(SoapySDRDeviceError(nread, error_to_string(nread)))
+            end
+        else
+            total_nread += nread
         end
-
-        total_nread += nread
 
         if time() > t_start + timeout_s
             # We've timed out, return early and warn.  Something is probably wrong.
@@ -878,11 +880,13 @@ function Base.write(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout
             flags[] |= out_flags
         end
 
-        if throw_error && nwritten < 0
-            throw(SoapySDRDeviceError(nwritten, error_to_string(nwritten)))
+        if nwritten < 0
+            if throw_error
+                throw(SoapySDRDeviceError(nwritten, error_to_string(nwritten)))
+            end
+        else
+            total_nwritten += nwritten
         end
-
-        total_nwritten += nwritten
 
         if time() > t_start + timeout_s
             # We've timed out, return early and warn.  Something is probably wrong.
