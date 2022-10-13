@@ -424,8 +424,10 @@ function Base.setproperty!(c::Channel, s::Symbol, v)
         SoapySDRDevice_setGain(c.device.ptr, c.direction, c.idx, uconvert(u"dB", v).val)
     elseif s === :sample_rate
         SoapySDRDevice_setSampleRate(c.device.ptr, c.direction, c.idx, uconvert(u"Hz", v).val)
+    elseif s === :dc_offset_mode
+        SoapySDRDevice_setDCOffsetMode(c.device.ptr, c.direction, c.idx, v)
     else
-        return setfield!(c, s, v)
+        setfield!(c, s, v)
     end
 end
 
