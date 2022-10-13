@@ -523,7 +523,7 @@ function Base.getindex(d::Device, se::Setting)
     unsafe_string(SoapySDRDevice_readSetting(d.ptr, se.name))
 end
 
-function Base.getindex(d::Device, se::Tuple{Register, Integer})
+function Base.getindex(d::Device, se::Tuple{Register, <:Integer})
     SoapySDRDevice_readRegister(d.ptr, se[1].name, se[2])
 end
 
@@ -543,15 +543,21 @@ function Base.setindex!(d::Device, v, ge::Setting)
 end
 
 """
-Set a register value on a device
+Set a register value on a device:
 
 ```
 dev[SoapySDR.Register("LMS7002M")] = (0x1234, 0x5678) # tuple of: (addr, value)
+dev[(SoapySDR.Register("LMS7002M"), 0x1234)] = 0x5678 # this is also equivalent, and symmetric to the getindex form to read
 ```
 """
-function Base.setindex!(d::Device, val::Tuple{Integer, Integer}, se::Register)
+function Base.setindex!(d::Device, val::Tuple{<:Integer, <:Integer}, se::Register)
     SoapySDRDevice_writeRegister(d.ptr, se.name, val[1], val[2])
 end
+
+function Base.setindex!(d::Device, val::Integer, se::Tuple{Register, <:Integer})
+    SoapySDRDevice_writeRegister(d.ptr, se[1].name, se[2], val)
+end
+
 
 ## GainElement
 
