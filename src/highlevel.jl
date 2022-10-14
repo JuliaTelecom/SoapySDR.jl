@@ -427,7 +427,7 @@ function Base.setproperty!(c::Channel, s::Symbol, v)
     elseif s === :dc_offset_mode
         SoapySDRDevice_setDCOffsetMode(c.device.ptr, c.direction, c.idx, v)
     else
-        setfield!(c, s, v)
+        throw(ArgumentError("Channel has no property: $s"))
     end
 end
 
