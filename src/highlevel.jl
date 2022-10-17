@@ -515,6 +515,11 @@ function Base.getindex(c::Channel, se::SensorComponent)
     unsafe_string(SoapySDRDevice_readChannelSensor(c.device, c.direction, c.idx, se.name))
 end
 
+function Base.getindex(c::Channel, se::Setting)
+    unsafe_string(SoapySDRDevice_readChannelSetting(c.device, c.direction, c.idx, se.name))
+end
+
+
 function Base.getindex(d::Device, se::SensorComponent)
     unsafe_string(SoapySDRDevice_readSensor(d.ptr, se.name))
 end
@@ -540,6 +545,10 @@ end
 function Base.setindex!(d::Device, v, ge::Setting)
     SoapySDRDevice_writeSetting(d, ge.name, v)
     return v
+end
+
+function Base.setindex!(c::Channel, v, se::Setting)
+    SoapySDRDevice_writeChannelSetting(c.device, c.direction, c.idx, se.name, v)
 end
 
 """
