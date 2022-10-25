@@ -31,7 +31,7 @@ struct Devices
 end
 Base.length(d::Devices) = length(d.kwargslist)
 
-function Devices(;kwargs...)
+function Devices(; kwargs...)
     Devices(KWArgs(kwargs))
 end
 
@@ -47,7 +47,7 @@ function Base.show(io::IO, d::Devices)
 end
 
 Base.getindex(d::Devices, i::Integer) = d.kwargslist[i]
-Base.iterate(d::Devices, state=1) = state > length(d) ? nothing : (d[state], state+1)
+Base.iterate(d::Devices, state = 1) = state > length(d) ? nothing : (d[state], state + 1)
 
 ####################################################################################################
 #    Device
@@ -116,7 +116,8 @@ function Base.show(io::IO, d::Device)
     println(io, "  uarts: ", d.uarts)
     println(io, "  gpios: ", d.gpios)
     println(io, "  registers: ", d.registers)
-    print(io, "  master_clock_rate: ");  print_unit(io, d.master_clock_rate)
+    print(io, "  master_clock_rate: ")
+    print_unit(io, d.master_clock_rate)
 end
 
 function Base.getproperty(d::Device, s::Symbol)
@@ -151,7 +152,7 @@ function Base.getproperty(d::Device, s::Symbol)
     elseif s === :frontendmapping_rx
         unsafe_string(SoapySDRDevice_getFrontendMapping(d, Rx))
     elseif s === :master_clock_rate
-        SoapySDRDevice_getMasterClockRate(d.ptr)*u"Hz"
+        SoapySDRDevice_getMasterClockRate(d.ptr) * u"Hz"
     else
         getfield(d, s)
     end
@@ -175,7 +176,25 @@ end
 
 
 function Base.propertynames(::Device)
-    return (:ptr, :info, :driver, :hardware, :tx, :rx, :sensors, :time_source, :timesources, :clock_source, :clock_source, :frontendmapping_rx, :frontendmapping_tx, :uarts, :registers, :gpios, :master_clock_rate)
+    return (
+        :ptr,
+        :info,
+        :driver,
+        :hardware,
+        :tx,
+        :rx,
+        :sensors,
+        :time_source,
+        :timesources,
+        :clock_source,
+        :clock_source,
+        :frontendmapping_rx,
+        :frontendmapping_tx,
+        :uarts,
+        :registers,
+        :gpios,
+        :master_clock_rate,
+    )
 end
 
 ####################################################################################################
@@ -246,30 +265,30 @@ function Base.show(io::IO, c::Channel)
     println(io, "  antenna: ", c.antenna)
     println(io, "  antennas: ", c.antennas)
     print(io, "  bandwidth [ ")
-        join(io, map(x->sprint(print_hz_range, x), bandwidth_ranges(c)), ", ")
-        println(io, " ]: ", pick_freq_unit(c.bandwidth))
+    join(io, map(x -> sprint(print_hz_range, x), bandwidth_ranges(c)), ", ")
+    println(io, " ]: ", pick_freq_unit(c.bandwidth))
     print(io, "  frequency [ ")
-            join(io, map(x->sprint(print_hz_range, x), frequency_ranges(c)), ", ")
-            println(io, " ]: ", pick_freq_unit(c.frequency))
-        for element in FrequencyComponentList(c)
-            print(io, "    ", element, " [ ")
-            join(io, map(x->sprint(print_hz_range, x), frequency_ranges(c, element)), ", ")
-            println(io, " ]: ", pick_freq_unit(c[element]))
-        end
+    join(io, map(x -> sprint(print_hz_range, x), frequency_ranges(c)), ", ")
+    println(io, " ]: ", pick_freq_unit(c.frequency))
+    for element in FrequencyComponentList(c)
+        print(io, "    ", element, " [ ")
+        join(io, map(x -> sprint(print_hz_range, x), frequency_ranges(c, element)), ", ")
+        println(io, " ]: ", pick_freq_unit(c[element]))
+    end
     println(io, "  gain_mode (AGC=true/false/missing): ", c.gain_mode)
     println(io, "  gain: ", c.gain)
     println(io, "  gain_elements:")
-        for element in c.gain_elements
-            println(io, "    ", element, " [", gain_range(c, element),"]: ", c[element])
-        end
+    for element in c.gain_elements
+        println(io, "    ", element, " [", gain_range(c, element), "]: ", c[element])
+    end
     println(io, "  fullduplex: ", c.fullduplex)
     println(io, "  stream_formats: ", c.stream_formats)
     println(io, "  native_stream_format: ", c.native_stream_format)
     println(io, "  fullscale: ", c.fullscale)
     println(io, "  sensors: ", c.sensors)
-    print(io, "  sample_rate [ ", )
-        join(io, map(x->sprint(print_hz_range, x), sample_rate_ranges(c)), ", ")
-        println(io, " ]: ", pick_freq_unit(c.sample_rate))
+    print(io, "  sample_rate [ ")
+    join(io, map(x -> sprint(print_hz_range, x), sample_rate_ranges(c)), ", ")
+    println(io, " ]: ", pick_freq_unit(c.sample_rate))
     println(io, "  dc_offset_mode (true/false/missing): ", c.dc_offset_mode)
     println(io, "  dc_offset: ", c.dc_offset)
     println(io, "  iq_balance_mode (true/false/missing): ", c.iq_balance_mode)
@@ -295,7 +314,7 @@ end
 
 function Base.getindex(cl::ChannelList, i::Integer)
     checkbounds(cl, i)
-    Channel(cl.device, cl.direction, i-1)
+    Channel(cl.device, cl.direction, i - 1)
 end
 
 function Base.getproperty(c::Channel, s::Symbol)
@@ -307,7 +326,7 @@ function Base.getproperty(c::Channel, s::Symbol)
     elseif s === :antennas
         return AntennaList(c)
     elseif s === :gain
-        return SoapySDRDevice_getGain(c.device.ptr, c.direction, c.idx)*dB
+        return SoapySDRDevice_getGain(c.device.ptr, c.direction, c.idx) * dB
     elseif s === :gain_elements
         return GainElementList(c)
     elseif s === :dc_offset_mode
@@ -334,7 +353,7 @@ function Base.getproperty(c::Channel, s::Symbol)
         end
         i = Ref{Cdouble}(0)
         q = Ref{Cdouble}(0)
-        SoapySDRDevice_getIQBalance(c.device.ptr, c.direction, c.idx, i,q)
+        SoapySDRDevice_getIQBalance(c.device.ptr, c.direction, c.idx, i, q)
         return i[], q[]
     elseif s === :gain_mode
         if !SoapySDRDevice_hasGainMode(c.device.ptr, c.direction, c.idx)
@@ -358,13 +377,15 @@ function Base.getproperty(c::Channel, s::Symbol)
     elseif s === :fullduplex
         return Bool(SoapySDRDevice_getFullDuplex(c.device.ptr, c.direction, c.idx))
     elseif s === :stream_formats
-        slist = StringList(SoapySDRDevice_getStreamFormats(c.device.ptr, c.direction, c.idx)...)
+        slist =
+            StringList(SoapySDRDevice_getStreamFormats(c.device.ptr, c.direction, c.idx)...)
         return map(_stream_map_soapy2jl, slist)
     elseif s === :native_stream_format
         fmt, _ = SoapySDRDevice_getNativeStreamFormat(c.device.ptr, c.direction, c.idx)
         return _stream_map_soapy2jl(fmt == C_NULL ? "" : unsafe_string(fmt))
     elseif s === :fullscale
-        _, fullscale = SoapySDRDevice_getNativeStreamFormat(c.device.ptr, c.direction, c.idx)
+        _, fullscale =
+            SoapySDRDevice_getNativeStreamFormat(c.device.ptr, c.direction, c.idx)
         return fullscale
     elseif s === :frequency_components
         return FrequencyComponentList(c)
@@ -374,29 +395,31 @@ function Base.getproperty(c::Channel, s::Symbol)
 end
 
 function Base.propertynames(::SoapySDR.Channel)
-    return (:device,
-            :direction,
-            :idx,
-            :info,
-            :antenna,
-            :antennas,
-            :gain_elements,
-            :gain,
-            :dc_offset_mode,
-            :dc_offset,
-            :iq_balance_mode,
-            :iq_balance,
-            :gain_mode,
-            :frequency_correction,
-            :frequency_components,
-            :sample_rate,
-            :bandwidth,
-            :frequency,
-            :fullduplex,
-            :native_stream_format,
-            :stream_formats,
-            :fullscale,
-            :sensors)
+    return (
+        :device,
+        :direction,
+        :idx,
+        :info,
+        :antenna,
+        :antennas,
+        :gain_elements,
+        :gain,
+        :dc_offset_mode,
+        :dc_offset,
+        :iq_balance_mode,
+        :iq_balance,
+        :gain_mode,
+        :frequency_correction,
+        :frequency_components,
+        :sample_rate,
+        :bandwidth,
+        :frequency,
+        :fullduplex,
+        :native_stream_format,
+        :stream_formats,
+        :fullscale,
+        :sensors,
+    )
 end
 
 function Base.setproperty!(c::Channel, s::Symbol, v)
@@ -410,20 +433,40 @@ function Base.setproperty!(c::Channel, s::Symbol, v)
         end
     elseif s === :frequency
         if isa(v, Quantity)
-            SoapySDRDevice_setFrequency(c.device.ptr, c.direction, c.idx, uconvert(u"Hz", v).val, C_NULL)
+            SoapySDRDevice_setFrequency(
+                c.device.ptr,
+                c.direction,
+                c.idx,
+                uconvert(u"Hz", v).val,
+                C_NULL,
+            )
         elseif isa(v, FreqSpec)
             throw(ArgumentError("FreqSpec unsupported"))
         else
-            throw(ArgumentError("Frequency must be specified as either a Quantity or a FreqSpec!"))
+            throw(
+                ArgumentError(
+                    "Frequency must be specified as either a Quantity or a FreqSpec!",
+                ),
+            )
         end
     elseif s === :bandwidth
-        SoapySDRDevice_setBandwidth(c.device.ptr, c.direction, c.idx, uconvert(u"Hz", v).val)
+        SoapySDRDevice_setBandwidth(
+            c.device.ptr,
+            c.direction,
+            c.idx,
+            uconvert(u"Hz", v).val,
+        )
     elseif s === :gain_mode
         SoapySDRDevice_setGainMode(c.device.ptr, c.direction, c.idx, v)
     elseif s === :gain
         SoapySDRDevice_setGain(c.device.ptr, c.direction, c.idx, uconvert(u"dB", v).val)
     elseif s === :sample_rate
-        SoapySDRDevice_setSampleRate(c.device.ptr, c.direction, c.idx, uconvert(u"Hz", v).val)
+        SoapySDRDevice_setSampleRate(
+            c.device.ptr,
+            c.direction,
+            c.idx,
+            uconvert(u"Hz", v).val,
+        )
     elseif s === :dc_offset_mode
         SoapySDRDevice_setDCOffsetMode(c.device.ptr, c.direction, c.idx, v)
     else
@@ -439,15 +482,27 @@ end
 # For example there may be several GainElements we list in a Channel. A Julian idiom for this is
 # the set/getindex class of functions.
 
-abstract type AbstractComponent; end
+abstract type AbstractComponent end
 Base.print(io::IO, c::AbstractComponent) = print(io, c.name)
-Base.convert(::Type{T}, s::Symbol) where {T <: AbstractComponent} = T(s)
-Base.convert(::Type{T}, s::String) where {T <: AbstractComponent} = T(Symbol(s))
-Base.convert(::Type{Cstring}, s::AbstractComponent) =  Cstring(unsafe_convert(Ptr{UInt8}, s.name))
+Base.convert(::Type{T}, s::Symbol) where {T<:AbstractComponent} = T(s)
+Base.convert(::Type{T}, s::String) where {T<:AbstractComponent} = T(Symbol(s))
+Base.convert(::Type{Cstring}, s::AbstractComponent) =
+    Cstring(unsafe_convert(Ptr{UInt8}, s.name))
 
-for e in (:TimeSource, :ClockSource, :GainElement, :Antenna, :FrequencyComponent, :SensorComponent, :Setting, :Register, :UART, :GPIO)
+for e in (
+    :TimeSource,
+    :ClockSource,
+    :GainElement,
+    :Antenna,
+    :FrequencyComponent,
+    :SensorComponent,
+    :Setting,
+    :Register,
+    :UART,
+    :GPIO,
+)
     @eval begin
-        struct $e <: AbstractComponent;
+        struct $e <: AbstractComponent
             name::Symbol
         end
         function $e(s::AbstractString)
@@ -469,16 +524,23 @@ function Base.show(io::IO, l::ComponentList{T}) where {T}
     print(io, "]")
 end
 
-for (e, f) in zip((:Antenna, :GainElement, :FrequencyComponent, :SensorComponent),
-               (:SoapySDRDevice_listAntennas, :SoapySDRDevice_listGains, :SoapySDRDevice_listFrequencies, :SoapySDRDevice_listSensors))
+for (e, f) in zip(
+    (:Antenna, :GainElement, :FrequencyComponent, :SensorComponent),
+    (
+        :SoapySDRDevice_listAntennas,
+        :SoapySDRDevice_listGains,
+        :SoapySDRDevice_listFrequencies,
+        :SoapySDRDevice_listSensors,
+    ),
+)
     @eval begin
-        $f(channel::Channel) =
-            $f(channel.device, channel.direction, channel.idx)
-        $(Symbol(string(e, "List")))(channel::Channel) = ComponentList{$e}(StringList($f(channel)...))
+        $f(channel::Channel) = $f(channel.device, channel.direction, channel.idx)
+        $(Symbol(string(e, "List")))(channel::Channel) =
+            ComponentList{$e}(StringList($f(channel)...))
     end
 end
 
-function ComponentList(::Type{T}, d::Device) where {T <: AbstractComponent}
+function ComponentList(::Type{T}, d::Device) where {T<:AbstractComponent}
     if T <: SensorComponent
         ComponentList{SensorComponent}(StringList(SoapySDRDevice_listSensors(d.ptr)...))
     elseif T <: TimeSource
@@ -494,7 +556,7 @@ function ComponentList(::Type{T}, d::Device) where {T <: AbstractComponent}
     end
 end
 
-function ComponentList(::Type{T}, d::Device, c::Channel) where {T <: AbstractComponent}
+function ComponentList(::Type{T}, d::Device, c::Channel) where {T<:AbstractComponent}
     len = Ref{Csize_t}()
     if T <: SensorComponent
         s = SoapySDRDevice_listChannelSensors(d.ptr, c.direction, c.idx, len)
@@ -508,7 +570,7 @@ function Base.getindex(c::Channel, ge::GainElement)
 end
 
 function Base.getindex(c::Channel, fe::FrequencyComponent)
-    SoapySDRDevice_getFrequencyComponent(c.device, c.direction, c.idx,fe.name) * Hz
+    SoapySDRDevice_getFrequencyComponent(c.device, c.direction, c.idx, fe.name) * Hz
 end
 
 function Base.getindex(c::Channel, se::SensorComponent)
@@ -528,7 +590,7 @@ function Base.getindex(d::Device, se::Setting)
     unsafe_string(SoapySDRDevice_readSetting(d.ptr, se.name))
 end
 
-function Base.getindex(d::Device, se::Tuple{Register, <:Integer})
+function Base.getindex(d::Device, se::Tuple{Register,<:Integer})
     SoapySDRDevice_readRegister(d.ptr, se[1].name, se[2])
 end
 
@@ -538,7 +600,14 @@ function Base.setindex!(c::Channel, gain, ge::GainElement)
 end
 
 function Base.setindex!(c::Channel, frequency, ge::FrequencyComponent)
-    SoapySDRDevice_setFrequencyComponent(c.device, c.direction, c.idx, ge.name, uconvert(u"Hz", frequency).val, C_NULL)
+    SoapySDRDevice_setFrequencyComponent(
+        c.device,
+        c.direction,
+        c.idx,
+        ge.name,
+        uconvert(u"Hz", frequency).val,
+        C_NULL,
+    )
     return frequency
 end
 
@@ -559,11 +628,11 @@ dev[SoapySDR.Register("LMS7002M")] = (0x1234, 0x5678) # tuple of: (addr, value)
 dev[(SoapySDR.Register("LMS7002M"), 0x1234)] = 0x5678 # this is also equivalent, and symmetric to the getindex form to read
 ```
 """
-function Base.setindex!(d::Device, val::Tuple{<:Integer, <:Integer}, se::Register)
+function Base.setindex!(d::Device, val::Tuple{<:Integer,<:Integer}, se::Register)
     SoapySDRDevice_writeRegister(d.ptr, se.name, val[1], val[2])
 end
 
-function Base.setindex!(d::Device, val::Integer, se::Tuple{Register, <:Integer})
+function Base.setindex!(d::Device, val::Integer, se::Tuple{Register,<:Integer})
     SoapySDRDevice_writeRegister(d.ptr, se[1].name, se[2], val)
 end
 
@@ -573,28 +642,29 @@ end
 function _gainrange(soapyr::SoapySDRRange)
     if soapyr.step == 0.0
         # Represents an interval rather than a range
-        return (soapyr.minimum*dB)..(soapyr.maximum*dB)
+        return (soapyr.minimum * dB) .. (soapyr.maximum * dB)
     end
     # TODO
     @warn "Step ranges are not supported for gain elements. Returning Interval instead. Step: $(soapyr.step*dB)"
     #return range(soapyr.minimum*dB; stop=soapyr.maximum*dB, step=soapyr.step*dB)
-    return (soapyr.minimum*dB)..(soapyr.maximum*dB)
+    return (soapyr.minimum * dB) .. (soapyr.maximum * dB)
 end
 
 function gainrange(c::Channel)
     return _gainrange(SoapySDRDevice_getGainRange(c.device, c.direction, c.idx))
 end
 
-gainrange(c::Channel, ge::GainElement) =
-    return _gainrange(SoapySDRDevice_getGainElementRange(c.device, c.direction, c.idx, ge.name))
+gainrange(c::Channel, ge::GainElement) = return _gainrange(
+    SoapySDRDevice_getGainElementRange(c.device, c.direction, c.idx, ge.name),
+)
 
 
 function _hzrange(soapyr::SoapySDRRange)
     if soapyr.step == 0.0
         # Represents an interval rather than a range
-        return (soapyr.minimum*Hz)..(soapyr.maximum*Hz)
+        return (soapyr.minimum * Hz) .. (soapyr.maximum * Hz)
     end
-    return range(soapyr.minimum*Hz; stop=soapyr.maximum*Hz, step=soapyr.step*Hz)
+    return range(soapyr.minimum * Hz; stop = soapyr.maximum * Hz, step = soapyr.step * Hz)
 end
 
 function bandwidth_ranges(c::Channel)
@@ -614,7 +684,8 @@ function frequency_ranges(c::Channel)
 end
 
 function frequency_ranges(c::Channel, fe::FrequencyComponent)
-    (ptr, len) = SoapySDRDevice_getFrequencyRangeComponent(c.device.ptr, c.direction, c.idx, fe.name)
+    (ptr, len) =
+        SoapySDRDevice_getFrequencyRangeComponent(c.device.ptr, c.direction, c.idx, fe.name)
     ptr == C_NULL && return SoapySDRRange[]
     arr = map(_hzrange, unsafe_wrap(Array, Ptr{SoapySDRRange}(ptr), (len,)))
     SoapySDR_free(ptr)
@@ -650,7 +721,7 @@ end
 ### Frequency Setting
 struct FreqSpec{T}
     val::T
-    kwargs::Dict{Any, String}
+    kwargs::Dict{Any,String}
 end
 
 ####################################################################################################
@@ -693,7 +764,7 @@ Base.cconvert(::Type{<:Ptr{SoapySDRStream}}, s::Stream) = s
 Base.unsafe_convert(::Type{<:Ptr{SoapySDRStream}}, s::Stream) = s.ptr
 Base.isopen(s::Stream) = s.ptr != C_NULL && isopen(s.d)
 
-streamtype(::Stream{T}) where T = T
+streamtype(::Stream{T}) where {T} = T
 
 function Base.setproperty!(c::Stream, s::Symbol, v)
     return setfield!(c, s, v)
@@ -724,23 +795,47 @@ function Base.show(io::IO, s::Stream)
 end
 
 function Stream(format::Type, device::Device, direction::Direction; kwargs...)
-    Stream{T}(device, 1, SoapySDRDevice_setupStream(device, direction, string(format), C_NULL, 0, KWArgs(kwargs)))
+    Stream{T}(
+        device,
+        1,
+        SoapySDRDevice_setupStream(
+            device,
+            direction,
+            string(format),
+            C_NULL,
+            0,
+            KWArgs(kwargs),
+        ),
+    )
 end
 
-function Stream(format::Type, channels::AbstractVector{T}; kwargs...) where {T <: Channel}
+function Stream(format::Type, channels::AbstractVector{T}; kwargs...) where {T<:Channel}
     soapy_format = _stream_map_jl2soapy(format)
-    isempty(channels) && error("Must specify at least one channel or use the device/direction constructor for automatic.")
+    isempty(channels) && error(
+        "Must specify at least one channel or use the device/direction constructor for automatic.",
+    )
     device = first(channels).device
     direction = first(channels).direction
     if !all(channels) do channel
-                channel.device == device && channel.direction == direction
-            end
+        channel.device == device && channel.direction == direction
+    end
         throw(ArgumentError("Channels must agree on device and direction"))
     end
-    Stream{format}(device, length(channels), SoapySDRDevice_setupStream(device, direction, soapy_format, map(x->x.idx, channels), length(channels), KWArgs(kwargs)))
+    Stream{format}(
+        device,
+        length(channels),
+        SoapySDRDevice_setupStream(
+            device,
+            direction,
+            soapy_format,
+            map(x -> x.idx, channels),
+            length(channels),
+            KWArgs(kwargs),
+        ),
+    )
 end
 
-function Stream(channels::AbstractVector{T}; kwargs...) where {T <: Channel}
+function Stream(channels::AbstractVector{T}; kwargs...) where {T<:Channel}
     native_format = promote_type(map(c -> c.native_stream_format, channels)...)
     if native_format <: AbstractComplexInteger
         @warn "$(string(native_format)) may be poorly supported, it is recommend to specify a different type with Stream(format::Type, channels)"
@@ -789,7 +884,13 @@ end
 
 Read data from the device into the given buffers.
 """
-function Base.read!(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout=nothing, flags::Union{Ref{Int},Nothing}=nothing, throw_error::Bool=false) where {N, T}
+function Base.read!(
+    s::Stream{T},
+    buffers::NTuple{N,AbstractVector{T}};
+    timeout = nothing,
+    flags::Union{Ref{Int},Nothing} = nothing,
+    throw_error::Bool = false,
+) where {N,T}
     t_start = time()
     timeout === nothing && (timeout = 0.1u"s") # Default from SoapySDR upstream
     timeout_s = uconvert(u"s", timeout).val
@@ -802,8 +903,14 @@ function Base.read!(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout
     end
     GC.@preserve buffers while total_nread < samples_to_read
         # collect list of pointers to pass to SoapySDR
-        buff_ptrs = Ref(map(b -> pointer(b, total_nread+1), buffers))
-        nread, out_flags, timens = SoapySDRDevice_readStream(s.d, s, buff_ptrs, samples_to_read - total_nread, timeout_us)
+        buff_ptrs = Ref(map(b -> pointer(b, total_nread + 1), buffers))
+        nread, out_flags, timens = SoapySDRDevice_readStream(
+            s.d,
+            s,
+            buff_ptrs,
+            samples_to_read - total_nread,
+            timeout_us,
+        )
 
         if typeof(flags) <: Ref
             flags[] |= out_flags
@@ -819,11 +926,12 @@ function Base.read!(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout
 
         if time() > t_start + timeout_s
             # We've timed out, return early and warn.  Something is probably wrong.
-            @warn("readStream timeout!",
-                timeout=timeout_s,
+            @warn(
+                "readStream timeout!",
+                timeout = timeout_s,
                 total_nread,
                 samples_to_read,
-                flags=join(flags_to_set(out_flags), ","),
+                flags = join(flags_to_set(out_flags), ","),
             )
             return buffers
         end
@@ -836,8 +944,8 @@ end
 
 Read at most `nb` samples from s
 """
-function Base.read(s::Stream{T}, n::Integer; timeout=nothing) where {T}
-    bufs = ntuple(_->Vector{T}(undef, n), s.nchannels)
+function Base.read(s::Stream{T}, n::Integer; timeout = nothing) where {T}
+    bufs = ntuple(_ -> Vector{T}(undef, n), s.nchannels)
     read!(s, bufs; timeout)
     bufs
 end
@@ -885,7 +993,12 @@ function activate!(f::Function, s::Stream; kwargs...)
 end
 
 function deactivate!(s::Stream; flags = 0, timens = nothing)
-    SoapySDRDevice_deactivateStream(s.d, s, flags, timens === nothing ? 0 : uconvert(u"ns", timens).val)
+    SoapySDRDevice_deactivateStream(
+        s.d,
+        s,
+        flags,
+        timens === nothing ? 0 : uconvert(u"ns", timens).val,
+    )
     return nothing
 end
 
@@ -894,7 +1007,13 @@ end
 
 Write data from the given buffers into the device.  The buffers must all be the same length.
 """
-function Base.write(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout = nothing, flags::Union{Ref{Int},Nothing}=nothing, throw_error::Bool=false) where {N, T}
+function Base.write(
+    s::Stream{T},
+    buffers::NTuple{N,AbstractVector{T}};
+    timeout = nothing,
+    flags::Union{Ref{Int},Nothing} = nothing,
+    throw_error::Bool = false,
+) where {N,T}
     t_start = time()
     timeout === nothing && (timeout = 0.1u"s") # Default from SoapySDR upstream
     timeout_s = uconvert(u"s", timeout).val
@@ -910,8 +1029,16 @@ function Base.write(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout
     end
 
     GC.@preserve buffers while total_nwritten < samples_to_write
-        buff_ptrs = Ref(map(b -> pointer(b, total_nwritten+1), buffers))
-        nwritten, out_flags = SoapySDRDevice_writeStream(s.d, s, buff_ptrs, samples_to_write - total_nwritten, 0, 0, timeout_us)
+        buff_ptrs = Ref(map(b -> pointer(b, total_nwritten + 1), buffers))
+        nwritten, out_flags = SoapySDRDevice_writeStream(
+            s.d,
+            s,
+            buff_ptrs,
+            samples_to_write - total_nwritten,
+            0,
+            0,
+            timeout_us,
+        )
 
         if typeof(flags) <: Ref
             flags[] |= out_flags
@@ -927,11 +1054,12 @@ function Base.write(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout
 
         if time() > t_start + timeout_s
             # We've timed out, return early and warn.  Something is probably wrong.
-            @warn("writeStream timeout!",
-                timeout=timeout_s,
+            @warn(
+                "writeStream timeout!",
+                timeout = timeout_s,
                 total_nwritten,
                 samples_to_write,
-                flags=join(flags_to_set(out_flags), ","),
+                flags = join(flags_to_set(out_flags), ","),
             )
             return buffers
         end

@@ -16,7 +16,10 @@ args = get_default_args()
 push!(args, "-I$include_dir")
 @show args
 
-headers = [joinpath(include_dir, "SoapySDR", header) for header in readdir(joinpath(include_dir, "SoapySDR")) if endswith(header, ".h")]
+headers = [
+    joinpath(include_dir, "SoapySDR", header) for
+    header in readdir(joinpath(include_dir, "SoapySDR")) if endswith(header, ".h")
+]
 @show headers
 @show basename.(headers)
 # there is also an experimental `detect_headers` function for auto-detecting top-level headers in the directory

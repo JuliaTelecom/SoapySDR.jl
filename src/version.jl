@@ -3,7 +3,7 @@
 
 Print information about the version of SoapySDR in use.
 """
-function versioninfo(io=stdout; kwargs...)
+function versioninfo(io = stdout; kwargs...)
     api_ver = unsafe_string(SoapySDR_getAPIVersion())
     abi_ver = unsafe_string(SoapySDR_getABIVersion())
     lib_ver = unsafe_string(SoapySDR_getLibVersion())
