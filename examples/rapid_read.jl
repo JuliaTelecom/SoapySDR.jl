@@ -19,7 +19,7 @@ function rapid_read()
         current_buff = bufs[Int(flip)+1]
         prev_buff = bufs[Int(!flip)+1]
 
-        read!(rx_stream, (current_buff, ))
+        read!(rx_stream, (current_buff,))
 
         # sanity checks?
         #nequal = 0

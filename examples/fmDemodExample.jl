@@ -36,20 +36,22 @@ SoapySDR.SoapySDRKwargs_clear(kwargs)
 sdr = SoapySDR.SoapySDRDevice_make(kwargs)
 
 if (unsafe_load(sdr) == C_NULL)
-    @printf "SoapySDRDevice_make fail: %s\n" unsafe_string(SoapySDR.SoapySDRDevice_lastError())
+    @printf "SoapySDRDevice_make fail: %s\n" unsafe_string(
+        SoapySDR.SoapySDRDevice_lastError(),
+    )
 end
 
 # query device info
 (name, sz) = SoapySDR.SoapySDRDevice_listAntennas(sdr, SoapySDR.SOAPY_SDR_RX, 0)
 @printf "Rx antennas: "
-for i=1:Int(sz[])
+for i = 1:Int(sz[])
     @printf "%s, " unsafe_string.(unsafe_wrap(Array, name, Int(sz[])))[i]
 end
 @printf "\n"
 
 (name2, sz2) = SoapySDR.SoapySDRDevice_listGains(sdr, SoapySDR.SOAPY_SDR_RX, 0)
 @printf "Rx gains: "
-for i=1:Int(sz[])
+for i = 1:Int(sz[])
     @printf "%s, " unsafe_string.(unsafe_wrap(Array, name2, Int(sz2[])))[i]
 end
 @printf "\n"
@@ -58,7 +60,7 @@ end
 
 @printf "Rx freq ranges: "
 for i = 1:Int(sz[])
-    range =  unsafe_wrap(Array, ranges, Int(sz[]))[i]
+    range = unsafe_wrap(Array, ranges, Int(sz[]))[i]
     @printf "[%g Hz -> %g Hz], " range.minimum range.maximum
 end
 @printf "\n"
@@ -81,7 +83,16 @@ end
 
 # set up a stream (complex floats)
 rxStream = SoapySDR.SoapySDRStream()
-if (SoapySDR.SoapySDRDevice_setupStream(sdr, SoapySDR.SOAPY_SDR_RX, SoapySDR.SOAPY_SDR_CF32, C_NULL, 0, SoapySDR.KWArgs()) != 0)
+if (
+    SoapySDR.SoapySDRDevice_setupStream(
+        sdr,
+        SoapySDR.SOAPY_SDR_RX,
+        SoapySDR.SOAPY_SDR_CF32,
+        C_NULL,
+        0,
+        SoapySDR.KWArgs(),
+    ) != 0
+)
     @printf "setupStream fail: %s\n" unsafe_string(SoapySDR.SoapySDRDevice_lastError())
 end
 
@@ -93,29 +104,35 @@ buffsz = 1024
 buff = Array{ComplexF32}(undef, buffsz)
 
 # receive some samples
-timeS = 15 
+timeS = 15
 timeSamp = Int(floor(timeS * sampRate / buffsz))
-storeIq = zeros(ComplexF32, buffsz*timeSamp)
+storeIq = zeros(ComplexF32, buffsz * timeSamp)
 
 flags = Ref{Cint}()
 timeNs = Ref{Clonglong}()
-buffs = [buff] 
+buffs = [buff]
 
 #storeFft = zeros(timeSamp, buffsz)
-storeBuff = zeros(ComplexF32,timeSamp, buffsz)
-for i=1:timeSamp
-    nelem, flags, timeNs = SoapySDR.SoapySDRDevice_readStream(sdr, pointer_from_objref(rxStream), Ref(pointer(buff)), buffsz, 100000)
-    local storeBuff[i,:] = buff
+storeBuff = zeros(ComplexF32, timeSamp, buffsz)
+for i = 1:timeSamp
+    nelem, flags, timeNs = SoapySDR.SoapySDRDevice_readStream(
+        sdr,
+        pointer_from_objref(rxStream),
+        Ref(pointer(buff)),
+        buffsz,
+        100000,
+    )
+    local storeBuff[i, :] = buff
 end
 
 b = blackman(20)
 storeFft = zeros(timeSamp, buffsz)
 for i = 1:size(storeBuff)[1]
-    local storeFft[i,:] = 20 .*log10.(abs.(fftshift(fft(storeBuff[i,:]))))
+    local storeFft[i, :] = 20 .* log10.(abs.(fftshift(fft(storeBuff[i, :]))))
 end
 
 # get IQ array
-storeIq = Array(reshape(storeBuff', :, size(storeBuff)[1]*size(storeBuff)[2])')[:]
+storeIq = Array(reshape(storeBuff', :, size(storeBuff)[1] * size(storeBuff)[2])')[:]
 
 # shutdown the stream
 SoapySDR.SoapySDRDevice_deactivateStream(sdr, pointer_from_objref(rxStream), 0, 0)  # stop streaming
@@ -124,11 +141,11 @@ SoapySDR.SoapySDRDevice_unmake(sdr)
 
 function plotTimeFreq(storeFft, fs, f0)
     w, h = figaspect(0.5)
-    figure(figsize=[w,h])
-    minF = (f0 - fs/2 )./ 1e6
-    maxF = (f0 + fs/2 )./ 1e6
-    maxT = 1/fs * size(storeFft)[1] * size(storeFft)[2]
-    imshow(storeFft, extent=[minF,maxF,0,maxT], aspect="auto")
+    figure(figsize = [w, h])
+    minF = (f0 - fs / 2) ./ 1e6
+    maxF = (f0 + fs / 2) ./ 1e6
+    maxT = 1 / fs * size(storeFft)[1] * size(storeFft)[2]
+    imshow(storeFft, extent = [minF, maxF, 0, maxT], aspect = "auto")
     xlabel("Frequnecy (MHz)")
     ylabel("Time (s)")
     cb = colorbar()
@@ -137,10 +154,10 @@ end
 
 function plotTime(data, fs)
     w, h = figaspect(0.25)
-    figure(figsize=[w,h])
-    maxT = 1/fs * size(data)[1]
-    t = range(0, maxT, length=size(data)[1])
-    plot(t, data, linewidth=0.1)
+    figure(figsize = [w, h])
+    maxT = 1 / fs * size(data)[1]
+    t = range(0, maxT, length = size(data)[1])
+    plot(t, data, linewidth = 0.1)
     xlim([0, maxT])
     xlabel("Time (s)")
     ylabel("Amplitude")
@@ -148,7 +165,7 @@ end
 
 function plotIq(data)
     figure()
-    scatter(real.(data), imag.(data), s=10)
+    scatter(real.(data), imag.(data), s = 10)
     xlabel("In-phase")
     ylabel("Quadrature")
     title("IQ data")
@@ -156,7 +173,7 @@ end
 plotIq(storeIq[1:10000])
 plotTimeFreq(storeFft, sampRate, f0)
 
-(data, fs) =  fmDemod(storeIq, sampRate)
+(data, fs) = fmDemod(storeIq, sampRate)
 plotTime(data, fs)
 
-wavwrite(data, "demod.wav", Fs=fs)
+wavwrite(data, "demod.wav", Fs = fs)

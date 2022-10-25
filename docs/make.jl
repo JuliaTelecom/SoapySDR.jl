@@ -1,19 +1,19 @@
 using SoapySDR
 using Documenter
 
-DocMeta.setdocmeta!(SoapySDR, :DocTestSetup, :(using SoapySDR); recursive=true)
+DocMeta.setdocmeta!(SoapySDR, :DocTestSetup, :(using SoapySDR); recursive = true)
 
 makedocs(;
-    modules=[SoapySDR],
-    authors="JuliaTelecom and contributors",
-    repo="https://github.com/JuliaTelecom/SoapySDR.jl/blob/{commit}{path}#{line}",
-    sitename="SoapySDR.jl",
-    format=Documenter.HTML(;
-        prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://JuliaTelecom.github.io/SoapySDR.jl",
-        assets=String[],
+    modules = [SoapySDR],
+    authors = "JuliaTelecom and contributors",
+    repo = "https://github.com/JuliaTelecom/SoapySDR.jl/blob/{commit}{path}#{line}",
+    sitename = "SoapySDR.jl",
+    format = Documenter.HTML(;
+        prettyurls = get(ENV, "CI", "false") == "true",
+        canonical = "https://JuliaTelecom.github.io/SoapySDR.jl",
+        assets = String[],
     ),
-    pages=[
+    pages = [
         "Home" => "index.md",
         "Tutorial" => "tutorial.md",
         "Loading Drivers" => "drivers.md",
@@ -23,7 +23,4 @@ makedocs(;
     ],
 )
 
-deploydocs(;
-    repo="github.com/JuliaTelecom/SoapySDR.jl",
-    devbranch = "main"
-)
+deploydocs(; repo = "github.com/JuliaTelecom/SoapySDR.jl", devbranch = "main")

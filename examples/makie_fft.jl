@@ -18,7 +18,7 @@ include("highlevel_dump_devices.jl")
 
 get_time_ms() = trunc(Int, time() * 1000)
 
-function makie_fft(direct_buffer_access=true, timer_display=false)
+function makie_fft(direct_buffer_access = true, timer_display = false)
     devs = Devices()
 
     sdr = Device(devs[1])
@@ -27,7 +27,7 @@ function makie_fft(direct_buffer_access=true, timer_display=false)
 
     sampRate = 2.048e6
 
-    rx1.sample_rate = sampRate*u"Hz"
+    rx1.sample_rate = sampRate * u"Hz"
 
     # Enable automatic Gain Control
     rx1.gain_mode = true
@@ -36,7 +36,7 @@ function makie_fft(direct_buffer_access=true, timer_display=false)
 
     f0 = 104.1e6
 
-    rx1.frequency = f0*u"Hz"
+    rx1.frequency = f0 * u"Hz"
 
     # set up a stream (complex floats)
     format = rx1.native_stream_format
@@ -74,9 +74,10 @@ function makie_fft(direct_buffer_access=true, timer_display=false)
     while true
         @timeit to "Reading stream" begin
             if !direct_buffer_access
-                read!(rxStream, (buff, ))
+                read!(rxStream, (buff,))
             else
-                err, handle, flags, timeNs = SoapySDR.SoapySDRDevice_acquireReadBuffer(sdr, rxStream, buffs, 0)
+                err, handle, flags, timeNs =
+                    SoapySDR.SoapySDRDevice_acquireReadBuffer(sdr, rxStream, buffs, 0)
                 if err == SoapySDR.SOAPY_SDR_TIMEOUT
                     sleep(0.001)
                     have_slack = true
@@ -91,8 +92,9 @@ function makie_fft(direct_buffer_access=true, timer_display=false)
             end
         end
         @timeit to "Copying FFT data" storeFft[][2:end, :] .= storeFft[][1:end-1, :]
-        @timeit to "FFT" storeFft[][1,:] = 20 .*log10.(abs.(fftshift(fft_plan_a*buff)))[1:decimator_factor:end]
-        @timeit to "Plotting" begin 
+        @timeit to "FFT" storeFft[][1, :] =
+            20 .* log10.(abs.(fftshift(fft_plan_a * buff)))[1:decimator_factor:end]
+        @timeit to "Plotting" begin
             if have_slack && get_time_ms() - last_plot > 100 # 10 fps
                 storeFft[] = storeFft[]
                 last_plot = get_time_ms()

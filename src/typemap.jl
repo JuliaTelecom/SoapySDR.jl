@@ -1,7 +1,7 @@
 # Map of Soapy stream formats to Julia types
 
 """SOAPY_SDR_TX SOAPY_SDR_RX"""
-@enum Direction Tx=0 Rx=1
+@enum Direction Tx = 0 Rx = 1
 
 """
 Abstract type denoting a Complex(U)Int(12/4) type.
@@ -20,14 +20,14 @@ Type indicating a Complex Int format.
 
 Parameter `T` indicates the number of bits.
 """
-struct ComplexInt{T} <: AbstractComplexInteger; end
+struct ComplexInt{T} <: AbstractComplexInteger end
 
 """
 Type indicating a Complex Unsigned Int format.
 
 Parameter `T` indicates the number of bits.
 """
-struct ComplexUInt{T} <: AbstractComplexInteger; end
+struct ComplexUInt{T} <: AbstractComplexInteger end
 
 const _stream_type_pairs = [
     (SOAPY_SDR_CF64, Complex{Float64}),
@@ -50,21 +50,22 @@ const _stream_type_pairs = [
     (SOAPY_SDR_U16, UInt16),
     (SOAPY_SDR_S8, Int8),
     (SOAPY_SDR_U8, UInt8),
-    ("", Nothing) ]
+    ("", Nothing),
+]
 
 """
 Type map from SoapySDR Stream formats to Julia types.
 
 Note: Please see ComplexUInt and ComplexUInt if using 12 or 4 bit complex types.
 """
-const _stream_type_soapy2jl = Dict{String, Type}(_stream_type_pairs)
+const _stream_type_soapy2jl = Dict{String,Type}(_stream_type_pairs)
 
 """
 Type map from SoapySDR Stream formats to Julia types.
 
 Note: Please see ComplexUInt and ComplexUInt if using 12 or 4 bit complex types.
 """
-const _stream_type_jl2soapy = Dict{Type, String}(reverse.(_stream_type_pairs))
+const _stream_type_jl2soapy = Dict{Type,String}(reverse.(_stream_type_pairs))
 
 function _stream_map_jl2soapy(stream_type)
     if !haskey(_stream_type_jl2soapy, stream_type)

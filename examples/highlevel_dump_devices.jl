@@ -7,7 +7,7 @@ using SoapySDR
 
 
 for (didx, dev) in enumerate(Devices())
-    @info("device", dev, idx=didx)
+    @info("device", dev, idx = didx)
 
     dev = Device(dev)
 
@@ -15,7 +15,7 @@ for (didx, dev) in enumerate(Devices())
     for (idx, tx_channel) in enumerate(dev.tx)
         display(tx_channel)
     end
-    
+
     @info("RX channels:")
     for (idx, rx_channel) in enumerate(dev.rx)
         display(rx_channel)

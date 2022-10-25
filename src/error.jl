@@ -6,7 +6,7 @@ Calls `SoapySDR_errToStr(error)`, returning the string.
 """
 function error_to_string(error)
     ptr = SoapySDR_errToStr(error)
-    ptr === C_NULL ? "" : unsafe_string(ptr) 
+    ptr === C_NULL ? "" : unsafe_string(ptr)
 end
 
 struct SoapySDRDeviceError <: Exception

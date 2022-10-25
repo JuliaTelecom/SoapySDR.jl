@@ -3,10 +3,10 @@
 
 export KWArgs
 
-mutable struct KWArgs <: AbstractDict{String, String}
+mutable struct KWArgs <: AbstractDict{String,String}
     box::Base.RefValue{SoapySDRKwargs}
 
-    function KWArgs(kw::SoapySDRKwargs; owned::Bool=true)
+    function KWArgs(kw::SoapySDRKwargs; owned::Bool = true)
         this = new(Ref(kw))
         owned && finalizer(SoapySDRKwargs_clear, this)
         return this
@@ -52,11 +52,14 @@ end
 
 Base.length(kw::KWArgs) = kw.box[].size
 
-function Base.iterate(kw::KWArgs, i=1)
+function Base.iterate(kw::KWArgs, i = 1)
     i > length(kw) && return nothing
-    @GC.preserve kw begin
-        return (unsafe_string(unsafe_load(kw.box[].keys, i))=>
-                unsafe_string(unsafe_load(kw.box[].vals, i))), i+1
+    GC.@preserve kw begin
+        return (
+            unsafe_string(unsafe_load(kw.box[].keys, i)) =>
+                unsafe_string(unsafe_load(kw.box[].vals, i))
+        ),
+        i + 1
     end
 end
 
@@ -85,7 +88,7 @@ end
 
 function Base.getindex(kwl::KWArgsList, i::Integer)
     @boundscheck checkbounds(kwl, i)
-    KWArgs(unsafe_load(kwl.ptr, i); owned=false)
+    KWArgs(unsafe_load(kwl.ptr, i); owned = false)
 end
 
 
@@ -135,7 +138,8 @@ function Base.getindex(s::StringList, i::Integer)
     unsafe_string(unsafe_load(s.strs, i))
 end
 
-SoapySDRStrings_clear(s::StringList) = @GC.preserve s SoapySDRStrings_clear(pointer_from_objref(s), s.length)
+SoapySDRStrings_clear(s::StringList) =
+    GC.@preserve s SoapySDRStrings_clear(pointer_from_objref(s), s.length)
 
 
 ## ArgInfo
@@ -148,8 +152,8 @@ function Base.show(io::IO, s::SoapySDRArgInfo)
     println(io, "units: ", unsafe_string(s.units))
     #type
     #range
-    println(io, "options: ", StringList(s.options, s.numOptions; owned=false))
-    println(io, "optionNames: ", StringList(s.optionNames, s.numOptions; owned=false))
+    println(io, "options: ", StringList(s.options, s.numOptions; owned = false))
+    println(io, "optionNames: ", StringList(s.optionNames, s.numOptions; owned = false))
 end
 
 

@@ -39,8 +39,9 @@ function dma_test()
         buf_ct = stream.num_direct_access_buffers
 
         println("Receiving data")
-        time = @elapsed for i in 1:buf_ct*3 # cycle through all buffers three times
-            err, handle, flags, timeNs = SoapySDR.SoapySDRDevice_acquireReadBuffer(dev, stream, buffs, 1000000)
+        time = @elapsed for i = 1:buf_ct*3 # cycle through all buffers three times
+            err, handle, flags, timeNs =
+                SoapySDR.SoapySDRDevice_acquireReadBuffer(dev, stream, buffs, 1000000)
 
             if err == SOAPY_SDR_TIMEOUT
                 timeout_count += 1
@@ -56,7 +57,7 @@ function dma_test()
             end
 
             SoapySDR.SoapySDRDevice_releaseReadBuffer(dev, stream, handle)
-            total_bytes += stream.mtu*sizeof(native_format)
+            total_bytes += stream.mtu * sizeof(native_format)
         end
         println("Data rate: $(Base.format_bytes(total_bytes / time))/s")
         println("Timeout count:", timeout_count)
@@ -67,4 +68,3 @@ function dma_test()
     end
 end
 dma_test()
-
