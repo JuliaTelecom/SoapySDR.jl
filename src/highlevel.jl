@@ -825,6 +825,8 @@ function Base.read!(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout
                 samples_to_read,
                 flags=join(flags_to_set(out_flags), ","),
             )
+            # Dump the DMA buffers
+            println(s.d[SoapySDR.Setting("DMA_BUFFERS")])
             return buffers
         end
     end
@@ -933,6 +935,8 @@ function Base.write(s::Stream{T}, buffers::NTuple{N, AbstractVector{T}}; timeout
                 samples_to_write,
                 flags=join(flags_to_set(out_flags), ","),
             )
+            # Dump the DMA buffers
+            println(s.d[SoapySDR.Setting("DMA_BUFFERS")])
             return buffers
         end
     end
