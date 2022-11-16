@@ -354,7 +354,7 @@ function Base.getproperty(c::Channel, s::Symbol)
         i = Ref{Cdouble}(0)
         q = Ref{Cdouble}(0)
         SoapySDRDevice_getIQBalance(c.device.ptr, c.direction, c.idx, i, q)
-        return i[], q[]
+        return Complex(i[], q[])
     elseif s === :gain_mode
         if !SoapySDRDevice_hasGainMode(c.device.ptr, c.direction, c.idx)
             return missing
@@ -469,6 +469,8 @@ function Base.setproperty!(c::Channel, s::Symbol, v)
         )
     elseif s === :dc_offset_mode
         SoapySDRDevice_setDCOffsetMode(c.device.ptr, c.direction, c.idx, v)
+    elseif s === :iq_balance
+        SoapySDRDevice_setIQBalance(c.device.ptr, c.direction, c.idx, real(v), imag(v))
     else
         throw(ArgumentError("Channel has no property: $s"))
     end
