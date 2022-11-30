@@ -613,12 +613,12 @@ function Base.setindex!(c::Channel, frequency, ge::FrequencyComponent)
     return frequency
 end
 
-function Base.setindex!(d::Device, v, ge::Setting)
+function Base.setindex!(d::Device, v::AbstractString, ge::Setting)
     SoapySDRDevice_writeSetting(d, ge.name, v)
     return v
 end
 
-function Base.setindex!(c::Channel, v, se::Setting)
+function Base.setindex!(c::Channel, v::AbstractString, se::Setting)
     SoapySDRDevice_writeChannelSetting(c.device, c.direction, c.idx, se.name, v)
 end
 
