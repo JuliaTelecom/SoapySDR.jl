@@ -55,7 +55,7 @@ storeBuff = zeros(ComplexF32, timeSamp, buffsz)
 SoapySDR.activate!(rxStream)
 
 for i = 1:timeSamp
-    read!(rxStream, (buff,))
+    read!(rxStream, [buff])
     storeBuff[i, :] = buff
 end
 

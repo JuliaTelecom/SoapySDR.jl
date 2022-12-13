@@ -200,7 +200,7 @@ SoapySDR.register_log_handler()
         sd.activate!(tx_stream)
 
         # First, try to write an invalid buffer type, ensure that that errors
-        buffers = (zeros(ComplexF32, 10), zeros(ComplexF32, 11))
+        buffers = [zeros(ComplexF32, 10), zeros(ComplexF32, 11)]
         @test_throws ArgumentError write(tx_stream, buffers)
 
         # We (unfortunately) cannot do a write/read test, as that's not supported
