@@ -881,18 +881,26 @@ function flags_to_set(flags)
     return s
 end
 
+function Base.read!(
+    ::Stream,
+    ::NTuple;
+    kwargs...
+)
+    error("Buffers should be a Vector of Vectors rather than NTuple.")
+end
+
 """
-    read!(s::SoapySDR.Stream{T}, buffers::NTuple{N, Vector{T}}; [timeout], [flags::Ref{Int}], [throw_error=false])
+    read!(s::SoapySDR.Stream{T}, buffers::AbstractVector{AbstractVector{T}}; [timeout], [flags::Ref{Int}], [throw_error=false])
 
 Read data from the device into the given buffers.
 """
 function Base.read!(
     s::Stream{T},
-    buffers::NTuple{N,AbstractVector{T}};
+    buffers::AbstractVector{<:AbstractVector{T}};
     timeout = nothing,
     flags::Union{Ref{Int},Nothing} = nothing,
     throw_error::Bool = false,
-) where {N,T}
+) where {T}
     t_start = time()
     timeout === nothing && (timeout = 0.1u"s") # Default from SoapySDR upstream
     timeout_s = uconvert(u"s", timeout).val
@@ -905,7 +913,7 @@ function Base.read!(
     end
     GC.@preserve buffers while total_nread < samples_to_read
         # collect list of pointers to pass to SoapySDR
-        buff_ptrs = Ref(map(b -> pointer(b, total_nread + 1), buffers))
+        buff_ptrs = pointer(map(b -> pointer(b, total_nread + 1), buffers))
         nread, out_flags, timens = SoapySDRDevice_readStream(
             s.d,
             s,
@@ -947,7 +955,7 @@ end
 Read at most `nb` samples from s
 """
 function Base.read(s::Stream{T}, n::Integer; timeout = nothing) where {T}
-    bufs = ntuple(_ -> Vector{T}(undef, n), s.nchannels)
+    bufs = [Vector{T}(undef, n) for _ in 1:s.nchannels]
     read!(s, bufs; timeout)
     bufs
 end
@@ -1004,18 +1012,26 @@ function deactivate!(s::Stream; flags = 0, timens = nothing)
     return nothing
 end
 
+function Base.write(
+    ::Stream,
+    ::NTuple;
+    kwargs...
+)
+    error("Buffers should be a Vector of Vectors rather than NTuple.")
+end
+
 """
-    write(s::SoapySDR.Stream{T}, buffer::NTuple{N, Vector{T}}; [timeout], [flags::Ref{Int}], [throw_error=false]) where {N, T}
+    write(s::SoapySDR.Stream{T}, buffer::AbstractVector{AbstractVector{T}}; [timeout], [flags::Ref{Int}], [throw_error=false]) where {N, T}
 
 Write data from the given buffers into the device.  The buffers must all be the same length.
 """
 function Base.write(
     s::Stream{T},
-    buffers::NTuple{N,AbstractVector{T}};
+    buffers::AbstractVector{<:AbstractVector{T}};
     timeout = nothing,
     flags::Union{Ref{Int},Nothing} = nothing,
     throw_error::Bool = false,
-) where {N,T}
+) where {T}
     t_start = time()
     timeout === nothing && (timeout = 0.1u"s") # Default from SoapySDR upstream
     timeout_s = uconvert(u"s", timeout).val
@@ -1031,7 +1047,7 @@ function Base.write(
     end
 
     GC.@preserve buffers while total_nwritten < samples_to_write
-        buff_ptrs = Ref(map(b -> pointer(b, total_nwritten + 1), buffers))
+        buff_ptrs = pointer(map(b -> pointer(b, total_nwritten + 1), buffers))
         nwritten, out_flags = SoapySDRDevice_writeStream(
             s.d,
             s,
