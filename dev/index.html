@@ -59,11 +59,11 @@ function loopback_test(s_tx, s_rx, num_buffers)
     # Read/write `num_buffers`, writing zeros out except for one buffer.
     for idx = 1:num_buffers
         if idx == ceil(num_buffers / 2)
-            Base.write(s_tx, (data_tx,))
+            Base.write(s_tx, [data_tx])
         else
-            Base.write(s_tx, (data_tx_zeros,))
+            Base.write(s_tx, [data_tx_zeros])
         end
-        Base.read!(s_rx, (data_rx_buffs[idx],))
+        Base.read!(s_rx, [data_rx_buffs[idx]])
     end
     SoapySDR.deactivate!.((s_tx, s_rx))
     return data_rx_buffs
@@ -83,4 +83,4 @@ plot(real.(data_rx));
 </code></pre><h2 id="Release-Log"><a class="docs-heading-anchor" href="#Release-Log">Release Log</a><a id="Release-Log-1"></a><a class="docs-heading-anchor-permalink" href="#Release-Log" title="Permalink"></a></h2><h3 id=".2"><a class="docs-heading-anchor" href="#.2">0.2</a><a id=".2-1"></a><a class="docs-heading-anchor-permalink" href="#.2" title="Permalink"></a></h3><p>This changes the high level API to allow device constructor arguments.</p><p>In prior releases to construct a <code>Device</code> one would do:</p><pre><code class="nohighlight hljs">devs = Devices()
 dev = devs[1]</code></pre><p>Now one has to explicitly call <code>open</code> to create the <code>Device</code>, which allows arguments to be set:</p><pre><code class="nohighlight hljs">devs = Devices()
 devs[1][&quot;argument&quot;] = &quot;value&quot;
-dev = open(devs[1])</code></pre><p>Similarly it is now possible to <code>close</code> a device.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="tutorial/">Tutorial »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Wednesday 30 November 2022 23:31">Wednesday 30 November 2022</span>. Using Julia version 1.8.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+dev = open(devs[1])</code></pre><p>Similarly it is now possible to <code>close</code> a device.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="tutorial/">Tutorial »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Saturday 17 December 2022 17:31">Saturday 17 December 2022</span>. Using Julia version 1.8.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
