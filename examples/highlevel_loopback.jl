@@ -58,11 +58,11 @@ function loopback_test(s_tx, s_rx, num_buffers)
     # Read/write `num_buffers`, writing zeros out except for one buffer.
     for idx = 1:num_buffers
         if idx == ceil(num_buffers / 2)
-            Base.write(s_tx, (data_tx,))
+            Base.write(s_tx, [data_tx])
         else
-            Base.write(s_tx, (data_tx_zeros,))
+            Base.write(s_tx, [data_tx_zeros])
         end
-        Base.read!(s_rx, (data_rx_buffs[idx],))
+        Base.read!(s_rx, [data_rx_buffs[idx]])
     end
     SoapySDR.deactivate!.((s_tx, s_rx))
     return data_rx_buffs
