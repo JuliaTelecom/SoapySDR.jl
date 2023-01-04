@@ -813,7 +813,7 @@ function activate!(s::Stream; flags = 0, timens = nothing, numElems = nothing)
         timens = uconvert(u"ns", timens).val
     end
     if numElems === nothing
-        numElems = 0
+        numElems = s.mtu
     end
 
     SoapySDRDevice_activateStream(s.d, s, flags, timens, numElems)

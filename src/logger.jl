@@ -44,6 +44,7 @@ Log messages with lower priority are dropped.
 
 NOTE: This uses SoapySDR log level number, which is different from Julia log level number.
 """
-function set_log_level(level)
-    SoapySDR_setLogLevel(SoapySDRLogLevel(level))
+function set_log_level(level::SoapySDRLogLevel)
+    SoapySDR_setLogLevel(level)
 end
+set_log_level(level::Integer) = set_log_level(SoapySDRLogLevel(level))
