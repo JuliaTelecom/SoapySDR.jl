@@ -17,9 +17,9 @@ julia> Devices()
 [1] :addr => "pcie:///dev/xtrx0", :dev => "pcie:///dev/xtrx0", :driver => "xtrx", :label => "XTRX: pcie:///dev/xtrx0 (10Gbit)", :media => "PCIe", :module => "SoapyXTRX", :name => "XTRX", :serial => "", :type => "xtrx"
 ```
 
-Devices may be selected just by indexing:
+Devices may be selected just by indexing and constructing the `Device`:
 ```
-julia> device = Devices()[1]
+julia> device = SoapySDR.Device(Devices()[1])
 SoapySDR xtrxdev device (driver: xtrxsoapy) w/ 2 TX channels and 2 RX channels
 ```
 
