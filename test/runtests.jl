@@ -3,6 +3,7 @@ using Test
 using Unitful
 using Unitful.DefaultSymbols
 using Intervals
+using IOCapture
 
 const dB = u"dB"
 
@@ -24,22 +25,32 @@ SoapySDR.register_log_handler()
 
 @testset "SoapySDR.jl" begin
     @testset "Version" begin
-        SoapySDR.versioninfo()
+        c = IOCapture.capture() do
+            SoapySDR.versioninfo()
+        end
+        @test contains(c.output, "API Version")
+        @test contains(c.output, "ABI Version")
+        @test contains(c.output, "Library Version")
     end
+
     @testset "Logging" begin
         SoapySDR.register_log_handler()
         SoapySDR.set_log_level(0)
     end
+
     @testset "Error" begin
-        SoapySDR.error_to_string(-1) == "TIMEOUT"
-        SoapySDR.error_to_string(10) == "UNKNOWN"
+        @test SoapySDR.error_to_string(-1) == "TIMEOUT"
+        @test SoapySDR.error_to_string(10) == "UNKNOWN"
     end
+
     @testset "Ranges/Display" begin
         intervalrange = sd.SoapySDRRange(0, 1, 0)
         steprange = sd.SoapySDRRange(0, 1, 0.1)
 
         intervalrangedb = sd._gainrange(intervalrange)
-        steprangedb = sd._gainrange(steprange) #TODO
+        steprangedb = @test_logs (:warn, r"Step ranges are not supported for gain elements.") begin
+            sd._gainrange(steprange) #TODO
+        end
 
         intervalrangehz = sd._hzrange(intervalrange)
         steprangehz = sd._hzrange(steprange)
@@ -66,13 +77,10 @@ SoapySDR.register_log_handler()
             }
         end
 
-        io = IOBuffer(read = true, write = true)
-
-        sd.print_hz_range(io, intervalrangehz)
-        @test String(take!(io)) == "00..0.001 kHz"
-        sd.print_hz_range(io, steprangehz)
-        @test String(take!(io)) == "00 Hz:0.0001 kHz:0.001 kHz"
+        @test sprint(sd.print_hz_range, intervalrangehz) == "00..0.001 kHz"
+        @test sprint(sd.print_hz_range, steprangehz) == "00 Hz:0.0001 kHz:0.001 kHz"
     end
+
     @testset "Keyword Arguments" begin
         args = KWArgs()
         @test length(args) == 0
@@ -90,22 +98,22 @@ SoapySDR.register_log_handler()
         str = String(args)
         @test contains(str, "foo=0")
     end
-    @testset "High Level API" begin
-        io = IOBuffer(read = true, write = true)
 
+    @testset "High Level API" begin
         # Test failing to open a device due to an invalid specification
         @test_throws SoapySDR.SoapySDRDeviceError Device(parse(KWArgs, "driver=foo"))
 
         # Device constructor, show, iterator
         @test length(Devices()) == 1
         @test length(Devices(driver = "loopback")) == 1
-        show(io, Devices())
+        show(devnull, Devices())
         deva = Devices()[1]
         deva["refclk"] = "internal"
         dev = Device(deva)
-        show(io, dev)
+        # XXX: exiting here already prints the error
+        show(devnull, dev)
         for dev in Devices()
-            show(io, dev)
+            show(devnull, dev)
         end
         @test typeof(dev) == sd.Device
         @test typeof(dev.info) == sd.KWArgs
@@ -118,22 +126,21 @@ SoapySDR.register_log_handler()
         dev.time_source = dev.time_sources[1]
         @test dev.time_source == SoapySDR.TimeSource(:sw_ticks)
 
-
         # Channels
         rx_chan_list = dev.rx
         tx_chan_list = dev.tx
         @test typeof(rx_chan_list) == sd.ChannelList
         @test typeof(tx_chan_list) == sd.ChannelList
-        show(io, rx_chan_list)
-        show(io, tx_chan_list)
+        show(devnull, rx_chan_list)
+        show(devnull, tx_chan_list)
         rx_chan = dev.rx[1]
         tx_chan = dev.tx[1]
         @test typeof(rx_chan) == sd.Channel
         @test typeof(tx_chan) == sd.Channel
-        show(io, rx_chan)
-        show(io, tx_chan)
-        show(io, MIME"text/plain"(), rx_chan)
-        show(io, MIME"text/plain"(), tx_chan)
+        show(devnull, rx_chan)
+        show(devnull, tx_chan)
+        show(devnull, MIME"text/plain"(), rx_chan)
+        show(devnull, MIME"text/plain"(), tx_chan)
 
         #channel set/get properties
         @test rx_chan.native_stream_format == SoapySDR.ComplexInt{12} #, fullscale
@@ -161,12 +168,12 @@ SoapySDR.register_log_handler()
         @test rx_chan.gain_elements ==
               SoapySDR.GainElement[:IF1, :IF2, :IF3, :IF4, :IF5, :IF6, :TUNER]
         if1 = rx_chan.gain_elements[1]
-        @show rx_chan[if1]
+        show(devnull, rx_chan[if1])
         rx_chan[if1] = 0.5u"dB"
         @test rx_chan[if1] == 0.5u"dB"
 
-        #@show rx_chan.gain_profile
-        @show rx_chan.frequency_correction
+        #show(devnull, rx_chan.gain_profile)
+        show(devnull, rx_chan.frequency_correction)
 
         #@test tx_chan.bandwidth == 2.048e6u"Hz"
         #@test tx_chan.frequency == 1.0e8u"Hz"
@@ -226,13 +233,13 @@ SoapySDR.register_log_handler()
 
         # do block syntax
         Device(Devices()[1]) do dev
-            println(dev.info)
+            show(devnull, dev.info)
         end
         # and again to ensure correct GC
         Device(Devices()[1]) do dev
             sd.Stream(ComplexF32, [dev.rx[1]]) do s_rx
-                println(dev.info)
-                println(s_rx)
+                show(devnull, dev.info)
+                show(devnull, s_rx)
 
                 # Activate/deactivate
                 sd.activate!(s_rx) do
@@ -246,18 +253,20 @@ SoapySDR.register_log_handler()
             end
         end
     end
+
     @testset "Settings" begin
-        io = IOBuffer(read = true, write = true)
         dev = Device(Devices()[1])
         arglist = SoapySDR.ArgInfoList(SoapySDR.SoapySDRDevice_getSettingInfo(dev)...)
-        println(arglist)
+        show(devnull, arglist)
         a1 = arglist[1]
-        println(a1)
+        show(devnull, a1)
     end
 
-
     @testset "Examples" begin
-        include("../examples/highlevel_dump_devices.jl")
+        c = IOCapture.capture() do
+            include("$(@__DIR__)/../examples/highlevel_dump_devices.jl")
+        end
+        @test contains(c.output, "driver=loopback")
     end
 
     @testset "Modules" begin
