@@ -1,0 +1,8 @@
+[deps]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+IOCapture = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
+Intervals = "d8418881-c3e1-53bb-8760-2df7ec849ed5"
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+SoapyLoopback_jll = "8d250ce8-a086-56bd-8a36-e4e8f4202680"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
