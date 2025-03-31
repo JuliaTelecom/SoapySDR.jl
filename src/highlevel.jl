@@ -126,7 +126,7 @@ function Base.getproperty(d::Device, s::Symbol)
     elseif s === :driver
         Symbol(unsafe_string(SoapySDRDevice_getDriverKey(d)))
     elseif s === :hardware
-        isopen(device) || throw(InvalidStateException("Device is closed!", :closed))
+        isopen(d) || throw(InvalidStateException("Device is closed!", :closed))
         Symbol(unsafe_string(SoapySDRDevice_getHardwareKey(d)))
     elseif s === :tx
         ChannelList(d, Tx)

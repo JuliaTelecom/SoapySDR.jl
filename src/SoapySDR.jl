@@ -1,8 +1,8 @@
 module SoapySDR
 
 using soapysdr_jll
-const lib = soapysdr_jll.libsoapysdr
 const soapysdr = soapysdr_jll.libsoapysdr
+
 using CEnum
 
 using Intervals
@@ -14,7 +14,7 @@ const GC = Base.GC
 export @u_str
 
 include("error.jl")
-include("lowlevel/auto_wrap.jl")
+include("libsoapysdr.jl")
 include("unithelpers.jl")
 include("typemap.jl")
 include("typewrappers.jl")
@@ -22,7 +22,7 @@ include("highlevel.jl")
 include("functionwraps.jl")
 include("logger.jl")
 include("version.jl")
-include("Modules.jl")
+include("modules.jl")
 
 const SDRStream = Stream
 
