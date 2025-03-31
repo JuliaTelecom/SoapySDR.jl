@@ -28,11 +28,11 @@ include("device/channel.jl")
 include("device/stream.jl")
 include("device/sensor.jl")
 include("device/time.jl")
+include("device/settings.jl")
 
 # helpers
 include("typemap.jl")
 include("unithelpers.jl")
-include("wrappers.jl")  # TODO: get rid of this
 
 # high-level functionality
 include("components.jl")

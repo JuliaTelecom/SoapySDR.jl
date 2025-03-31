@@ -117,74 +117,76 @@ end
 
 function Base.getproperty(c::Channel, s::Symbol)
     if s === :info
-        return KWArgs(SoapySDRDevice_getChannelInfo(c.device.ptr, c.direction, c.idx))
+        return KWArgs(SoapySDRDevice_getChannelInfo(c.device, c.direction, c.idx))
     elseif s === :antenna
-        ant = SoapySDRDevice_getAntenna(c.device.ptr, c.direction, c.idx)
+        ant = SoapySDRDevice_getAntenna(c.device, c.direction, c.idx)
         return Antenna(Symbol(ant == C_NULL ? "" : unsafe_string(ant)))
     elseif s === :antennas
         return AntennaList(c)
     elseif s === :gain
-        return SoapySDRDevice_getGain(c.device.ptr, c.direction, c.idx) * dB
+        return SoapySDRDevice_getGain(c.device, c.direction, c.idx) * dB
     elseif s === :gain_elements
         return GainElementList(c)
     elseif s === :dc_offset_mode
-        if !SoapySDRDevice_hasDCOffsetMode(c.device.ptr, c.direction, c.idx)
+        if !SoapySDRDevice_hasDCOffsetMode(c.device, c.direction, c.idx)
             return missing
         end
-        return SoapySDRDevice_getDCOffsetMode(c.device.ptr, c.direction, c.idx)
+        return SoapySDRDevice_getDCOffsetMode(c.device, c.direction, c.idx)
     elseif s === :dc_offset
-        if !SoapySDRDevice_hasDCOffset(c.device.ptr, c.direction, c.idx)
+        if !SoapySDRDevice_hasDCOffset(c.device, c.direction, c.idx)
             return missing
         end
         i = Ref{Cdouble}(0)
         q = Ref{Cdouble}(0)
-        SoapySDRDevice_getDCOffset(c.device.ptr, c.direction, c.idx, i, q)
+        SoapySDRDevice_getDCOffset(c.device, c.direction, c.idx, i, q)
         return i[], q[]
     elseif s === :iq_balance_mode
-        if !SoapySDRDevice_hasIQBalanceMode(c.device.ptr, c.direction, c.idx)
+        if !SoapySDRDevice_hasIQBalanceMode(c.device, c.direction, c.idx)
             return missing
         end
-        return SoapySDRDevice_getIQBalanceMode(c.device.ptr, c.direction, c.idx)
+        return SoapySDRDevice_getIQBalanceMode(c.device, c.direction, c.idx)
     elseif s === :iq_balance
-        if !SoapySDRDevice_hasIQBalance(c.device.ptr, c.direction, c.idx)
+        if !SoapySDRDevice_hasIQBalance(c.device, c.direction, c.idx)
             return missing
         end
         i = Ref{Cdouble}(0)
         q = Ref{Cdouble}(0)
-        SoapySDRDevice_getIQBalance(c.device.ptr, c.direction, c.idx, i, q)
+        SoapySDRDevice_getIQBalance(c.device, c.direction, c.idx, i, q)
         return Complex(i[], q[])
     elseif s === :gain_mode
-        if !SoapySDRDevice_hasGainMode(c.device.ptr, c.direction, c.idx)
+        if !SoapySDRDevice_hasGainMode(c.device, c.direction, c.idx)
             return missing
         end
-        return SoapySDRDevice_getGainMode(c.device.ptr, c.direction, c.idx)
+        return SoapySDRDevice_getGainMode(c.device, c.direction, c.idx)
     elseif s === :frequency_correction
-        if !SoapySDRDevice_hasFrequencyCorrection(c.device.ptr, c.direction, c.idx)
+        if !SoapySDRDevice_hasFrequencyCorrection(c.device, c.direction, c.idx)
             return missing
         end
         # TODO: ppm unit?
-        return SoapySDRDevice_getFrequencyCorrection(c.device.ptr, c.direction, c.idx)
+        return SoapySDRDevice_getFrequencyCorrection(c.device, c.direction, c.idx)
     elseif s === :sample_rate
-        return SoapySDRDevice_getSampleRate(c.device.ptr, c.direction, c.idx) * Hz
+        return SoapySDRDevice_getSampleRate(c.device, c.direction, c.idx) * Hz
     elseif s === :sensors
         ComponentList(SensorComponent, c.device, c)
     elseif s === :bandwidth
-        return SoapySDRDevice_getBandwidth(c.device.ptr, c.direction, c.idx) * Hz
+        return SoapySDRDevice_getBandwidth(c.device, c.direction, c.idx) * Hz
     elseif s === :frequency
-        return SoapySDRDevice_getFrequency(c.device.ptr, c.direction, c.idx) * Hz
+        return SoapySDRDevice_getFrequency(c.device, c.direction, c.idx) * Hz
     elseif s === :fullduplex
-        return Bool(SoapySDRDevice_getFullDuplex(c.device.ptr, c.direction, c.idx))
+        return Bool(SoapySDRDevice_getFullDuplex(c.device, c.direction, c.idx))
     elseif s === :stream_formats
-        slist =
-            StringList(SoapySDRDevice_getStreamFormats(c.device.ptr, c.direction, c.idx)...)
+        len = Ref{Csize_t}()
+        ptr = SoapySDRDevice_getStreamFormats(c.device, c.direction, c.idx, len)
+        slist = StringList(ptr, len[])
         return map(_stream_map_soapy2jl, slist)
     elseif s === :native_stream_format
-        fmt, _ = SoapySDRDevice_getNativeStreamFormat(c.device.ptr, c.direction, c.idx)
+        fullscale = Ref{Cdouble}()
+        fmt = SoapySDRDevice_getNativeStreamFormat(c.device, c.direction, c.idx, fullscale)
         return _stream_map_soapy2jl(fmt == C_NULL ? "" : unsafe_string(fmt))
     elseif s === :fullscale
-        _, fullscale =
-            SoapySDRDevice_getNativeStreamFormat(c.device.ptr, c.direction, c.idx)
-        return fullscale
+        fullscale = Ref{Cdouble}()
+        fmt = SoapySDRDevice_getNativeStreamFormat(c.device, c.direction, c.idx, fullscale)
+        return fullscale[]
     elseif s === :frequency_components
         return FrequencyComponentList(c)
     else
@@ -223,16 +225,16 @@ end
 function Base.setproperty!(c::Channel, s::Symbol, v)
     if s === :antenna
         if v isa Antenna
-            SoapySDRDevice_setAntenna(c.device.ptr, c.direction, c.idx, v.name)
+            SoapySDRDevice_setAntenna(c.device, c.direction, c.idx, v.name)
         elseif v isa Symbol || v isa String
-            SoapySDRDevice_setAntenna(c.device.ptr, c.direction, c.idx, v)
+            SoapySDRDevice_setAntenna(c.device, c.direction, c.idx, v)
         else
             throw(ArgumentError("antenna must be an Antenna or a Symbol"))
         end
     elseif s === :frequency
         if isa(v, Quantity)
             SoapySDRDevice_setFrequency(
-                c.device.ptr,
+                c.device,
                 c.direction,
                 c.idx,
                 uconvert(u"Hz", v).val,
@@ -249,26 +251,26 @@ function Base.setproperty!(c::Channel, s::Symbol, v)
         end
     elseif s === :bandwidth
         SoapySDRDevice_setBandwidth(
-            c.device.ptr,
+            c.device,
             c.direction,
             c.idx,
             uconvert(u"Hz", v).val,
         )
     elseif s === :gain_mode
-        SoapySDRDevice_setGainMode(c.device.ptr, c.direction, c.idx, v)
+        SoapySDRDevice_setGainMode(c.device, c.direction, c.idx, v)
     elseif s === :gain
-        SoapySDRDevice_setGain(c.device.ptr, c.direction, c.idx, uconvert(u"dB", v).val)
+        SoapySDRDevice_setGain(c.device, c.direction, c.idx, uconvert(u"dB", v).val)
     elseif s === :sample_rate
         SoapySDRDevice_setSampleRate(
-            c.device.ptr,
+            c.device,
             c.direction,
             c.idx,
             uconvert(u"Hz", v).val,
         )
     elseif s === :dc_offset_mode
-        SoapySDRDevice_setDCOffsetMode(c.device.ptr, c.direction, c.idx, v)
+        SoapySDRDevice_setDCOffsetMode(c.device, c.direction, c.idx, v)
     elseif s === :iq_balance
-        SoapySDRDevice_setIQBalance(c.device.ptr, c.direction, c.idx, real(v), imag(v))
+        SoapySDRDevice_setIQBalance(c.device, c.direction, c.idx, real(v), imag(v))
     else
         throw(ArgumentError("Channel has no property: $s"))
     end
