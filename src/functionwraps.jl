@@ -97,13 +97,6 @@ function SoapySDRDevice_getSampleRateRange(device, direction, channel)
 end
 
 function SoapySDRDevice_acquireReadBuffer(device::Device, stream, buffs, timeoutUs = 100000)
-    #SOAPY_SDR_API int SoapySDRDevice_acquireReadBuffer(SoapySDRDevice *device,
-    #    SoapySDRStream *stream,
-    #    size_t *handle,
-    #    const void **buffs,
-    #    int *flags,
-    #    long long *timeNs,
-    #    const long timeoutUs);
     handle = Ref{Csize_t}()
     flags = Ref{Cint}(0)
     timeNs = Ref{Clonglong}(-1)
@@ -128,11 +121,6 @@ function SoapySDRDevice_acquireWriteBuffer(
     buffs,
     timeoutUs = 100000,
 )
-    #SOAPY_SDR_API int SoapySDRDevice_acquireWriteBuffer(SoapySDRDevice *device,
-    #    SoapySDRStream *stream,
-    #    size_t *handle,
-    #    void **buffs,
-    #    const long timeoutUs);
     handle = Ref{Csize_t}()
     if !isopen(stream)
         throw(InvalidStateException("stream is closed!", :closed))
@@ -149,16 +137,7 @@ function SoapySDRDevice_releaseWriteBuffer(
     flags = Ref{Cint}(0),
     timeNs = 0,
 )
-    #SOAPY_SDR_API void SoapySDRDevice_releaseWriteBuffer(SoapySDRDevice *device,
-    #    SoapySDRStream *stream,
-    #    const size_t handle,
-    #    const size_t numElems,
-    #    int *flags,
-    #    const long long timeNs);
-    ccall(
-        (:SoapySDRDevice_releaseWriteBuffer, soapysdr),
-        Cvoid,
-        (Ptr{SoapySDRDevice}, Ptr{SoapySDRStream}, Csize_t, Csize_t, Ref{Cint}, Clonglong),
+    SoapySDRDevice_releaseWriteBuffer(
         device,
         stream,
         handle,
@@ -175,18 +154,7 @@ function SoapySDRDevice_readStream(device::Device, stream, buffs, numElems, time
     end
     flags = Ref{Cint}()
     timeNs = Ref{Clonglong}()
-    nelems = ccall(
-        (:SoapySDRDevice_readStream, soapysdr),
-        Cint,
-        (
-            Ptr{SoapySDRDevice},
-            Ptr{SoapySDRStream},
-            Ptr{Cvoid},
-            Csize_t,
-            Ptr{Cint},
-            Ptr{Clonglong},
-            Clong,
-        ),
+    nelems = SoapySDRDevice_readStream(
         device,
         stream,
         buffs,
@@ -211,18 +179,7 @@ function SoapySDRDevice_writeStream(
         throw(InvalidStateException("stream is closed!", :closed))
     end
     flags = Ref{Cint}(flags)
-    nelems = ccall(
-        (:SoapySDRDevice_writeStream, soapysdr),
-        Cint,
-        (
-            Ptr{SoapySDRDevice},
-            Ptr{SoapySDRStream},
-            Ptr{Cvoid},
-            Csize_t,
-            Ptr{Cint},
-            Clonglong,
-            Clong,
-        ),
+    nelems = SoapySDRDevice_writeStream(
         device,
         stream,
         buffs,
