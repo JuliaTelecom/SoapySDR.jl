@@ -13,17 +13,25 @@ const GC = Base.GC
 
 export @u_str
 
-include("error.jl")
+include("errors.jl")
 include("libsoapysdr.jl")
 
-include("unithelpers.jl")
 include("typemap.jl")
-include("typewrappers.jl")
-include("highlevel.jl")
-include("functionwraps.jl")
+include("unithelpers.jl")
+
+include("types.jl")
 include("logger.jl")
 include("version.jl")
 include("modules.jl")
+include("device.jl")
+include("device/channel.jl")
+include("device/stream.jl")
+include("device/sensor.jl")
+include("device/time.jl")
+
+include("wrappers.jl")  # TODO: get rid of this
+
+include("components.jl")
 
 const SDRStream = Stream
 
