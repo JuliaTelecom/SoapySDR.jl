@@ -79,8 +79,8 @@ mutable struct Device
         end
         this = new(dev_ptr)
         finalizer(this) do this
-            this.ptr != C_NULL && SoapySDRDevice_unmake(this.ptr)
-            this.ptr = Ptr{SoapySDRDevice}(C_NULL)
+            this != C_NULL && SoapySDRDevice_unmake(this)
+            this = Ptr{SoapySDRDevice}(C_NULL)
         end
         return this
     end
@@ -97,7 +97,7 @@ end
 
 Base.cconvert(::Type{<:Ptr{SoapySDRDevice}}, d::Device) = d
 Base.unsafe_convert(::Type{<:Ptr{SoapySDRDevice}}, d::Device) = d.ptr
-Base.isopen(d::Device) = d.ptr != C_NULL
+Base.isopen(d::Device) = d != C_NULL
 
 function Base.show(io::IO, d::Device)
     println(io, "SoapySDR ", d.hardware, " device")
@@ -141,17 +141,17 @@ function Base.getproperty(d::Device, s::Symbol)
     elseif s === :gpios
         ComponentList(GPIO, d)
     elseif s === :time_source
-        TimeSource(Symbol(unsafe_string(SoapySDRDevice_getTimeSource(d.ptr))))
+        TimeSource(Symbol(unsafe_string(SoapySDRDevice_getTimeSource(d))))
     elseif s === :clock_sources
         ComponentList(ClockSource, d)
     elseif s === :clock_source
-        ClockSource(Symbol(unsafe_string(SoapySDRDevice_getClockSource(d.ptr))))
+        ClockSource(Symbol(unsafe_string(SoapySDRDevice_getClockSource(d))))
     elseif s === :frontendmapping_tx
         unsafe_string(SoapySDRDevice_getFrontendMapping(d, Tx))
     elseif s === :frontendmapping_rx
         unsafe_string(SoapySDRDevice_getFrontendMapping(d, Rx))
     elseif s === :master_clock_rate
-        SoapySDRDevice_getMasterClockRate(d.ptr) * u"Hz"
+        SoapySDRDevice_getMasterClockRate(d) * u"Hz"
     else
         getfield(d, s)
     end
@@ -159,15 +159,15 @@ end
 
 function Base.setproperty!(c::Device, s::Symbol, v)
     if s === :frontendmapping_tx
-        SoapySDRDevice_setFrontendMapping(c.ptr, Tx, v)
+        SoapySDRDevice_setFrontendMapping(c, Tx, v)
     elseif s === :frontendmapping_rx
-        SoapySDRDevice_setFrontendMapping(c.ptr, Rx, v)
+        SoapySDRDevice_setFrontendMapping(c, Rx, v)
     elseif s === :time_source
-        SoapySDRDevice_setTimeSource(c.ptr, string(v))
+        SoapySDRDevice_setTimeSource(c, string(v))
     elseif s === :clock_source
-        SoapySDRDevice_setClockSource(c.ptr, string(v))
+        SoapySDRDevice_setClockSource(c, string(v))
     elseif s === :master_clock_rate
-        SoapySDRDevice_setMasterClockRate(c.ptr, v)
+        SoapySDRDevice_setMasterClockRate(c, v)
     else
         return setfield!(c, s, v)
     end

@@ -6,5 +6,5 @@ Returns: the value as a string.
 Note: Appropriate conversions need to be done by the user.
 """
 function get_sensor_info(d::Device, name)
-    SoapySDRDevice_getSensorInfo(d.ptr, name)
+    SoapySDRDevice_getSensorInfo(d, name)
 end

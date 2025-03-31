@@ -23,8 +23,8 @@ mutable struct Stream{T}
         this = new{T}(d, Int(nchannels), ptr)
         finalizer(this) do obj
             isopen(d) || return
-            SoapySDRDevice_closeStream(d, obj.ptr)
-            obj.ptr = Ptr{SoapySDRStream}(C_NULL)
+            SoapySDRDevice_closeStream(d, obj)
+            obj = Ptr{SoapySDRStream}(C_NULL)
         end
         return this
     end
@@ -36,7 +36,7 @@ const SDRStream = Stream
 
 Base.cconvert(::Type{<:Ptr{SoapySDRStream}}, s::Stream) = s
 Base.unsafe_convert(::Type{<:Ptr{SoapySDRStream}}, s::Stream) = s.ptr
-Base.isopen(s::Stream) = s.ptr != C_NULL && isopen(s.d)
+Base.isopen(s::Stream) = s != C_NULL && isopen(s.d)
 
 streamtype(::Stream{T}) where {T} = T
 
@@ -53,12 +53,12 @@ function Base.getproperty(stream::Stream, s::Symbol)
         if !isopen(stream)
             throw(InvalidStateException("Stream is closed!", :closed))
         end
-        SoapySDRDevice_getStreamMTU(stream.d.ptr, stream.ptr)
+        SoapySDRDevice_getStreamMTU(stream.d, stream)
     elseif s === :num_direct_access_buffers
         if !isopen(stream)
             throw(InvalidStateException("Stream is closed!", :closed))
         end
-        SoapySDRDevice_getNumDirectAccessBuffers(stream.d.ptr, stream.ptr)
+        SoapySDRDevice_getNumDirectAccessBuffers(stream.d, stream)
     else
         return getfield(stream, s)
     end
