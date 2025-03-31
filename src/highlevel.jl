@@ -126,6 +126,7 @@ function Base.getproperty(d::Device, s::Symbol)
     elseif s === :driver
         Symbol(unsafe_string(SoapySDRDevice_getDriverKey(d)))
     elseif s === :hardware
+        isopen(device) || throw(InvalidStateException("Device is closed!", :closed))
         Symbol(unsafe_string(SoapySDRDevice_getHardwareKey(d)))
     elseif s === :tx
         ChannelList(d, Tx)
@@ -1003,6 +1004,7 @@ function activate!(f::Function, s::Stream; kwargs...)
 end
 
 function deactivate!(s::Stream; flags = 0, timens = nothing)
+    isopen(s) || throw(InvalidStateException("Stream is closed!", :closed))
     SoapySDRDevice_deactivateStream(
         s.d,
         s,
