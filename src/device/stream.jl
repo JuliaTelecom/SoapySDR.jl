@@ -30,6 +30,10 @@ mutable struct Stream{T}
     end
 end
 
+# XXX: why this export?
+export SDRStream
+const SDRStream = Stream
+
 Base.cconvert(::Type{<:Ptr{SoapySDRStream}}, s::Stream) = s
 Base.unsafe_convert(::Type{<:Ptr{SoapySDRStream}}, s::Stream) = s.ptr
 Base.isopen(s::Stream) = s.ptr != C_NULL && isopen(s.d)
