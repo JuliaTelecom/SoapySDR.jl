@@ -1,6 +1,7 @@
 *.wav
 .ipynb_checkpoints
 /Manifest.toml
+test/Manifest.toml
 /docs/build/
 test/build
 test/products

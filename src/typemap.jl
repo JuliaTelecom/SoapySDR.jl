@@ -1,8 +1,5 @@
 # Map of Soapy stream formats to Julia types
 
-"""SOAPY_SDR_TX SOAPY_SDR_RX"""
-@enum Direction Tx = 0 Rx = 1
-
 """
 Abstract type denoting a Complex(U)Int(12/4) type.
 
