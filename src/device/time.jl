@@ -4,7 +4,7 @@
 Query if the Device has hardware time for the given source.
 """
 function has_hardware_time(d::Device, what::String)
-    SoapySDRDevice_hasHardwareTime(d.ptr, what)
+    SoapySDRDevice_hasHardwareTime(d, what)
 end
 
 """
@@ -13,7 +13,7 @@ end
 Get hardware time for the given source.
 """
 function get_hardware_time(d::Device, what::String)
-    SoapySDRDevice_getHardwareTime(d.ptr, what)
+    SoapySDRDevice_getHardwareTime(d, what)
 end
 
 """
@@ -22,5 +22,5 @@ end
 Set hardware time for the given source.
 """
 function set_hardware_time(d::Device, timeNs::Int64, what::String)
-    SoapySDRDevice_setHardwareTime(d.ptr, timeNs, what)
+    SoapySDRDevice_setHardwareTime(d, timeNs, what)
 end

@@ -23,8 +23,7 @@ function KWArgs(kwargs::Base.Iterators.Pairs)
     return args
 end
 
-Base.unsafe_convert(T::Type{Ptr{SoapySDRKwargs}}, args::KWArgs) =
-    Base.unsafe_convert(T, args.box)
+Base.cconvert(T::Type{Ptr{SoapySDRKwargs}}, args::KWArgs) = args.box
 
 Base.String(args::KWArgs) = unsafe_string(SoapySDRKwargs_toString(args))
 
@@ -101,12 +100,13 @@ mutable struct ArgInfoList <: AbstractVector{SoapySDRArgInfo}
     function ArgInfoList(ptr::Ptr{SoapySDRArgInfo}, length::Csize_t)
         this = new(ptr, length)
         finalizer(this) do this
-            SoapySDRArgInfoList_clear(this.ptr, this.length)
+            SoapySDRArgInfoList_clear(this, this.length)
         end
         return this
     end
 end
 
+Base.unsafe_convert(::Type{Ptr{SoapySDRArgInfo}}, kwl::ArgInfoList) = kwl.ptr
 Base.size(kwl::ArgInfoList) = (kwl.length,)
 
 function Base.getindex(kwl::ArgInfoList, i::Integer)
@@ -120,6 +120,7 @@ end
 mutable struct StringList <: AbstractVector{String}
     strs::Ptr{Cstring}
     length::Csize_t
+
     function StringList(strs::Ptr{Cstring}, length::Integer; owned::Bool = true)
         this = new(strs, Csize_t(length))
         if owned
@@ -132,7 +133,9 @@ end
 function StringList(strs::Ptr{Ptr{Cchar}}, length::Integer; kwargs...)
     StringList(reinterpret(Ptr{Cstring}, strs), length; kwargs...)
 end
+
 Base.size(s::StringList) = (s.length,)
+
 function Base.getindex(s::StringList, i::Integer)
     checkbounds(s, i)
     unsafe_string(unsafe_load(s.strs, i))
@@ -155,7 +158,6 @@ function Base.show(io::IO, s::SoapySDRArgInfo)
     println(io, "options: ", StringList(s.options, s.numOptions; owned = false))
     println(io, "optionNames: ", StringList(s.optionNames, s.numOptions; owned = false))
 end
-
 
 function Base.show(io::IO, s::SoapySDRRange)
     print(io, s.minimum, ":", s.step, ":", s.maximum)
