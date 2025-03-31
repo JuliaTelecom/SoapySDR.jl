@@ -58,32 +58,38 @@ for (e, f) in zip(
     ),
 )
     @eval begin
-        $f(channel::Channel) = $f(channel.device, channel.direction, channel.idx)
-        $(Symbol(string(e, "List")))(channel::Channel) =
-            ComponentList{$e}(StringList($f(channel)...))
+        function $(Symbol(string(e, "List")))(channel::Channel)
+            len = Ref{Csize_t}()
+            ptr = $f(channel.device, channel.direction, channel.idx, len)
+            strlist = StringList(ptr, len[])
+            return ComponentList{$e}(strlist)
+        end
     end
 end
 
 function ComponentList(::Type{T}, d::Device) where {T<:AbstractComponent}
-    if T <: SensorComponent
-        ComponentList{SensorComponent}(StringList(SoapySDRDevice_listSensors(d.ptr)...))
+    len = Ref{Csize_t}()
+    ptr = if T <: SensorComponent
+        SoapySDRDevice_listSensors(d, len)
     elseif T <: TimeSource
-        ComponentList{TimeSource}(StringList(SoapySDRDevice_listTimeSources(d.ptr)...))
+        SoapySDRDevice_listTimeSources(d, len)
     elseif T <: ClockSource
-        ComponentList{ClockSource}(StringList(SoapySDRDevice_listClockSources(d.ptr)...))
+        SoapySDRDevice_listClockSources(d, len)
     elseif T <: UART
-        ComponentList{UART}(StringList(SoapySDRDevice_listUARTs(d.ptr)...))
+        SoapySDRDevice_listUARTs(d, len)
     elseif T <: GPIO
-        ComponentList{GPIO}(StringList(SoapySDRDevice_listGPIOBanks(d.ptr)...))
+        SoapySDRDevice_listGPIOBanks(d, len)
     elseif T <: Register
-        ComponentList{Register}(StringList(SoapySDRDevice_listRegisterInterfaces(d.ptr)...))
+        SoapySDRDevice_listRegisterInterfaces(d, len)
     end
+    strlist = StringList(ptr, len[])
+    ComponentList{T}(strlist)
 end
 
 function ComponentList(::Type{T}, d::Device, c::Channel) where {T<:AbstractComponent}
     len = Ref{Csize_t}()
     if T <: SensorComponent
-        s = SoapySDRDevice_listChannelSensors(d.ptr, c.direction, c.idx, len)
+        s = SoapySDRDevice_listChannelSensors(d, c.direction, c.idx, len)
         ComponentList{SensorComponent}(StringList(s, len[]))
     end
 end
@@ -107,15 +113,15 @@ end
 
 
 function Base.getindex(d::Device, se::SensorComponent)
-    unsafe_string(SoapySDRDevice_readSensor(d.ptr, se.name))
+    unsafe_string(SoapySDRDevice_readSensor(d, se.name))
 end
 
 function Base.getindex(d::Device, se::Setting)
-    unsafe_string(SoapySDRDevice_readSetting(d.ptr, se.name))
+    unsafe_string(SoapySDRDevice_readSetting(d, se.name))
 end
 
 function Base.getindex(d::Device, se::Tuple{Register,<:Integer})
-    SoapySDRDevice_readRegister(d.ptr, se[1].name, se[2])
+    SoapySDRDevice_readRegister(d, se[1].name, se[2])
 end
 
 function Base.setindex!(c::Channel, gain, ge::GainElement)
@@ -153,11 +159,11 @@ dev[(SoapySDR.Register("LMS7002M"), 0x1234)] = 0x5678 # this is also equivalent,
 ```
 """
 function Base.setindex!(d::Device, val::Tuple{<:Integer,<:Integer}, se::Register)
-    SoapySDRDevice_writeRegister(d.ptr, se.name, val[1], val[2])
+    SoapySDRDevice_writeRegister(d, se.name, val[1], val[2])
 end
 
 function Base.setindex!(d::Device, val::Integer, se::Tuple{Register,<:Integer})
-    SoapySDRDevice_writeRegister(d.ptr, se[1].name, se[2], val)
+    SoapySDRDevice_writeRegister(d, se[1].name, se[2], val)
 end
 
 
@@ -192,39 +198,42 @@ function _hzrange(soapyr::SoapySDRRange)
 end
 
 function bandwidth_ranges(c::Channel)
-    (ptr, len) = SoapySDRDevice_getBandwidthRange(c.device.ptr, c.direction, c.idx)
+    len = Ref{Csize_t}()
+    ptr = SoapySDRDevice_getBandwidthRange(c.device, c.direction, c.idx, len)
     ptr == C_NULL && return SoapySDRRange[]
-    arr = map(_hzrange, unsafe_wrap(Array, Ptr{SoapySDRRange}(ptr), (len,)))
+    arr = map(_hzrange, unsafe_wrap(Array, Ptr{SoapySDRRange}(ptr), (len[],)))
     SoapySDR_free(ptr)
     arr
 end
 
 function frequency_ranges(c::Channel)
-    (ptr, len) = SoapySDRDevice_getFrequencyRange(c.device.ptr, c.direction, c.idx)
+    len = Ref{Csize_t}()
+    ptr = SoapySDRDevice_getFrequencyRange(c.device, c.direction, c.idx, len)
     ptr == C_NULL && return SoapySDRRange[]
-    arr = map(_hzrange, unsafe_wrap(Array, Ptr{SoapySDRRange}(ptr), (len,)))
+    arr = map(_hzrange, unsafe_wrap(Array, Ptr{SoapySDRRange}(ptr), (len[],)))
     SoapySDR_free(ptr)
     arr
 end
 
 function frequency_ranges(c::Channel, fe::FrequencyComponent)
-    (ptr, len) =
-        SoapySDRDevice_getFrequencyRangeComponent(c.device.ptr, c.direction, c.idx, fe.name)
+    len = Ref{Csize_t}()
+    ptr = SoapySDRDevice_getFrequencyRangeComponent(c.device, c.direction, c.idx, fe.name, len)
     ptr == C_NULL && return SoapySDRRange[]
-    arr = map(_hzrange, unsafe_wrap(Array, Ptr{SoapySDRRange}(ptr), (len,)))
+    arr = map(_hzrange, unsafe_wrap(Array, Ptr{SoapySDRRange}(ptr), (len[],)))
     SoapySDR_free(ptr)
     arr
 end
 
 function gain_range(c::Channel, ge::GainElement)
-    ptr = SoapySDRDevice_getGainElementRange(c.device.ptr, c.direction, c.idx, ge.name)
+    ptr = SoapySDRDevice_getGainElementRange(c.device, c.direction, c.idx, ge.name)
     ptr
 end
 
 function sample_rate_ranges(c::Channel)
-    (ptr, len) = SoapySDRDevice_getSampleRateRange(c.device.ptr, c.direction, c.idx)
+    len = Ref{Csize_t}()
+    ptr = SoapySDRDevice_getSampleRateRange(c.device, c.direction, c.idx, len)
     ptr == C_NULL && return SoapySDRRange[]
-    arr = map(_hzrange, unsafe_wrap(Array, Ptr{SoapySDRRange}(ptr), (len,)))
+    arr = map(_hzrange, unsafe_wrap(Array, Ptr{SoapySDRRange}(ptr), (len[],)))
     SoapySDR_free(ptr)
     arr
 end
@@ -236,7 +245,7 @@ List the natively supported sample rates for a given channel.
 """
 function list_sample_rates(c::Channel)
     len = Ref{Csize_t}(0)
-    ptr = SoapySDRDevice_listSampleRates(c.device.ptr, c.direction, c.idx, len)
+    ptr = SoapySDRDevice_listSampleRates(c.device, c.direction, c.idx, len)
     arr = unsafe_wrap(Array, Ptr{Float64}(ptr), (len[],)) * Hz
     SoapySDR_free(ptr)
     arr

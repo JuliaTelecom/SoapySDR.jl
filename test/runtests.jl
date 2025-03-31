@@ -256,7 +256,7 @@ SoapySDR.register_log_handler()
 
     @testset "Settings" begin
         dev = Device(Devices()[1])
-        arglist = SoapySDR.ArgInfoList(SoapySDR.SoapySDRDevice_getSettingInfo(dev)...)
+        arglist = SoapySDR.SettingInfo(dev)
         show(devnull, arglist)
         a1 = arglist[1]
         show(devnull, a1)

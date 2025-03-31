@@ -185,17 +185,22 @@ function Base.read!(
     end
     GC.@preserve buffers while total_nread < samples_to_read
         # collect list of pointers to pass to SoapySDR
+        isopen(s) || throw(InvalidStateException("stream is closed!", :closed))
         buff_ptrs = pointer(map(b -> pointer(b, total_nread + 1), buffers))
-        nread, out_flags, timens = SoapySDRDevice_readStream(
+        out_flags = Ref{Cint}()
+        timens = Ref{Clonglong}()
+        nread = SoapySDRDevice_readStream(
             s.d,
             s,
             buff_ptrs,
             samples_to_read - total_nread,
+            out_flags,
+            timens,
             timeout_us,
         )
 
         if typeof(flags) <: Ref
-            flags[] |= out_flags
+            flags[] |= out_flags[]
         end
 
         if nread < 0
@@ -213,7 +218,7 @@ function Base.read!(
                 timeout = timeout_s,
                 total_nread,
                 samples_to_read,
-                flags = join(flags_to_set(out_flags), ","),
+                flags = join(flags_to_set(out_flags[]), ","),
             )
             return buffers
         end
@@ -321,18 +326,19 @@ function Base.write(
 
     GC.@preserve buffers while total_nwritten < samples_to_write
         buff_ptrs = pointer(map(b -> pointer(b, total_nwritten + 1), buffers))
-        nwritten, out_flags = SoapySDRDevice_writeStream(
+        out_flags = Ref{Cint}(0)
+        nwritten = SoapySDRDevice_writeStream(
             s.d,
             s,
             buff_ptrs,
             samples_to_write - total_nwritten,
-            0,
+            flags,
             0,
             timeout_us,
         )
 
         if typeof(flags) <: Ref
-            flags[] |= out_flags
+            flags[] |= out_flags[]
         end
 
         if nwritten < 0
@@ -350,7 +356,7 @@ function Base.write(
                 timeout = timeout_s,
                 total_nwritten,
                 samples_to_write,
-                flags = join(flags_to_set(out_flags), ","),
+                flags = join(flags_to_set(out_flags[]), ","),
             )
             return buffers
         end
