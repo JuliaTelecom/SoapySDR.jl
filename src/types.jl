@@ -4,16 +4,28 @@
 export KWArgs
 
 mutable struct KWArgs <: AbstractDict{String,String}
-    box::Base.RefValue{SoapySDRKwargs}
+    ptr::Ptr{SoapySDRKwargs}
+    roots::Any
 
-    function KWArgs(kw::SoapySDRKwargs; owned::Bool = true)
-        this = new(Ref(kw))
+    function KWArgs(ptr::Ptr{SoapySDRKwargs}, roots=nothing; owned::Bool=true)
+        this = new(ptr, roots)
         owned && finalizer(SoapySDRKwargs_clear, this)
         return this
     end
 end
 
-KWArgs() = KWArgs(SoapySDRKwargs_fromString(""))
+# Some SoapySDR API functions give us SoapySDRKwargs structs (e.g. SoapySDRKwargs_fromString
+# or SoapySDRDevice_getHardwareInfo), while functions accepting one take pointers. For this,
+# we have to maintain our own box we can derive a pointer from. However, we cannot do this
+# for all KWArgs values, e.g., when iterating a KWArgsList, we need to keep referencing the
+# contained KWArgs or mutating APIs (e.g. SoapySDRKwargs_set) will affect the wrong object.
+function KWArgs(val::SoapySDRKwargs; owned::Bool=true)
+    box = Ref(val)
+    ptr = Base.unsafe_convert(Ptr{SoapySDRKwargs}, box)
+    KWArgs(ptr, box; owned)
+end
+
+KWArgs() = parse(KWArgs, "")
 
 function KWArgs(kwargs::Base.Iterators.Pairs)
     args = KWArgs()
@@ -23,7 +35,7 @@ function KWArgs(kwargs::Base.Iterators.Pairs)
     return args
 end
 
-Base.cconvert(T::Type{Ptr{SoapySDRKwargs}}, args::KWArgs) = args.box
+Base.unsafe_convert(::Type{<:Ptr{SoapySDRKwargs}}, args::KWArgs) = args.ptr
 
 Base.String(args::KWArgs) = unsafe_string(SoapySDRKwargs_toString(args))
 
@@ -49,14 +61,15 @@ function Base.setindex!(args::KWArgs, value, key)
     args
 end
 
-Base.length(kw::KWArgs) = kw.box[].size
+Base.length(kw::KWArgs) = unsafe_load(kw.ptr).size
 
 function Base.iterate(kw::KWArgs, i = 1)
     i > length(kw) && return nothing
     GC.@preserve kw begin
+        kwargs = unsafe_load(kw.ptr)
         return (
-            unsafe_string(unsafe_load(kw.box[].keys, i)) =>
-                unsafe_string(unsafe_load(kw.box[].vals, i))
+            unsafe_string(unsafe_load(kwargs.keys, i)) =>
+                unsafe_string(unsafe_load(kwargs.vals, i))
         ),
         i + 1
     end
@@ -72,7 +85,7 @@ mutable struct KWArgsList <: AbstractVector{KWArgs}
     function KWArgsList(ptr::Ptr{SoapySDRKwargs}, length::Csize_t)
         this = new(ptr, length)
         finalizer(this) do this
-            SoapySDRKwargsList_clear(this, this.length)
+            SoapySDRKwargsList_clear(this.ptr, this.length)
         end
         this
     end
@@ -80,14 +93,9 @@ end
 
 Base.size(kwl::KWArgsList) = (kwl.length,)
 
-function Base.unsafe_convert(::Type{Ptr{SoapySDRKwargs}}, kwl::KWArgsList)
-    @assert kwl.ptr != C_NULL
-    kwl.ptr
-end
-
 function Base.getindex(kwl::KWArgsList, i::Integer)
     @boundscheck checkbounds(kwl, i)
-    KWArgs(unsafe_load(kwl.ptr, i); owned = false)
+    KWArgs(kwl.ptr + (i - 1) * sizeof(SoapySDRKwargs); owned = false)
 end
 
 
