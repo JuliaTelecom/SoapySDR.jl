@@ -80,20 +80,12 @@ SoapySDR.register_log_handler()
                 @test typeof(steprangedb) ==
                       Interval{Gain{Unitful.LogInfo{:Decibel,10,10},:?,Float64},Closed,Closed}
                 @test typeof(intervalrangehz) == Interval{hztype,Closed,Closed}
-                if VERSION >= v"1.7"
-                    @test typeof(steprangehz) == StepRangeLen{
-                        hztype,
-                        Base.TwicePrecision{hztype},
-                        Base.TwicePrecision{hztype},
-                        Int64,
-                    }
-                else
-                    @test typeof(steprangehz) == StepRangeLen{
-                        hztype,
-                        Base.TwicePrecision{hztype},
-                        Base.TwicePrecision{hztype},
-                    }
-                end
+                @test typeof(steprangehz) == StepRangeLen{
+                    hztype,
+                    Base.TwicePrecision{hztype},
+                    Base.TwicePrecision{hztype},
+                    Int64,
+                }
 
                 @test sprint(sd.print_hz_range, intervalrangehz) == "00..0.001 kHz"
                 @test sprint(sd.print_hz_range, steprangehz) == "00 Hz:0.0001 kHz:0.001 kHz"
@@ -292,8 +284,8 @@ SoapySDR.register_log_handler()
         Aqua.test_all(SoapySDR; ambiguities = false)
     end
 
-    VERSION >= v"1.8" && @testset "JET" begin
+    isempty(VERSION.prerelease) && @testset "JET" begin
         using JET
-        display(JET.report_package(SoapySDR))
+        JET.test_package(SoapySDR; target_modules=[SoapySDR])
     end
 end
