@@ -270,11 +270,11 @@ SoapySDR.register_log_handler()
         end
 
         @testset "Modules" begin
-            @test SoapySDR.Modules.get_root_path() == "/workspace/destdir"
+            @test SoapySDR.Modules.get_root_path() == "/workspace/destdir" skip=Sys.iswindows()
             @test all(
                 SoapySDR.Modules.list_search_paths() .==
                 ["/workspace/destdir/lib/SoapySDR/modules0.8"],
-            )
+            )  skip=Sys.iswindows()
             @test SoapySDR.Modules.list() == String[]
         end
     end
