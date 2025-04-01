@@ -1,7 +1,9 @@
 # SoapySDR.jl
 
-[![Dev Docs](https://img.shields.io/badge/docs-latest-blu)](https://juliatelecom.github.io/SoapySDR.jl/dev/)
-[![Coverage Status](https://coveralls.io/repos/github/JuliaTelecom/SoapySDR.jl/badge.svg?branch=main)](https://coveralls.io/github/JuliaTelecom/SoapySDR.jl?branch=main)
+[![Documentation](https://img.shields.io/badge/docs-latest-blue)](https://juliatelecom.github.io/SoapySDR.jl/dev/)
+[![Continuous integration](https://github.com/JuliaTelecom/SoapySDR.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/JuliaTelecom/SoapySDR.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![PkgEval](https://juliaci.github.io/NanosoldierReports/pkgeval_badges/S/SoapySDR.svg)](https://juliaci.github.io/NanosoldierReports/pkgeval_badges/S/SoapySDR.html)
+[![Code coverage](https://coveralls.io/repos/github/JuliaTelecom/SoapySDR.jl/badge.svg?branch=main)](https://coveralls.io/github/JuliaTelecom/SoapySDR.jl?branch=main)
 
 A Julia wrapper for [SoapySDR](https://github.com/pothosware/SoapySDR/wiki) to enable SDR processing in Julia.
 It features a high level interface to interact with underlying SDR radios.
