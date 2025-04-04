@@ -286,6 +286,6 @@ SoapySDR.register_log_handler()
 
     isempty(VERSION.prerelease) && @testset "JET" begin
         using JET
-        JET.test_package(SoapySDR; target_modules=[SoapySDR])
+        JET.test_package(SoapySDR; target_defined_modules=true)
     end
 end

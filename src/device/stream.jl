@@ -199,7 +199,7 @@ function Base.read!(
             timeout_us,
         )
 
-        if typeof(flags) <: Ref
+        if flags isa Ref
             flags[] |= out_flags[]
         end
 
@@ -337,7 +337,7 @@ function Base.write(
             timeout_us,
         )
 
-        if typeof(flags) <: Ref
+        if flags isa Ref
             flags[] |= out_flags[]
         end
 
