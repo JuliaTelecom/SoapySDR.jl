@@ -81,6 +81,8 @@ function ComponentList(::Type{T}, d::Device) where {T<:AbstractComponent}
         SoapySDRDevice_listGPIOBanks(d, len)
     elseif T <: Register
         SoapySDRDevice_listRegisterInterfaces(d, len)
+    else
+        error("Unsupported component type: $T")
     end
     strlist = StringList(ptr, len[])
     ComponentList{T}(strlist)
