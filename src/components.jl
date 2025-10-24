@@ -54,7 +54,7 @@ for (e, f) in zip(
         :SoapySDRDevice_listAntennas,
         :SoapySDRDevice_listGains,
         :SoapySDRDevice_listFrequencies,
-        :SoapySDRDevice_listSensors,
+        :SoapySDRDevice_listChannelSensors,
     ),
 )
     @eval begin

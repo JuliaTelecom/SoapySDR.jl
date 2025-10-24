@@ -63,7 +63,7 @@ end
 
 Base.length(kw::KWArgs) = unsafe_load(kw.ptr).size
 
-function Base.iterate(kw::KWArgs, i = 1)
+function Base.iterate(kw::KWArgs, i::Int=1)
     i > length(kw) && return nothing
     GC.@preserve kw begin
         kwargs = unsafe_load(kw.ptr)
@@ -95,7 +95,9 @@ Base.size(kwl::KWArgsList) = (kwl.length,)
 
 function Base.getindex(kwl::KWArgsList, i::Integer)
     @boundscheck checkbounds(kwl, i)
-    KWArgs(kwl.ptr + (i - 1) * sizeof(SoapySDRKwargs); owned = false)
+    # Keep a reference to the parent KWArgsList to prevent it from being GC'd
+    # This ensures the underlying memory remains valid for the lifetime of this KWArgs
+    KWArgs(kwl.ptr + (i - 1) * sizeof(SoapySDRKwargs), kwl; owned=false)
 end
 
 
