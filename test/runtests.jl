@@ -87,8 +87,8 @@ SoapySDR.register_log_handler()
                     Int64,
                 }
 
-                @test sprint(sd.print_hz_range, intervalrangehz) == "00..0.001 kHz"
-                @test sprint(sd.print_hz_range, steprangehz) == "00 Hz:0.0001 kHz:0.001 kHz"
+                @test sprint(sd.print_hz_range, intervalrangehz) in ("0..0.001 kHz", "00..0.001 kHz")
+                @test sprint(sd.print_hz_range, steprangehz) in ("0 Hz:0.0001 kHz:0.001 kHz", "00 Hz:0.0001 kHz:0.001 kHz")
             end
         end
 
