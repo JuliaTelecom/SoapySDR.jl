@@ -24,7 +24,7 @@ mutable struct Stream{T}
         finalizer(this) do obj
             isopen(d) || return
             SoapySDRDevice_closeStream(d, obj)
-            obj = Ptr{SoapySDRStream}(C_NULL)
+            obj.ptr = Ptr{SoapySDRStream}(C_NULL)
         end
         return this
     end
@@ -36,7 +36,7 @@ const SDRStream = Stream
 
 Base.cconvert(::Type{<:Ptr{SoapySDRStream}}, s::Stream) = s
 Base.unsafe_convert(::Type{<:Ptr{SoapySDRStream}}, s::Stream) = s.ptr
-Base.isopen(s::Stream) = s != C_NULL && isopen(s.d)
+Base.isopen(s::Stream) = s.ptr != C_NULL && isopen(s.d)
 
 streamtype(::Stream{T}) where {T} = T
 

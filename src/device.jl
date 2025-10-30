@@ -79,8 +79,9 @@ mutable struct Device
         end
         this = new(dev_ptr)
         finalizer(this) do this
-            this != C_NULL && SoapySDRDevice_unmake(this)
-            this = Ptr{SoapySDRDevice}(C_NULL)
+            isopen(this) || return
+            SoapySDRDevice_unmake(this)
+            this.ptr = Ptr{SoapySDRDevice}(C_NULL)
         end
         return this
     end
@@ -97,7 +98,7 @@ end
 
 Base.cconvert(::Type{<:Ptr{SoapySDRDevice}}, d::Device) = d
 Base.unsafe_convert(::Type{<:Ptr{SoapySDRDevice}}, d::Device) = d.ptr
-Base.isopen(d::Device) = d != C_NULL
+Base.isopen(d::Device) = d.ptr != C_NULL
 
 function Base.show(io::IO, d::Device)
     println(io, "SoapySDR ", d.hardware, " device")
