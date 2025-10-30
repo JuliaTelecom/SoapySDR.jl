@@ -1,6 +1,6 @@
 name = "SoapySDR"
 uuid = "4fa426e6-03fd-45b2-b2dd-25f726820c03"
-version = "0.5.2"
+version = "0.5.3"
 
 [deps]
 CEnum = "fa961155-64e5-5f13-b03f-caf6b980ea82"
