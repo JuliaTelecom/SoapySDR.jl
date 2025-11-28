@@ -327,12 +327,14 @@ function Base.write(
     GC.@preserve buffers while total_nwritten < samples_to_write
         buff_ptrs = pointer(map(b -> pointer(b, total_nwritten + 1), buffers))
         out_flags = Ref{Cint}(0)
+        # Handle flags: if nothing, pass pointer to out_flags; otherwise pass flags
+        flags_ptr = flags === nothing ? out_flags : flags
         nwritten = SoapySDRDevice_writeStream(
             s.d,
             s,
             buff_ptrs,
             samples_to_write - total_nwritten,
-            flags,
+            flags_ptr,
             0,
             timeout_us,
         )
