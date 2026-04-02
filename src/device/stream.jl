@@ -332,7 +332,7 @@ function Base.write(
             s,
             buff_ptrs,
             samples_to_write - total_nwritten,
-            flags,
+            out_flags,
             0,
             timeout_us,
         )
